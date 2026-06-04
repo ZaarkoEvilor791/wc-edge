@@ -18,7 +18,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
-        <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+        <main className="flex-1 overflow-hidden p-4 md:p-6">{children}</main>
       </div>
     </div>
   )

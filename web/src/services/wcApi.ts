@@ -26,7 +26,7 @@ export const wcApi = {
   transferSuggest: (body: { squad: number[]; round: number; freeTransfers: number }) =>
     post<{ transfers: { out: number; in: number; gain: number }[] }>('/api/transfers/suggest', body),
   live: (round: number) => get<unknown>(`/api/live?round=${round}`),
-  chat: (body: { messages: { role: string; content: string }[]; squad?: number[] }) =>
+  chat: (body: { messages: { role: string; content: string }[]; squad?: number[]; squadNames?: string[] }) =>
     post<{ content: string }>('/api/chat', body),
   // FIFA Fantasy proxies
   fifaPlayers: () => get<unknown[]>('/wc/players.json'),

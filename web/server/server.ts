@@ -133,16 +133,17 @@ app.post('/api/chat', async (req, res) => {
     return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' })
   }
 
-  const { messages, squad } = req.body as {
+  const { messages, squadNames } = req.body as {
     messages: { role: 'user' | 'assistant'; content: string }[]
-    squad?: number[]
+    squadNames?: string[]
   }
 
   const system = [
     'You are an expert FIFA WC 2026 Fantasy advisor called Edge.',
     'Give concise, actionable advice based on expected points projections, fixture difficulty, and player form.',
-    squad?.length
-      ? `The user's current squad elements: [${squad.join(', ')}].`
+    'Keep responses focused and under 150 words unless the user asks for detail.',
+    squadNames?.length
+      ? `The user's current 15-player squad: ${squadNames.join(', ')}.`
       : 'The user has not yet set their squad.',
   ].join(' ')
 
