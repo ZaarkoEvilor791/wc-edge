@@ -75,54 +75,60 @@
 
 ## Day-by-Day Build Schedule
 
-| Day | Date | Deliverable |
-|---|---|---|
-| 1 | Jun 4 | Repo scaffold ✅ + Phase 1 scrape (StatsBomb + API-Football Day 1) |
-| 2 | Jun 5 | Phase 1 complete (API-Football Day 2) + TypeScript types + React Query hooks + sidebar icons |
-| 3 | Jun 6 | Manual name-override review + unmatched_players.json top-30 fixed |
-| 4 | Jun 7 | Re-run Phase 1 with overrides + wc_model.py Phase 2 + all DB tables populated |
-| 5 | Jun 8 | Express server + all API routes + Assistant page + Squad Builder + squadOptimizer.ts |
-| 6 | Jun 9 | Transfers page + Captain page + RequireSquad HOC |
-| 7 | Jun 10 | Live page + GitHub Actions engine.yml + Render deploy |
-| 8 | Jun 11 | Polish + final engine run + production smoke test |
+| Day | Date | Deliverable | Status |
+|---|---|---|---|
+| 1 | Jun 4 | Repo scaffold + Phase 1 scrape (StatsBomb + API-Football Day 1) | ✅ Done |
+| 2 | Jun 5 | Engine pipeline (model+optimizer) + full web scaffold (5 pages, Express, hooks) | ✅ Done |
+| 3 | Jun 6 | Name-override review + wire Express routes + Assistant page (AI chat) | ← Start here |
+| 4 | Jun 7 | API-Football Day 2 + re-run model + Captain/Transfers page polish | |
+| 5 | Jun 8 | Squad page swap drawer + squadOptimizer.ts (Re-optimize endpoint) | |
+| 6 | Jun 9 | Transfers page (greedy cards) + Live page (match cards + captain banner) | |
+| 7 | Jun 10 | GitHub Actions engine.yml + Render deploy + smoke test | |
+| 8 | Jun 11 | Polish + final engine run + production smoke test | |
 
 ---
 
-## How to Start (Day 1 steps)
+## How to Start (Day 3 — current session)
 
-### 1. Set the GitHub secret (do this once)
+### What's already done (do not re-run)
 ```bash
-gh secret set API_FOOTBALL_KEY --repo ZaarkoEvilor791/wc-edge
-# paste the key when prompted
+# Day 1 (DONE): statsbomb + apif day 1
+# Day 2 (DONE): fifa source (re-run with position fix), model + optimizer
+# DB state: 1481 players, 48 teams, 8 rounds, 571 player_stats, 11848 projections, 1 suggested_squad
 ```
 
-### 2. Create engine/.env (local, gitignored)
-```
-API_FOOTBALL_KEY=<key>
-DATABASE_URL=<render-external-connection-string — set after Render deploy>
-```
-
-### 3. Run Phase 1 scrape
+### Day 3 manual task — name overrides (~30 min)
 ```bash
 cd engine
-py -m pip install -r requirements.txt   # Windows: use py launcher, not python
-py -m engine.wc_ingest --source statsbomb   # 199 match files, ~2 min, free (DONE Day 1)
-py -m engine.wc_ingest --source sofascore   # AFCON 2025 — currently 403 blocked, skip
-py -m engine.wc_ingest --source fifa        # players.json + rounds + squads, free (DONE Day 1)
-py -m engine.wc_ingest --source apif --day 1 # Day 1 budget used (80/100). DONE.
-py -m engine.wc_ingest --source apif --day 2 # Run Day 2 on June 5 — fresh 100 req quota
+py -m engine.wc_ingest --report    # prints top-30 unmatched players by price
+# Review engine/data/unmatched_players.json
+# Add hard cases to engine/data/name_overrides.json
+```
+
+### Day 4 — API-Football Day 2 + re-run model
+```bash
+cd engine
+$env:PYTHONUTF8=1   # PowerShell — needed for Windows console
+py -m engine.wc_ingest --source apif --day 2   # fresh 100 req quota
+py -m engine.wc_run                             # re-run model + optimizer with better data
 ```
 
 **IMPORTANT — API-Football notes:**
 - `/players/topscorers` has NO `page` parameter — already handled in code
-- Budget file: `engine/data/apif_budget.json` tracks day1_used (80 already) and day2_used
+- Budget file: `engine/data/apif_budget.json` — day1_used=80, day2_used=0
 - Day 2 run uses `--day 2` flag to use day2_used counter
+- **Run AFTER Day 3 name overrides** to get maximum match benefit
 
-### 4. Check unmatched players
+### Full pipeline from scratch (if needed)
 ```bash
-py -m engine.wc_ingest --report  # prints unmatched_players.json sorted by price
+cd engine
+$env:PYTHONUTF8=1
+py -m pip install -r requirements.txt
+py -m engine.wc_ingest --source statsbomb   # 199 match files, ~2 min, free
+py -m engine.wc_ingest --source fifa        # players + rounds + teams
+py -m engine.wc_ingest --source apif --day N # N=1 or N=2
+py -m engine.wc_run                          # model + optimizer
 ```
-Review manually on Day 3. Add hard cases to `engine/data/name_overrides.json`.
 
 ---
 
@@ -131,15 +137,20 @@ Review manually on Day 3. Add hard cases to `engine/data/name_overrides.json`.
 ```bash
 # Frontend + API server
 cd web
-npm install
-npm run dev   # http://localhost:5173 + http://localhost:3001
+npm install       # first time only — already done
+npm run dev       # starts Express :3001 + Vite :5173 concurrently
+# requires web/.env with DATABASE_URL + ANTHROPIC_API_KEY (gitignored)
 
-# Engine
+# Engine (Windows PowerShell)
 cd engine
-pip install -r requirements.txt
-python -m engine.wc_run          # Phase 2: recompute projections
-python -m engine.wc_ingest ...   # Phase 1: scrape data sources
+$env:PYTHONUTF8=1          # required on Windows for unicode chars in output
+py -m engine.wc_run        # Phase 2+3: model + optimizer (uses engine/.env)
+py -m engine.wc_ingest ... # Phase 1: scrape data sources
 ```
+
+**env files (gitignored, never commit):**
+- `engine/.env`: `DATABASE_URL=` + `API_FOOTBALL_KEY=`
+- `web/.env`: `DATABASE_URL=` + `ANTHROPIC_API_KEY=`
 
 ---
 
@@ -148,42 +159,57 @@ python -m engine.wc_ingest ...   # Phase 1: scrape data sources
 ```
 engine/              Python backend
 ├── engine/
-│   ├── wc_schema.sql    6 tables: players, teams, rounds, player_stats, projections, team_fdr, suggested_squad
-│   ├── wc_ingest.py     Phase 1: scrape FIFA Fantasy + StatsBomb + Sofascore + API-Football
-│   ├── wc_model.py      Phase 2: Bayesian projection + Poisson FDR + xP formula
-│   ├── wc_optimizer.py  MILP squad builder → writes suggested_squad table
-│   ├── wc_run.py        Orchestrator (Phase 1 + Phase 2)
-│   ├── db.py            Postgres connection (copy from fpl-edge verbatim)
-│   └── config.py        Constants: scoring, priors, league IDs
+│   ├── wc_schema.sql    7 tables: players, teams, rounds, player_stats,
+│   │                              projections, team_fdr, suggested_squad
+│   ├── wc_ingest.py     Phase 1: FIFA Fantasy + StatsBomb + Sofascore + API-Football
+│   ├── wc_model.py      Phase 2: Bayesian xG/xA + seed FDR + xP → projections + team_fdr
+│   ├── wc_optimizer.py  Phase 3: HiGHS MILP → suggested_squad (2GK/5DEF/5MID/3FWD)
+│   ├── wc_run.py        Orchestrator: py -m engine.wc_run [--phase model|optimizer|all]
+│   ├── db.py            psycopg3 pool, search_path=wc,public
+│   └── config.py        Constants: scoring, priors, API keys, league IDs
 ├── data/
-│   ├── name_overrides.json   pre-seeded known hard cases
-│   └── unmatched_players.json  generated by ingest, reviewed Day 3
-└── requirements.txt
+│   ├── sb_cache.json         1441 StatsBomb players (keyed by normalized name)
+│   ├── name_overrides.json   hard-coded name mappings for fuzzy-match failures
+│   ├── unmatched_players.json  961 unmatched players — review on Day 3
+│   └── apif_budget.json      {day1_used: 80, day2_used: 0}
+└── requirements.txt   httpx, psycopg[binary], python-dotenv, rapidfuzz, highspy
 
-web/                 React + Express
+web/                 React + Express (ALL FILES WRITTEN — TypeScript clean)
 ├── server/
-│   ├── server.ts        All API routes
-│   ├── db.ts            Postgres queries (wc schema)
-│   ├── cache.ts         COPY from fpl-edge verbatim
-│   └── squadOptimizer.ts  HiGHS-WASM squad MILP
+│   ├── server.ts        11 routes: 3 FIFA proxies + 8 DB/AI routes — all wired to DB
+│   └── db.ts            pg.Pool, search_path=wc,public, all query functions
 ├── src/
-│   ├── types/wc.ts
-│   ├── store/appStore.ts      (adapted from fpl-edge)
-│   ├── store/squadStore.ts    squad[], captain, bench, budget
-│   ├── hooks/useWC.ts
-│   ├── services/wcApi.ts
-│   ├── services/chatApi.ts    (adapted — adds squad param)
-│   ├── utils/wcScoring.ts
+│   ├── types/wc.ts           Player, Team, Round, Projection, SquadPlayer, SuggestedSquad
+│   ├── store/appStore.ts     sidebar collapse + mobile menu (Zustand + persist)
+│   ├── store/squadStore.ts   squad[], captain, bench, budget (Zustand + persist)
+│   ├── hooks/useWC.ts        React Query hooks for all 8 API routes
+│   ├── services/wcApi.ts     fetch wrappers for all routes
+│   ├── components/layout/
+│   │   ├── Layout.tsx        flex wrapper (sidebar + topbar + main)
+│   │   ├── Sidebar.tsx       5 nav items, WC gold accent, collapse/expand, mobile drawer
+│   │   └── TopBar.tsx        mobile hamburger only
 │   └── pages/
-│       ├── Assistant.tsx
-│       ├── Squad.tsx
-│       ├── Transfers.tsx
-│       ├── Captain.tsx
-│       └── Live.tsx
+│       ├── Assistant.tsx     shell (AI chat — Day 3 feature)
+│       ├── Squad.tsx         working: loads suggested_squad, renders by position, populates store
+│       ├── Transfers.tsx     shell (Day 4 feature)
+│       ├── Captain.tsx       working: 15-row ranked list, setCaptain
+│       └── Live.tsx          working: community API proxy, 60s refetch, graceful degradation
+├── package.json       React 18, Vite, TailwindCSS 3, @tanstack/react-query, zustand, highs, pg
+├── tailwind.config.ts accent=#E8B84B (WC gold), brand slate palette
+└── tsconfig.json
 
 .github/workflows/
-└── engine.yml     Crons: 04:00 UTC + 18:00 UTC daily + June 27 post-group update
+└── engine.yml     TODO Day 7: crons 04:00 + 18:00 UTC, post-group update June 27
 ```
+
+**DB state (after Day 2):**
+- `wc.players`: 1,481 rows (48 teams, positions correctly parsed)
+- `wc.teams`: 48 rows (built from rounds.json fixtures, seed/group from squads_fifa)
+- `wc.rounds`: 8 rows (GROUP×3, R32, R16, QF, SF, F)
+- `wc.player_stats`: 571 rows
+- `wc.projections`: 11,848 rows (1481 players × 8 rounds)
+- `wc.team_fdr`: 384 rows
+- `wc.suggested_squad`: 1 row (round 1, £98.9m, 77.6 xP — Mbappé/Salah/Ronaldo/Raphinha)
 
 ---
 
@@ -340,8 +366,23 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 ## Gotchas
 
 - **StatsBomb 199 files** — download with 0.5s delay, ~2 min total. No rate limit but be polite.
-- **API-Football 100 req/day hard cap** — track carefully. Budget in wc-edge.md §2.
-- **Sofascore unofficial** — no auth needed but may break without warning. AFCON 2025 only.
+- **API-Football 100 req/day hard cap** — track carefully. Budget in `engine/data/apif_budget.json`.
+- **Sofascore unofficial** — 403 blocked (Cloudflare). AFCON 2025 falls back to AFCON 2023 StatsBomb.
 - **Community live API (worldcup2026-api.vercel.app)** — no SLA. Degraded mode is a primary design constraint, not an edge case.
-- **suggested_squad table must be populated** before Squad page works — run wc_optimizer.py after Phase 2.
-- **Day 3 manual step** — review unmatched_players.json, add overrides to name_overrides.json before Day 4 Phase 1 re-run. Cannot be automated.
+- **suggested_squad table must be populated** before Squad page works — `py -m engine.wc_run` after any schema changes.
+- **Day 3 manual step** — review unmatched_players.json, add overrides to name_overrides.json before Day 4 apif re-run. Cannot be automated.
+- **FIFA Fantasy squadId (1-48) ≠ squads_fifa.json id (43817+)** — player.squadId is a sequential index into alphabetical team list. teams table is built from rounds.json fixtures, not squads_fifa.json. Seed/group enriched by team name match.
+- **highspy MILP integrality** — must use `highspy.HighsVarType.kInteger` (not integer `1`). Model status check uses `h.getModelStatus()` (not LP `primal_solution_status` which returns 0 for MIP).
+- **Python on Windows** — use `py` launcher, not `python`. Set `$env:PYTHONUTF8=1` in PowerShell for unicode output.
+- **wc schema search_path** — Python: `options="-c search_path=wc,public"` in psycopg3. Node: append `?options=-c%20search_path%3Dwc%2Cpublic` to connectionString.
+- **Elite product team** — always convene for design/architecture/sequencing decisions before coding. User has set this as global behavior.
+
+## Day 3 Start Checklist
+
+```
+[ ] 1. Run: py -m engine.wc_ingest --report  (see top-30 unmatched by price)
+[ ] 2. Review engine/data/unmatched_players.json, add entries to name_overrides.json
+[ ] 3. Wire Express API routes: server/db.ts is complete, server/server.ts has all routes
+[ ] 4. Build Assistant page: AI chat with starter prompts, squad context
+[ ] 5. Test end-to-end: npm run dev → http://localhost:5173 → Squad page renders with squad
+```
