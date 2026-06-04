@@ -1,0 +1,19 @@
+databases:
+  - name: wc-db
+    databaseName: wc_edge
+    plan: free
+
+services:
+  - type: web
+    name: wc-edge
+    env: node
+    plan: free
+    buildCommand: cd web && npm install && npm run build
+    startCommand: node web/dist/server/server.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wc-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
