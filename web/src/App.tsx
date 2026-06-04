@@ -28,9 +28,11 @@ function RequireSquad({ children }: { children: React.ReactNode }) {
 export default function App() {
   const wcOnboardingOpen = useAppStore((s) => s.wcOnboardingOpen)
   const setWcOnboardingOpen = useAppStore((s) => s.setWcOnboardingOpen)
-  const [firstVisit] = useState(() => !localStorage.getItem('wc-onboarded'))
+  // dismissed tracks whether the user has ever closed the onboarding — must be
+  // actual state (not derived-once) so calling onClose() causes a re-render
+  const [dismissed, setDismissed] = useState(() => !!localStorage.getItem('wc-onboarded'))
 
-  const showOnboarding = firstVisit || wcOnboardingOpen
+  const showOnboarding = !dismissed || wcOnboardingOpen
 
   return (
     <Layout>
@@ -38,6 +40,7 @@ export default function App() {
         open={showOnboarding}
         onClose={() => {
           localStorage.setItem('wc-onboarded', '1')
+          setDismissed(true)
           setWcOnboardingOpen(false)
         }}
       />

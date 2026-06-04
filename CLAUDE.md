@@ -232,6 +232,10 @@
 
 - **TypeScript:** clean (zero errors)
 
+**Bug fix — onboarding modal never closed (Session 10):**
+- **Root cause:** `App.tsx` used `const [firstVisit] = useState(() => !localStorage.getItem('wc-onboarded'))` — no setter, so `firstVisit` was permanently `true`. `onClose()` only called `setWcOnboardingOpen(false)` (already `false`, a no-op), leaving `showOnboarding = true || false` stuck. Modal never unmounted.
+- **Fix:** replaced with `const [dismissed, setDismissed] = useState(() => !!localStorage.getItem('wc-onboarded'))`. `onClose` now calls `setDismissed(true)`. Logic: `showOnboarding = !dismissed || wcOnboardingOpen`.
+
 ---
 
 ## Day-by-Day Build Schedule
