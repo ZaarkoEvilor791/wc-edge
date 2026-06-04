@@ -4,7 +4,7 @@
 
 **Deadline:** June 11, 2026 (Day 8). Tournament starts June 12, 2026.
 
-**Production URL:** TBD (Render, will be `https://wc-edge.onrender.com`)
+**Production URL:** `https://wc-edge.onrender.com`
 
 **Local dev:** frontend at `http://localhost:5173`, Express API at `http://localhost:3001`
 
