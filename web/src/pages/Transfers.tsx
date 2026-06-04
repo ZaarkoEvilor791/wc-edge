@@ -100,8 +100,8 @@ function SwapCard({
         <SwapPlayerCard player={suggestion.in} variant="in" />
       </div>
 
-      <div className="mt-5 flex gap-3">
-        {canUndo ? (
+      <div className="mt-5 grid gap-3" style={{ gridTemplateColumns: canUndo ? 'auto 1fr 1fr' : '1fr 1fr' }}>
+        {canUndo && (
           <button
             onClick={onUndo}
             className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-700 hover:text-slate-200"
@@ -109,25 +109,16 @@ function SwapCard({
           >
             ↩ Undo
           </button>
-        ) : (
-          <button
-            onClick={onSkip}
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
-          >
-            Skip
-          </button>
-        )}
-        {canUndo && (
-          <button
-            onClick={onSkip}
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
-          >
-            Skip
-          </button>
         )}
         <button
+          onClick={onSkip}
+          className="rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
+        >
+          Skip
+        </button>
+        <button
           onClick={onAccept}
-          className="flex-1 rounded-xl bg-accent py-2.5 text-sm font-bold text-accent-fg transition-opacity hover:opacity-90"
+          className="rounded-xl bg-accent py-2.5 text-sm font-bold text-accent-fg transition-opacity hover:opacity-90"
         >
           Accept
         </button>
