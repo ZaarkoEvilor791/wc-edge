@@ -54,7 +54,22 @@
   1. API-Football `/players/topscorers` has no `page` parameter — `&page=1` returns error. Fixed to single request per league, no pagination.
   2. Abbreviated API-Football names ("A. Isak") added last-name-only fallback in `_resolve_element()`
   3. All `wc_schema.sql` tables prefixed with `wc.` namespace
-- **Next session starts here (Day 2):** Run `python -m engine.wc_ingest --source apif --day 2` (fresh 100 req/day budget) + scaffold web/ directory (TypeScript types, React Query hooks, sidebar icons)
+**Session 4 (2026-06-05) — Day 2 complete: engine pipeline + full web scaffold:**
+
+- `engine/engine/wc_model.py` — Bayesian xG/xA posteriors, seed-based FDR, full xP formula → writes wc.projections (11,848 rows)
+- `engine/engine/wc_optimizer.py` — HiGHS MILP 15-player squad solver → writes wc.suggested_squad
+- `engine/engine/wc_run.py` — orchestrator: `py -m engine.wc_run` runs model + optimizer
+- **3 critical bugs fixed in wc_ingest.py:**
+  1. FIFA Fantasy `position` is a STRING ("DEF") not int — was silently defaulting all 1481 players to MID
+  2. `teams` table must be built from `rounds.json` fixtures (sequential IDs 1-48 matching player.squadId), NOT from `squads_fifa.json` (which uses FIFA entity IDs 43817+ with no overlap)
+  3. Enrich seed/group by team name match between rounds.json and squads_fifa.json
+- **Full web scaffold written:** Vite+React+TS, Express, 5 pages, sidebar, WC gold accent, all hooks, TypeScript clean
+- **DB state after Day 2:** projections (11,848), suggested_squad (round 1: £98.9m, 77.6 xP)
+- **Next session starts here (Day 3):**
+  1. Review `engine/data/unmatched_players.json` top-30 — add overrides to `engine/data/name_overrides.json`
+  2. Wire Express DB routes to real SQL queries (server/db.ts already has all query functions)
+  3. Build out Assistant page (AI chat with FIFA player context)
+  4. Day 4: `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req) + re-run model
 
 ---
 
