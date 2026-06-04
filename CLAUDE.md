@@ -211,6 +211,27 @@
   4. Top up Anthropic credits — required for `/api/chat` AND `/api/squad/from-screenshot` (both call Claude)
   5. Test screenshot flow end-to-end once credits are live
 
+**Session 10 (2026-06-08) — Day 6: Live polish + captain banner + squad swap drawer:**
+
+- **Live page polished** (`web/src/pages/Live.tsx`):
+  - Match cards redesigned: larger bold score (gold when live, white when FT, muted pre-match); status badge (pulsing green dot + minute for LIVE, FT, kickoff time for upcoming)
+  - Auto-refresh indicator: "Updates every 60s · last updated HH:MM" (tracked via `useEffect` on `data`)
+  - Captain banner: gold strip above match grid when squad has a captain and ≥1 match has started — "⚡ [Name] is your captain — consider a mid-match swap…" + "FIFA Fantasy →" external link (`play.fifa.com/fantasy/`)
+  - Banner condition: `hasActiveMatches && captainName != null` (advisory, no squad guard)
+
+- **PlayerProfileModal updated** (`web/src/components/shared/PlayerProfileModal.tsx`):
+  - Added optional `onSubOut?: (player: SquadPlayer) => void` prop
+  - Sub Out button calls `onSubOut(player)` when provided; falls back to `onClose()` otherwise
+
+- **Squad swap drawer shipped** (`web/src/pages/Squad.tsx`):
+  - `swapTarget: SquadPlayer | null` local state
+  - `PlayerProfileModal` passes `onSubOut={(p) => { setSelectedPlayer(null); setSwapTarget(p) }}`
+  - `SwapDrawer` — React portal bottom sheet: handle, header ("Swap out [Name]"), list of bench players of same position, tap to swap, tap backdrop to cancel
+  - Swap updates squad store via `setSquad` immediately; uses existing `getXI()` utility to derive bench list
+  - "No eligible [POS] on the bench" empty state when position not available
+
+- **TypeScript:** clean (zero errors)
+
 ---
 
 ## Day-by-Day Build Schedule
@@ -222,8 +243,8 @@
 | 3 | Jun 6 | Name-override review + Assistant page + UI quality pass (fpl-edge parity) | ✅ Done |
 | 4 | Jun 7 | UI redesign (pitch layout, player profiles, WC banner) + onboarding flow (screenshot squad sync) | ✅ Done |
 | 5 | Jun 8 | Fix teams DB bug + apif Day 2 + model rerun + Transfers greedy cards + Player profile modal redesign | ✅ Done (engine deferred to Day 9) |
-| 6 | Jun 9 | Live page polish + captain banner + squad swap drawer | ← Start here |
-| 7 | Jun 10 | GitHub Actions engine.yml + Render deploy + smoke test | |
+| 6 | Jun 9 | Live page polish + captain banner + squad swap drawer | ✅ Done |
+| 7 | Jun 10 | GitHub Actions engine.yml + Render deploy + smoke test | ← Start here |
 | 8 | Jun 11 | Polish + final engine run + production smoke test | |
 
 ---

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 import { useSuggestedSquad, useProjections, useCurrentRound } from '../hooks/useWC'
 import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
+import { getXI } from '../utils/squad'
 import Spinner from '../components/shared/Spinner'
 import StatCard from '../components/shared/StatCard'
 import Pitch from '../components/shared/Pitch'
@@ -39,7 +41,6 @@ function PlayerCard({ player, isCaptain, onClick }: { player: SquadPlayer; isCap
   )
 }
 
-// Inline SVG icons for view toggle
 function PitchIcon({ active }: { active: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
@@ -62,6 +63,76 @@ function ListIcon({ active }: { active: boolean }) {
   )
 }
 
+function SwapDrawer({
+  target,
+  bench,
+  onSwap,
+  onCancel,
+}: {
+  target: SquadPlayer
+  bench: SquadPlayer[]
+  onSwap: (replacement: SquadPlayer) => void
+  onCancel: () => void
+}) {
+  const eligible = bench.filter((p) => p.position === target.position)
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onCancel}>
+      <div className="absolute inset-0 bg-black/50" />
+      <div
+        className="relative w-full max-w-sm rounded-t-2xl border-t border-slate-700 bg-slate-900 px-4 pb-6 pt-4 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Handle */}
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-700" />
+
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-100">
+              Swap out <span className="text-accent">{target.name}</span>
+            </p>
+            <p className="text-xs text-slate-500">Select a bench player to bring in</p>
+          </div>
+          <button
+            onClick={onCancel}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 1l10 10M11 1L1 11" />
+            </svg>
+          </button>
+        </div>
+
+        {eligible.length === 0 ? (
+          <p className="py-4 text-center text-sm text-slate-500">
+            No eligible {target.position} on the bench
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {eligible.map((p) => (
+              <button
+                key={p.element}
+                onClick={() => onSwap(p)}
+                className="flex w-full items-center justify-between rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-left transition-colors hover:border-accent/50 hover:bg-slate-700"
+              >
+                <div>
+                  <p className="text-sm font-medium text-slate-100">{p.name}</p>
+                  <p className="text-xs text-slate-500">{p.team_abbr} · {p.position}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-accent">{p.xp.toFixed(1)} xP</p>
+                  <p className="text-xs text-slate-500">£{p.price.toFixed(1)}m</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 export default function Squad() {
   const { data, isLoading, error } = useSuggestedSquad()
   const { squad, captain, setSquad, setCaptain } = useSquadStore()
@@ -72,6 +143,7 @@ export default function Squad() {
 
   const [viewMode, setViewMode] = useState<'pitch' | 'list'>('pitch')
   const [selectedPlayer, setSelectedPlayer] = useState<SquadPlayer | null>(null)
+  const [swapTarget, setSwapTarget] = useState<SquadPlayer | null>(null)
 
   useEffect(() => {
     if (data?.squad_json && squad.length === 0) {
@@ -93,6 +165,13 @@ export default function Squad() {
 
   const displaySquad = squad.length > 0 ? squad : data.squad_json
   const activeCaptain = captain ?? [...displaySquad].sort((a, b) => b.xp - a.xp)[0]?.element
+  const { bench } = getXI(displaySquad, projections ?? [], round)
+
+  function handleSwap(replacement: SquadPlayer) {
+    if (!swapTarget) return
+    setSquad(displaySquad.map((p) => p.element === swapTarget.element ? replacement : p))
+    setSwapTarget(null)
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -102,20 +181,14 @@ export default function Squad() {
         <div className="flex items-center gap-1 rounded-lg border border-slate-700 p-0.5">
           <button
             onClick={() => setViewMode('pitch')}
-            className={clsx(
-              'rounded p-1.5 transition-colors',
-              viewMode === 'pitch' ? 'bg-slate-700' : 'hover:bg-slate-800',
-            )}
+            className={clsx('rounded p-1.5 transition-colors', viewMode === 'pitch' ? 'bg-slate-700' : 'hover:bg-slate-800')}
             title="Pitch view"
           >
             <PitchIcon active={viewMode === 'pitch'} />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={clsx(
-              'rounded p-1.5 transition-colors',
-              viewMode === 'list' ? 'bg-slate-700' : 'hover:bg-slate-800',
-            )}
+            className={clsx('rounded p-1.5 transition-colors', viewMode === 'list' ? 'bg-slate-700' : 'hover:bg-slate-800')}
             title="List view"
           >
             <ListIcon active={viewMode === 'list'} />
@@ -181,7 +254,20 @@ export default function Squad() {
         </button>
       </div>
 
-      <PlayerProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+      <PlayerProfileModal
+        player={selectedPlayer}
+        onClose={() => setSelectedPlayer(null)}
+        onSubOut={(p) => { setSelectedPlayer(null); setSwapTarget(p) }}
+      />
+
+      {swapTarget && (
+        <SwapDrawer
+          target={swapTarget}
+          bench={bench}
+          onSwap={handleSwap}
+          onCancel={() => setSwapTarget(null)}
+        />
+      )}
     </div>
   )
 }
