@@ -71,6 +71,26 @@
   3. Build out Assistant page (AI chat with FIFA player context)
   4. Day 4: `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req) + re-run model
 
+**Session 5 (2026-06-06) — Day 3: name overrides done, wiring routes + Assistant page:**
+
+- **Name overrides complete** — `engine/data/name_overrides.json` has 13 entries covering major mismatches (Vinicius, Mbappé, Bellingham, Rodri, Raphinha, Pedri, Gavi, Dani Olmo, Lucas Paquetá, Rúben Dias, Son)
+- **Key insight on SB coverage:** SB data absent for (a) nations not at WC22/Euro24/Copa24/AFCON23 — Norway (Haaland, Ødegaard), Sweden (Isak, Gyökeres); (b) players <45 min at those tournaments — Toney, Gordon, Cherki, Doué
+- **Fixed broken override:** `"rodri"` was mapped to `"rodrigo hernández"` (wrong) → fixed to `"rodrigo hernandez cascante"` (actual sb_cache key)
+- **Express routes:** already wired to real DB queries in server.ts — no changes needed. Placeholders are `/api/squad/optimize` (Day 5) and `/api/transfers/suggest` (Day 6), intentional per schedule.
+- **Assistant page decisions (elite team):**
+  - Full-page chat layout (not card) — home page must feel premium
+  - Immediate-send chips (not pre-fill) — 1-click to value
+  - **Critical fix:** pass `squadNames: string[]` from frontend (not element IDs) — Haiku has no knowledge of FIFA element numbers
+  - Top-5 projections injected as context prefix on **first user message only** from frontend (no server changes)
+  - No streaming on Day 3 — pulsing "Edge is thinking…" gold dot instead
+  - 3 squad-context chips (shown if squad.length > 0): "Who should I captain?", "Which player should I transfer out?", "Rate my squad out of 10"
+  - 3 generic chips (always shown if no squad): "Best value picks for WC 2026?", "Which GK has the best fixtures round 1?", "Build me a £100m squad"
+  - User bubbles: right-aligned gold; AI bubbles: left-aligned slate-800; markdown bold + line breaks only
+- **Next session starts here (Day 4):**
+  1. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota)
+  2. `py -m engine.wc_run` — re-run model + optimizer with name override improvements
+  3. Captain/Transfers page polish
+
 ---
 
 ## Day-by-Day Build Schedule
@@ -79,8 +99,8 @@
 |---|---|---|---|
 | 1 | Jun 4 | Repo scaffold + Phase 1 scrape (StatsBomb + API-Football Day 1) | ✅ Done |
 | 2 | Jun 5 | Engine pipeline (model+optimizer) + full web scaffold (5 pages, Express, hooks) | ✅ Done |
-| 3 | Jun 6 | Name-override review + wire Express routes + Assistant page (AI chat) | ← Start here |
-| 4 | Jun 7 | API-Football Day 2 + re-run model + Captain/Transfers page polish | |
+| 3 | Jun 6 | Name-override review + wire Express routes + Assistant page (AI chat) | ✅ Done |
+| 4 | Jun 7 | API-Football Day 2 + re-run model + Captain/Transfers page polish | ← Start here |
 | 5 | Jun 8 | Squad page swap drawer + squadOptimizer.ts (Re-optimize endpoint) | |
 | 6 | Jun 9 | Transfers page (greedy cards) + Live page (match cards + captain banner) | |
 | 7 | Jun 10 | GitHub Actions engine.yml + Render deploy + smoke test | |
@@ -88,21 +108,14 @@
 
 ---
 
-## How to Start (Day 3 — current session)
+## How to Start (Day 4 — current session)
 
 ### What's already done (do not re-run)
 ```bash
 # Day 1 (DONE): statsbomb + apif day 1
 # Day 2 (DONE): fifa source (re-run with position fix), model + optimizer
+# Day 3 (DONE): name overrides (13 entries), wire Express routes, Assistant page
 # DB state: 1481 players, 48 teams, 8 rounds, 571 player_stats, 11848 projections, 1 suggested_squad
-```
-
-### Day 3 manual task — name overrides (~30 min)
-```bash
-cd engine
-py -m engine.wc_ingest --report    # prints top-30 unmatched players by price
-# Review engine/data/unmatched_players.json
-# Add hard cases to engine/data/name_overrides.json
 ```
 
 ### Day 4 — API-Football Day 2 + re-run model
