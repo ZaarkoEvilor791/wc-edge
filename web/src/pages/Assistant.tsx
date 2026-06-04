@@ -111,16 +111,21 @@ export default function Assistant() {
   return (
     <div className="flex h-full flex-col -m-4 md:-m-6">
       {/* Header */}
-      <div className="shrink-0 border-b border-slate-600 px-6 py-4">
-        <h1 className="text-xl font-semibold text-slate-100">Edge Assistant</h1>
-        <p className="mt-0.5 text-sm text-slate-400">
-          AI-powered WC 2026 fantasy advice
-          {hasSquad && (
-            <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
-              Squad loaded
-            </span>
-          )}
-        </p>
+      <div className="shrink-0 flex items-center justify-between border-b border-slate-800 px-6 py-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-100">Edge</h1>
+          <p className="text-xs text-slate-500">
+            Your WC 2026 AI advisor
+            {hasSquad && (
+              <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
+                Squad loaded
+              </span>
+            )}
+          </p>
+        </div>
+        <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-500">
+          Powered by Claude
+        </span>
       </div>
 
       {/* Message list */}
@@ -150,7 +155,7 @@ export default function Assistant() {
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'rounded-tr-sm bg-accent text-accent-fg'
+                    ? 'rounded-tr-sm bg-slate-700 text-slate-100'
                     : 'rounded-tl-sm bg-slate-800 text-slate-100'
                 }`}
               >
@@ -195,7 +200,7 @@ export default function Assistant() {
       )}
 
       {/* Input bar */}
-      <div className="shrink-0 border-t border-slate-600 px-6 py-3">
+      <div className="shrink-0 border-t border-slate-800 px-6 py-3">
         <div className="flex items-end gap-3">
           <textarea
             ref={inputRef}
@@ -229,13 +234,13 @@ export default function Assistant() {
 
 function ThinkingDots() {
   return (
-    <span className="flex items-center gap-1">
+    <span className="flex items-center gap-1.5">
       <span className="text-xs text-slate-400">Edge is thinking</span>
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="inline-block h-1.5 w-1.5 rounded-full bg-accent"
-          style={{ animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }}
+          className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500"
+          style={{ animationDelay: `${i * 150}ms` }}
         />
       ))}
     </span>

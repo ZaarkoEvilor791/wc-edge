@@ -20,7 +20,7 @@ export default {
       colors: {
         slate: brandSlate,
         accent: {
-          DEFAULT: '#E8B84B',  // WC gold
+          DEFAULT: '#00D8CB',  // teal
           fg: '#060D18',
         },
         brand: {

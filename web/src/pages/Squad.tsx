@@ -3,14 +3,16 @@ import { useSquadStore } from '../store/squadStore'
 import { useEffect } from 'react'
 import clsx from 'clsx'
 import type { SquadPlayer } from '../types/wc'
+import Spinner from '../components/shared/Spinner'
+import StatCard from '../components/shared/StatCard'
 
 const POS_ORDER = ['GK', 'DEF', 'MID', 'FWD']
 
 function PlayerCard({ player, isCaptain }: { player: SquadPlayer; isCaptain: boolean }) {
   return (
     <div className={clsx(
-      'flex items-center justify-between rounded-lg border px-3 py-2',
-      isCaptain ? 'border-accent/60 bg-accent/10' : 'border-slate-700 bg-slate-800',
+      'flex items-center justify-between rounded-xl border px-3 py-2',
+      isCaptain ? 'border-accent/60 bg-accent/10' : 'border-slate-800 bg-slate-900',
     )}>
       <div className="flex items-center gap-2">
         <span className="w-8 text-center text-xs font-bold text-slate-500">{player.position}</span>
@@ -44,13 +46,11 @@ export default function Squad() {
     }
   }, [data, squad.length, setSquad, setCaptain])
 
-  if (isLoading) {
-    return <p className="text-slate-400">Loading squad...</p>
-  }
+  if (isLoading) return <Spinner label="Loading squad…" />
 
   if (error || !data) {
     return (
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
         <p className="text-slate-400">Squad is being computed. Check back soon.</p>
       </div>
     )
@@ -61,11 +61,12 @@ export default function Squad() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-100">My Squad</h1>
-        <div className="text-right text-xs text-slate-400">
-          <span className="text-accent font-semibold">{data.total_xp.toFixed(1)}</span> xP ·{' '}
-          <span>£{data.total_cost.toFixed(1)}m</span>
+      <div className="mb-5">
+        <h1 className="mb-3 text-xl font-semibold text-slate-100">My Squad</h1>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatCard label="Total xP" value={data.total_xp.toFixed(1)} sub="round 1 projected" />
+          <StatCard label="Squad Cost" value={`£${data.total_cost.toFixed(1)}m`} sub="of £100m" />
+          <StatCard label="Players" value={String(displaySquad.length)} sub="selected" />
         </div>
       </div>
 
@@ -75,7 +76,9 @@ export default function Squad() {
           if (!posPlayers.length) return null
           return (
             <div key={pos}>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{pos}</h2>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                {pos} <span className="font-normal">· {posPlayers.length}</span>
+              </h2>
               <div className="space-y-1.5">
                 {posPlayers.map((p) => (
                   <PlayerCard key={p.element} player={p} isCaptain={p.element === activeCaptain} />

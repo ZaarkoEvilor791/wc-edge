@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import clsx from 'clsx'
 import { useAppStore } from '../../store/appStore'
+import { Logo, LogoMark } from '../shared/Logo'
 
 function Icon({ path, viewBox = '0 0 24 24' }: { path: React.ReactNode; viewBox?: string }) {
   return (
@@ -86,14 +87,7 @@ export default function Sidebar() {
         'flex h-14 items-center border-b border-slate-800/60',
         isCollapsed ? 'justify-center' : 'px-5',
       )}>
-        {isCollapsed ? (
-          <span className="text-base font-bold text-accent">W</span>
-        ) : (
-          <span className="text-base font-bold tracking-tight">
-            <span className="text-accent">wc</span>
-            <span className="text-slate-100">-edge</span>
-          </span>
-        )}
+        {isCollapsed ? <LogoMark /> : <Logo />}
         {mobileMenuOpen && (
           <button
             type="button"
