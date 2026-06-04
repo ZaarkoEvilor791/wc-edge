@@ -25,10 +25,20 @@
 - Design grilling complete — all pages, API routes, and deployment fully specified
 - PRD published at https://github.com/ZaarkoEvilor791/fpl-edge/issues/12
 - Repo scaffolded, wc-edge.md copied (API key scrubbed), CLAUDE.md written
-- Phase 1 scrape NOT yet run — must happen Day 1
-- GitHub secret `API_FOOTBALL_KEY` must be set before running engine Actions
 
-**CRITICAL: Before writing any code, run `gh secret set API_FOOTBALL_KEY --repo ZaarkoEvilor791/wc-edge` with the real key from `fpl-edge/wc-edge.md` git history or the user's memory.**
+**Session 2 (2026-06-04) — infra complete, engine scaffolded, ready for Phase 1 scrape:**
+
+- `wc-edge-prd.md` written and committed (full PRD with user stories + test strategy)
+- `render.yaml` created — DB stanza removed (Render free tier allows only 1 DB; reusing fpl-edge Postgres)
+- Render web service live at `https://wc-edge.onrender.com`
+- **Database:** reusing fpl-edge Postgres (`fpledge` DB). Internal URL set in Render env. External URL in `engine/.env`.
+- `engine/.env` created (gitignored) with `API_FOOTBALL_KEY` and `DATABASE_URL`
+- `engine/engine/wc_schema.sql` written — 6 tables: `players`, `teams`, `rounds`, `player_stats`, `projections`, `team_fdr`, `suggested_squad`
+- **Pending before Phase 1 can run:**
+  1. Apply schema: `python -c "import psycopg, pathlib; conn = psycopg.connect('...external_url...'); conn.autocommit = True; conn.execute(pathlib.Path('engine/engine/wc_schema.sql').read_text()); conn.close()"`
+  2. Set GitHub Actions secret: `echo "665c3fb9bea5334f061a619ba38a9190" | gh secret set API_FOOTBALL_KEY --repo ZaarkoEvilor791/wc-edge`
+  3. Write `wc_ingest.py` — next task
+- **Next session starts here:** write `engine/engine/wc_ingest.py` + `config.py` + `db.py`, then run Phase 1 scrapes (statsbomb → sofascore → fifa → apif --day 1)
 
 ---
 
