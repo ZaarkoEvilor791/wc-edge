@@ -172,13 +172,44 @@
 - **`Squad.tsx`**: "Re-sync squad" button (bottom of page) sets `wcOnboardingOpen(true)` to reopen upload flow
 - **TypeScript:** clean (zero errors)
 
-**Pending Day 5 work:**
+**Session 9 (2026-06-08) — Day 5: Transfers page + Player profile modal redesign:**
+
+- **Transfers page shipped** (`web/src/pages/Transfers.tsx`):
+  - Sequential greedy algorithm — for each of N free transfers, finds the highest-gain swap (same position, fits budget), applies it to virtual squad, then finds the next best
+  - Backend: `POST /api/transfers/suggest` wired with full greedy implementation in `server.ts` (was a stub)
+  - UI: round selector, free transfers +/− stepper (1–6), "Analyze" button, single swap card at a time
+  - Swap card: OUT (rose tint) → IN (emerald tint), xP gain badge, price delta badge
+  - Accept updates squad store immediately; Skip moves to next card
+  - Done state: summary of accepted swaps + total xP gained
+  - `TransferCard` + `TransferSuggestion` + `TransferSuggestResponse` types added to `wc.ts`
+  - `useTransferSuggest()` mutation added to `useWC.ts`
+
+- **Player profile modal redesigned** (`web/src/components/shared/PlayerProfileModal.tsx`) — FIFA-parity:
+  - **Blue gradient header** (`from-blue-700 to-blue-900`): player name, team abbr, position | price, MD selection %, jersey SVG placeholder with team abbr
+  - **Overview / Fixtures tabs** with gold underline (`border-b-2 border-accent`) on active tab
+  - **Overview tab**: Captain + Vice-Captain buttons (wired to store, highlighted when active) → 2×2 stats grid (next fixture opponent, % selected, xP Rd1, total xP) → existing xP bar chart
+  - **Fixtures tab**: per-team fixture list from `GET /api/fixtures/:squadId`, grouped by round with date; graceful "Fixtures unavailable" fallback
+  - **Bottom strip**: Sub Out (closes modal) + Transfer Out (navigates to `/transfers`)
+  - Mobile: slides up as bottom sheet (`items-end` on small screens, rounded-t-2xl)
+
+- **`GET /api/fixtures/:squadId`** added to `server.ts`:
+  - Fetches FIFA `rounds.json` (via refactored `fifaFetch()` helper, 5 min TTL)
+  - Parses `tournaments[]` per round — finds fixtures where `homeSquadId` or `awaySquadId` matches
+  - Returns `Fixture[]` sorted by round; returns `[]` on proxy error (graceful)
+  - `fifaProxy()` refactored to use `fifaFetch()` internally (no behavior change)
+
+- **Vice-captain** added to `squadStore.ts`: `viceCaptain: number | null` + `setViceCaptain` action, persisted
+
+- **`Fixture` type** added to `wc.ts`; `fixtures()` added to `wcApi.ts`; `useFixtures()` hook added to `useWC.ts`
+
+- **TypeScript:** clean (zero errors)
+
+**Pending Day 9 (deferred engine work):**
   1. Fix `wc.teams` duplicate rows — `DELETE FROM wc.teams WHERE squad_id > 1000` before fifa upsert
   2. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota — **do not skip, budget resets daily**)
   3. `py -m engine.wc_run` — re-run model + optimizer with name override + better apif data
   4. Top up Anthropic credits — required for `/api/chat` AND `/api/squad/from-screenshot` (both call Claude)
   5. Test screenshot flow end-to-end once credits are live
-  6. Transfers page greedy swap cards (Day 6 in original schedule, now Day 5 target)
 
 ---
 
@@ -190,8 +221,8 @@
 | 2 | Jun 5 | Engine pipeline (model+optimizer) + full web scaffold (5 pages, Express, hooks) | ✅ Done |
 | 3 | Jun 6 | Name-override review + Assistant page + UI quality pass (fpl-edge parity) | ✅ Done |
 | 4 | Jun 7 | UI redesign (pitch layout, player profiles, WC banner) + onboarding flow (screenshot squad sync) | ✅ Done |
-| 5 | Jun 8 | Fix teams DB bug + apif Day 2 + model rerun + Transfers greedy cards | ← Start here |
-| 6 | Jun 9 | Live page polish + captain banner + squad swap drawer | |
+| 5 | Jun 8 | Fix teams DB bug + apif Day 2 + model rerun + Transfers greedy cards + Player profile modal redesign | ✅ Done (engine deferred to Day 9) |
+| 6 | Jun 9 | Live page polish + captain banner + squad swap drawer | ← Start here |
 | 7 | Jun 10 | GitHub Actions engine.yml + Render deploy + smoke test | |
 | 8 | Jun 11 | Polish + final engine run + production smoke test | |
 

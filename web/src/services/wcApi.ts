@@ -1,4 +1,4 @@
-import type { Player, Round, Team, Projection, SuggestedSquad } from '../types/wc'
+import type { Player, Round, Team, Projection, SuggestedSquad, TransferSuggestResponse, Fixture } from '../types/wc'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path)
@@ -23,8 +23,8 @@ export const wcApi = {
   projections: (round: number) => get<Projection[]>(`/api/projections?round=${round}`),
   suggestedSquad: () => get<SuggestedSquad>('/api/squad/suggest'),
   optimizeSquad: (body: { round?: number }) => post<SuggestedSquad>('/api/squad/optimize', body),
-  transferSuggest: (body: { squad: number[]; round: number; freeTransfers: number }) =>
-    post<{ transfers: { out: number; in: number; gain: number }[] }>('/api/transfers/suggest', body),
+  transferSuggest: (body: { squad: number[]; round: number; freeTransfers: number; budget?: number }) =>
+    post<TransferSuggestResponse>('/api/transfers/suggest', body),
   live: (round: number) => get<unknown>(`/api/live?round=${round}`),
   chat: (body: { messages: { role: string; content: string }[]; squad?: number[]; squadNames?: string[] }) =>
     post<{ content: string }>('/api/chat', body),
@@ -33,6 +33,7 @@ export const wcApi = {
       '/api/squad/from-screenshot',
       { imageBase64, mimeType },
     ),
+  fixtures: (squadId: number) => get<Fixture[]>(`/api/fixtures/${squadId}`),
   // FIFA Fantasy proxies
   fifaPlayers: () => get<unknown[]>('/wc/players.json'),
   fifaRounds: () => get<unknown[]>('/wc/rounds.json'),

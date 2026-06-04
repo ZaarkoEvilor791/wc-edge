@@ -25,17 +25,19 @@ app.use(express.json({ limit: '10mb' }))
 const FIFA_BASE = 'https://play.fifa.com/json/fantasy'
 const proxyCache = new Map<string, { data: unknown; ts: number }>()
 
-async function fifaProxy(url: string, ttlMs: number, res: express.Response) {
+async function fifaFetch(url: string, ttlMs: number): Promise<unknown> {
   const cached = proxyCache.get(url)
-  if (cached && Date.now() - cached.ts < ttlMs) {
-    return res.json(cached.data)
-  }
+  if (cached && Date.now() - cached.ts < ttlMs) return cached.data
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`${r.status}`)
+  const data = await r.json()
+  proxyCache.set(url, { data, ts: Date.now() })
+  return data
+}
+
+async function fifaProxy(url: string, ttlMs: number, res: express.Response) {
   try {
-    const r = await fetch(url)
-    if (!r.ok) throw new Error(`${r.status}`)
-    const data = await r.json()
-    proxyCache.set(url, { data, ts: Date.now() })
-    res.json(data)
+    res.json(await fifaFetch(url, ttlMs))
   } catch (err) {
     res.status(502).json({ error: 'FIFA proxy failed', detail: String(err) })
   }
@@ -44,6 +46,37 @@ async function fifaProxy(url: string, ttlMs: number, res: express.Response) {
 app.get('/wc/players.json', (_, res) => fifaProxy(`${FIFA_BASE}/players.json`, 5 * 60_000, res))
 app.get('/wc/rounds.json', (_, res) => fifaProxy(`${FIFA_BASE}/rounds.json`, 5 * 60_000, res))
 app.get('/wc/squads_fifa.json', (_, res) => fifaProxy(`${FIFA_BASE}/squads_fifa.json`, 30 * 60_000, res))
+
+app.get('/api/fixtures/:squadId', async (req, res) => {
+  const squadId = Number(req.params.squadId)
+  if (!squadId || Number.isNaN(squadId)) {
+    return res.status(400).json({ error: 'squadId required' })
+  }
+  try {
+    const rounds = await fifaFetch(`${FIFA_BASE}/rounds.json`, 5 * 60_000) as Record<string, unknown>[]
+    const fixtures = []
+    for (const rnd of rounds) {
+      const tournaments = (rnd.tournaments as Record<string, unknown>[] | undefined) ?? []
+      for (const fix of tournaments) {
+        if (fix.homeSquadId === squadId || fix.awaySquadId === squadId) {
+          fixtures.push({
+            round: rnd.id,
+            stage: rnd.stage ?? '',
+            date: (fix.date as string) ?? (rnd.startDate as string) ?? null,
+            homeTeamId: fix.homeSquadId,
+            homeTeamName: fix.homeSquadName,
+            awayTeamId: fix.awaySquadId,
+            awayTeamName: fix.awaySquadName,
+            kickoff: (fix.kickoffTime as string) ?? (fix.time as string) ?? null,
+          })
+        }
+      }
+    }
+    res.json(fixtures)
+  } catch {
+    res.json([])
+  }
+})
 
 // ---- DB API routes ----
 
@@ -108,8 +141,88 @@ app.post('/api/squad/optimize', async (_, res) => {
   }
 })
 
-app.post('/api/transfers/suggest', async (_req, res) => {
-  res.json({ transfers: [] })
+app.post('/api/transfers/suggest', async (req, res) => {
+  const { squad, round, freeTransfers, budget = 100 } = req.body as {
+    squad: number[]
+    round: number
+    freeTransfers: number
+    budget?: number
+  }
+
+  if (!Array.isArray(squad) || !round || !freeTransfers) {
+    return res.status(400).json({ error: 'squad[], round, freeTransfers required' })
+  }
+
+  try {
+    const [players, projections, teams] = await Promise.all([
+      getPlayers(), getProjections(round), getTeams(),
+    ])
+
+    const playerMap = new Map(players.map((p) => [p.element, p]))
+    const projMap = new Map(projections.map((p) => [p.element, p]))
+    const teamMap = new Map(teams.map((t) => [t.squad_id, t]))
+
+    const toCard = (el: number) => {
+      const p = playerMap.get(el)!
+      return {
+        element: el,
+        name: p.known_name ?? [p.first_name, p.last_name].filter(Boolean).join(' '),
+        position: p.position as 'GK' | 'DEF' | 'MID' | 'FWD',
+        price: p.price ?? 0,
+        xp: projMap.get(el)?.xp ?? 0,
+        team_abbr: teamMap.get(p.squad_id)?.abbr ?? '?',
+        squad_id: p.squad_id,
+        low_sample: projMap.get(el)?.low_sample ?? false,
+      }
+    }
+
+    const currentSquad = [...squad]
+    const squadSet = new Set(squad)
+    let currentCost = squad.reduce((s, el) => s + (playerMap.get(el)?.price ?? 0), 0)
+
+    const transfers: { out: ReturnType<typeof toCard>; in: ReturnType<typeof toCard>; xp_gain: number; price_delta: number }[] = []
+
+    for (let i = 0; i < Math.min(freeTransfers, 6); i++) {
+      let best: { outEl: number; inEl: number; gain: number; newCost: number } | null = null
+
+      for (const outEl of currentSquad) {
+        const outP = playerMap.get(outEl)
+        if (!outP) continue
+        const outXp = projMap.get(outEl)?.xp ?? 0
+
+        for (const inProj of projections) {
+          const inEl = inProj.element
+          if (squadSet.has(inEl)) continue
+          const inP = playerMap.get(inEl)
+          if (!inP || inP.position !== outP.position) continue
+          const newCost = currentCost - (outP.price ?? 0) + (inP.price ?? 0)
+          if (newCost > budget) continue
+          const gain = inProj.xp - outXp
+          if (gain <= 0) continue
+          if (!best || gain > best.gain) best = { outEl, inEl, gain, newCost }
+        }
+      }
+
+      if (!best) break
+
+      transfers.push({
+        out: toCard(best.outEl),
+        in: toCard(best.inEl),
+        xp_gain: best.gain,
+        price_delta: (playerMap.get(best.outEl)?.price ?? 0) - (playerMap.get(best.inEl)?.price ?? 0),
+      })
+
+      const idx = currentSquad.indexOf(best.outEl)
+      currentSquad[idx] = best.inEl
+      squadSet.delete(best.outEl)
+      squadSet.add(best.inEl)
+      currentCost = best.newCost
+    }
+
+    res.json({ transfers })
+  } catch (err) {
+    res.status(500).json({ error: String(err) })
+  }
 })
 
 app.get('/api/live', async (req, res) => {

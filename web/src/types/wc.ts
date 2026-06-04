@@ -67,6 +67,39 @@ export interface ChatMessage {
   content: string
 }
 
+export interface Fixture {
+  round: number
+  stage: string
+  date: string | null
+  homeTeamId: number
+  homeTeamName: string
+  awayTeamId: number
+  awayTeamName: string
+  kickoff: string | null
+}
+
+export interface TransferCard {
+  element: number
+  name: string
+  position: 'GK' | 'DEF' | 'MID' | 'FWD'
+  price: number
+  xp: number
+  team_abbr: string
+  squad_id: number
+  low_sample: boolean
+}
+
+export interface TransferSuggestion {
+  out: TransferCard
+  in: TransferCard
+  xp_gain: number
+  price_delta: number  // positive = frees budget
+}
+
+export interface TransferSuggestResponse {
+  transfers: TransferSuggestion[]
+}
+
 // Squad store shape (mirrors squadStore.ts)
 export type SquadState = {
   squad: SquadPlayer[]

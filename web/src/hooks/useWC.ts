@@ -65,6 +65,22 @@ export function usePlayerProjectionsAllRounds(element: number) {
   }))
 }
 
+export function useFixtures(squadId: number) {
+  return useQuery({
+    queryKey: ['fixtures', squadId],
+    queryFn: () => wcApi.fixtures(squadId),
+    staleTime: 5 * 60_000,
+    enabled: squadId > 0,
+  })
+}
+
+export function useTransferSuggest() {
+  return useMutation({
+    mutationFn: (body: { squad: number[]; round: number; freeTransfers: number; budget?: number }) =>
+      wcApi.transferSuggest(body),
+  })
+}
+
 export function useCurrentRound() {
   const { data: rounds } = useRounds()
   if (!rounds) return null

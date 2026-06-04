@@ -5,10 +5,12 @@ import type { SquadPlayer } from '../types/wc'
 interface SquadStore {
   squad: SquadPlayer[]
   captain: number | null
+  viceCaptain: number | null
   bench: number[]
   budget: number
   setSquad: (squad: SquadPlayer[]) => void
   setCaptain: (element: number) => void
+  setViceCaptain: (element: number) => void
   setBudget: (budget: number) => void
 }
 
@@ -17,10 +19,12 @@ export const useSquadStore = create<SquadStore>()(
     (set) => ({
       squad: [],
       captain: null,
+      viceCaptain: null,
       bench: [],
       budget: 100,
       setSquad: (squad) => set({ squad }),
       setCaptain: (element) => set({ captain: element }),
+      setViceCaptain: (element) => set({ viceCaptain: element }),
       setBudget: (budget) => set({ budget }),
     }),
     {
