@@ -22,7 +22,16 @@ export const useSquadStore = create<SquadStore>()(
       viceCaptain: null,
       bench: [],
       budget: 100,
-      setSquad: (squad) => set({ squad }),
+      setSquad: (squad) => {
+        // Deduplicate by element before storing
+        const seen = new Set<number>()
+        const deduped = squad.filter((p) => {
+          if (seen.has(p.element)) return false
+          seen.add(p.element)
+          return true
+        })
+        set({ squad: deduped })
+      },
       setCaptain: (element) => set({ captain: element }),
       setViceCaptain: (element) => set({ viceCaptain: element }),
       setBudget: (budget) => set({ budget }),

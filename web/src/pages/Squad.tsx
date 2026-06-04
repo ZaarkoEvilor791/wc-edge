@@ -146,12 +146,24 @@ export default function Squad() {
   const [swapTarget, setSwapTarget] = useState<SquadPlayer | null>(null)
 
   useEffect(() => {
-    if (data?.squad_json && squad.length === 0) {
+    if (!data?.squad_json) return
+    const isCorrupt = squad.length > 0 && (
+      // Duplicate elements
+      new Set(squad.map(p => p.element)).size !== squad.length ||
+      // Wrong squad size
+      squad.length !== 15 ||
+      // Wrong position composition
+      squad.filter(p => p.position === 'GK').length !== 2 ||
+      squad.filter(p => p.position === 'DEF').length !== 5 ||
+      squad.filter(p => p.position === 'MID').length !== 5 ||
+      squad.filter(p => p.position === 'FWD').length !== 3
+    )
+    if (squad.length === 0 || isCorrupt) {
       setSquad(data.squad_json)
       const topPlayer = [...data.squad_json].sort((a, b) => b.xp - a.xp)[0]
       if (topPlayer) setCaptain(topPlayer.element)
     }
-  }, [data, squad.length, setSquad, setCaptain])
+  }, [data, squad.length, squad, setSquad, setCaptain])
 
   if (isLoading) return <Spinner label="Loading squad…" />
 
