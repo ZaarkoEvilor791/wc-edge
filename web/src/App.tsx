@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import Assistant from './pages/Assistant'
@@ -5,7 +6,9 @@ import Squad from './pages/Squad'
 import Transfers from './pages/Transfers'
 import Captain from './pages/Captain'
 import Live from './pages/Live'
+import OnboardingModal from './components/shared/OnboardingModal'
 import { useSquadStore } from './store/squadStore'
+import { useAppStore } from './store/appStore'
 
 function RequireSquad({ children }: { children: React.ReactNode }) {
   const squad = useSquadStore((s) => s.squad)
@@ -23,8 +26,21 @@ function RequireSquad({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const wcOnboardingOpen = useAppStore((s) => s.wcOnboardingOpen)
+  const setWcOnboardingOpen = useAppStore((s) => s.setWcOnboardingOpen)
+  const [firstVisit] = useState(() => !localStorage.getItem('wc-onboarded'))
+
+  const showOnboarding = firstVisit || wcOnboardingOpen
+
   return (
     <Layout>
+      <OnboardingModal
+        open={showOnboarding}
+        onClose={() => {
+          localStorage.setItem('wc-onboarded', '1')
+          setWcOnboardingOpen(false)
+        }}
+      />
       <Routes>
         <Route path="/" element={<Assistant />} />
         <Route path="/squad" element={<Squad />} />

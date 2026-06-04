@@ -6,6 +6,8 @@ interface AppStore {
   toggleSidebar: () => void
   mobileMenuOpen: boolean
   setMobileMenuOpen: (v: boolean) => void
+  wcOnboardingOpen: boolean
+  setWcOnboardingOpen: (v: boolean) => void
 }
 
 export const useAppStore = create<AppStore>()(
@@ -15,6 +17,8 @@ export const useAppStore = create<AppStore>()(
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       mobileMenuOpen: false,
       setMobileMenuOpen: (v) => set({ mobileMenuOpen: v }),
+      wcOnboardingOpen: false,
+      setWcOnboardingOpen: (v) => set({ wcOnboardingOpen: v }),
     }),
     {
       name: 'wc-edge-storage',

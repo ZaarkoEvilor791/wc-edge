@@ -28,6 +28,11 @@ export const wcApi = {
   live: (round: number) => get<unknown>(`/api/live?round=${round}`),
   chat: (body: { messages: { role: string; content: string }[]; squad?: number[]; squadNames?: string[] }) =>
     post<{ content: string }>('/api/chat', body),
+  squadFromScreenshot: (imageBase64: string, mimeType: string) =>
+    post<{ matched: import('../types/wc').SquadPlayer[]; unmatched: string[]; total: number }>(
+      '/api/squad/from-screenshot',
+      { imageBase64, mimeType },
+    ),
   // FIFA Fantasy proxies
   fifaPlayers: () => get<unknown[]>('/wc/players.json'),
   fifaRounds: () => get<unknown[]>('/wc/rounds.json'),

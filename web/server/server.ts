@@ -12,13 +12,14 @@ import {
   getProjections,
   getSuggestedSquad,
   getCurrentRoundId,
+  matchPlayersByName,
 } from './db'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001
 
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
 
 // ---- FIFA Fantasy proxies (5-min TTL cached) ----
 const FIFA_BASE = 'https://play.fifa.com/json/fantasy'
@@ -158,6 +159,58 @@ app.post('/api/chat', async (req, res) => {
     res.json({ content: text })
   } catch (err) {
     res.status(502).json({ error: 'AI request failed', detail: String(err) })
+  }
+})
+
+// ---- Squad from screenshot ----
+
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
+type AllowedMime = typeof ALLOWED_MIME[number]
+
+app.post('/api/squad/from-screenshot', async (req, res) => {
+  if (!anthropic) {
+    return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' })
+  }
+  const { imageBase64, mimeType } = req.body as { imageBase64?: string; mimeType?: string }
+  if (!imageBase64 || !mimeType) {
+    return res.status(400).json({ error: 'imageBase64 and mimeType required' })
+  }
+  if (!ALLOWED_MIME.includes(mimeType as AllowedMime)) {
+    return res.status(400).json({ error: 'Unsupported image type' })
+  }
+  try {
+    const visionRes = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: mimeType as AllowedMime, data: imageBase64 },
+          },
+          {
+            type: 'text',
+            text: 'List every player name visible in this FIFA Fantasy squad screenshot. Return ONLY valid JSON: {"players":["name1","name2",...]}. No markdown, no explanation.',
+          },
+        ],
+      }],
+    })
+    const raw = visionRes.content.find((b) => b.type === 'text')?.text ?? ''
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return res.status(422).json({ error: 'Could not parse player names from screenshot' })
+    const { players: names } = JSON.parse(jsonMatch[0]) as { players: string[] }
+    if (!Array.isArray(names) || names.length === 0) {
+      return res.status(422).json({ error: 'No player names found in screenshot' })
+    }
+    const results = await Promise.all(names.map(async (name) => ({ name, match: await matchPlayersByName(name) })))
+    res.json({
+      matched: results.filter((r) => r.match).map((r) => r.match),
+      unmatched: results.filter((r) => !r.match).map((r) => r.name),
+      total: names.length,
+    })
+  } catch (err) {
+    res.status(502).json({ error: 'Screenshot processing failed', detail: String(err) })
   }
 })
 

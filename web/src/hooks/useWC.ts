@@ -38,6 +38,13 @@ export function useOptimizeSquad() {
   })
 }
 
+export function useSquadFromScreenshot() {
+  return useMutation({
+    mutationFn: ({ imageBase64, mimeType }: { imageBase64: string; mimeType: string }) =>
+      wcApi.squadFromScreenshot(imageBase64, mimeType),
+  })
+}
+
 export function usePlayerProjectionsAllRounds(element: number) {
   const queries = useQueries({
     queries: [1, 2, 3, 4, 5, 6, 7, 8].map((round) => ({

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import clsx from 'clsx'
 import { useSuggestedSquad, useProjections, useCurrentRound } from '../hooks/useWC'
 import { useSquadStore } from '../store/squadStore'
+import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
 import Spinner from '../components/shared/Spinner'
 import StatCard from '../components/shared/StatCard'
@@ -64,6 +65,7 @@ function ListIcon({ active }: { active: boolean }) {
 export default function Squad() {
   const { data, isLoading, error } = useSuggestedSquad()
   const { squad, captain, setSquad, setCaptain } = useSquadStore()
+  const setWcOnboardingOpen = useAppStore((s) => s.setWcOnboardingOpen)
   const currentRound = useCurrentRound()
   const round = currentRound?.id ?? 1
   const { data: projections } = useProjections(round)
@@ -165,6 +167,19 @@ export default function Squad() {
           })}
         </div>
       )}
+
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={() => setWcOnboardingOpen(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-500 transition hover:border-slate-600 hover:text-slate-300"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M10 6A4 4 0 1 1 6 2" />
+            <path d="M10 2v4H6" />
+          </svg>
+          Re-sync squad
+        </button>
+      </div>
 
       <PlayerProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </div>
