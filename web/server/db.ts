@@ -49,8 +49,8 @@ export async function getRounds() {
 }
 
 export async function getProjections(round: number) {
-  return q<{ element: number; xp: number; p_play: number; mf: number; p_goal: number; p_cs: number; variance: number; low_sample: boolean }>(
-    'SELECT element, xp, p_play, mf, p_goal, p_cs, variance, low_sample FROM projections WHERE round = $1 ORDER BY xp DESC',
+  return q<{ element: number; round: number; xp: number; p_play: number; mf: number; p_goal: number; p_cs: number; variance: number; low_sample: boolean }>(
+    'SELECT element, round, xp, p_play, mf, p_goal, p_cs, variance, low_sample FROM projections WHERE round = $1 ORDER BY xp DESC',
     [round]
   )
 }

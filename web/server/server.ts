@@ -183,7 +183,7 @@ app.post('/api/transfers/suggest', async (req, res) => {
 
     const transfers: { out: ReturnType<typeof toCard>; in: ReturnType<typeof toCard>; xp_gain: number; price_delta: number }[] = []
 
-    for (let i = 0; i < Math.min(freeTransfers, 6); i++) {
+    for (let i = 0; i < 6; i++) {
       let best: { outEl: number; inEl: number; gain: number; newCost: number } | null = null
 
       for (const outEl of currentSquad) {

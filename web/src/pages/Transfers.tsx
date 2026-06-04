@@ -330,7 +330,7 @@ export default function Transfers() {
       )}
 
       {/* Swap cards */}
-      {suggestions !== null && !isDone && suggestions.length === 0 && (
+      {suggestions !== null && suggestions.length === 0 && (
         <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
           <p className="text-slate-100 font-medium">Your squad is already optimal</p>
           <p className="mt-1 text-sm text-slate-400">No profitable swaps found within budget</p>
@@ -340,7 +340,7 @@ export default function Transfers() {
         </div>
       )}
 
-      {suggestions !== null && !isDone && suggestions.length > 0 && (
+      {suggestions !== null && suggestions.length > 0 && !isDone && (
         <SwapCard
           suggestion={suggestions[index]}
           index={index}
@@ -353,7 +353,7 @@ export default function Transfers() {
         />
       )}
 
-      {isDone && (
+      {suggestions !== null && suggestions.length > 0 && isDone && (
         <DoneState
           accepted={accepted}
           skipped={skipped}

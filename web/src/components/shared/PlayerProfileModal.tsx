@@ -64,7 +64,7 @@ function FixtureRow({ fixture, squadId }: { fixture: Fixture; squadId: number })
   )
 }
 
-function ModalContent({ player, onClose, onSubOut }: { player: SquadPlayer; onClose: () => void; onSubOut?: (p: SquadPlayer) => void }) {
+function ModalContent({ player, onClose, onSubOut, isBench }: { player: SquadPlayer; onClose: () => void; onSubOut?: (p: SquadPlayer) => void; isBench?: boolean }) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'overview' | 'fixtures'>('overview')
   const { captain, viceCaptain, setCaptain, setViceCaptain } = useSquadStore()
@@ -240,7 +240,7 @@ function ModalContent({ player, onClose, onSubOut }: { player: SquadPlayer; onCl
                 onClick={() => onSubOut ? onSubOut(player) : onClose()}
                 className="w-full rounded-xl border border-slate-600 py-2.5 text-sm font-bold uppercase tracking-wide text-slate-200 hover:bg-slate-800"
               >
-                Sub Out
+                {isBench ? 'Sub In' : 'Sub Out'}
               </button>
               <button
                 onClick={() => { navigate('/transfers'); onClose() }}
@@ -260,12 +260,13 @@ interface Props {
   player: SquadPlayer | null
   onClose: () => void
   onSubOut?: (player: SquadPlayer) => void
+  isBench?: boolean
 }
 
-export default function PlayerProfileModal({ player, onClose, onSubOut }: Props) {
+export default function PlayerProfileModal({ player, onClose, onSubOut, isBench }: Props) {
   if (!player) return null
   return createPortal(
-    <ModalContent player={player} onClose={onClose} onSubOut={onSubOut} />,
+    <ModalContent player={player} onClose={onClose} onSubOut={onSubOut} isBench={isBench} />,
     document.body,
   )
 }

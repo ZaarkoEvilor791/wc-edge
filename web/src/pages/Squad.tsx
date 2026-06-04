@@ -65,16 +65,18 @@ function ListIcon({ active }: { active: boolean }) {
 
 function SwapDrawer({
   target,
-  bench,
+  options,
+  subIn,
   onSwap,
   onCancel,
 }: {
   target: SquadPlayer
-  bench: SquadPlayer[]
+  options: SquadPlayer[]
+  subIn: boolean
   onSwap: (replacement: SquadPlayer) => void
   onCancel: () => void
 }) {
-  const eligible = bench.filter((p) => p.position === target.position)
+  const eligible = options.filter((p) => p.position === target.position && p.element !== target.element)
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onCancel}>
@@ -89,9 +91,11 @@ function SwapDrawer({
         <div className="mb-3 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-100">
-              Swap out <span className="text-accent">{target.name}</span>
+              {subIn ? 'Sub in' : 'Swap out'} <span className="text-accent">{target.name}</span>
             </p>
-            <p className="text-xs text-slate-500">Select a bench player to bring in</p>
+            <p className="text-xs text-slate-500">
+              {subIn ? 'Select a starter to move to bench' : 'Select a bench player to bring in'}
+            </p>
           </div>
           <button
             onClick={onCancel}
@@ -105,7 +109,7 @@ function SwapDrawer({
 
         {eligible.length === 0 ? (
           <p className="py-4 text-center text-sm text-slate-500">
-            No eligible {target.position} on the bench
+            No eligible {target.position} {subIn ? 'starters' : 'on the bench'}
           </p>
         ) : (
           <div className="space-y-2">
@@ -177,18 +181,25 @@ export default function Squad() {
 
   const displaySquad = squad.length > 0 ? squad : data.squad_json
   const activeCaptain = captain ?? [...displaySquad].sort((a, b) => b.xp - a.xp)[0]?.element
-  const { bench } = getXI(displaySquad, projections ?? [], round)
+  const { xi, bench } = getXI(displaySquad, projections ?? [], round)
+  const selectedIsBench = bench.some((p) => p.element === selectedPlayer?.element)
+  const swapTargetIsBench = bench.some((p) => p.element === swapTarget?.element)
 
   const totalCost = displaySquad.reduce((s, p) => s + p.price, 0)
   const budgetPct = Math.min(100, (totalCost / 100) * 100)
 
   const countByTeam: Record<string, number> = {}
   displaySquad.forEach((p) => { countByTeam[p.team_abbr] = (countByTeam[p.team_abbr] ?? 0) + 1 })
-  const overLimit = Object.entries(countByTeam).filter(([, n]) => n >= 3)
+  // TODO: make round-aware — group max=3, R32=4, R16=5, QF=6, SF/F=8 (see PRD §Country Limits)
+  const overLimit = Object.entries(countByTeam).filter(([, n]) => n > 3)
 
   function handleSwap(replacement: SquadPlayer) {
     if (!swapTarget) return
-    setSquad(displaySquad.map((p) => p.element === swapTarget.element ? replacement : p))
+    setSquad(displaySquad.map((p) => {
+      if (p.element === swapTarget.element) return replacement
+      if (p.element === replacement.element) return swapTarget
+      return p
+    }))
     setSwapTarget(null)
   }
 
@@ -306,12 +317,14 @@ export default function Squad() {
         player={selectedPlayer}
         onClose={() => setSelectedPlayer(null)}
         onSubOut={(p) => { setSelectedPlayer(null); setSwapTarget(p) }}
+        isBench={selectedIsBench}
       />
 
       {swapTarget && (
         <SwapDrawer
           target={swapTarget}
-          bench={bench}
+          options={swapTargetIsBench ? xi : bench}
+          subIn={swapTargetIsBench}
           onSwap={handleSwap}
           onCancel={() => setSwapTarget(null)}
         />
