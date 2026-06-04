@@ -145,6 +145,41 @@
   4. `py -m engine.wc_run` — re-run model + optimizer
   5. Top up Anthropic credits for AI chat end-to-end testing
 
+**Session 8 (2026-06-06) — Onboarding flow + screenshot squad sync:**
+
+- **OnboardingModal shipped** (`web/src/components/shared/OnboardingModal.tsx`):
+  - React portal, shows on first visit via `localStorage['wc-onboarded']` flag
+  - Two paths: "Build a new team" and "I already have a team"
+  - **New team path:** closes modal → `/squad` loads pre-computed optimal squad (no change to existing flow)
+  - **Existing team path:** drag-drop / click to upload a screenshot of their FIFA Fantasy squad
+  - States: `idle → upload → processing → success | error`
+  - Success: shows first 5 matched player names + count, "View my squad →" CTA
+  - Error: "Try again" or "Use optimal squad" fallback
+  - Mobile: renders as bottom sheet (`items-end` on small screens)
+- **Screenshot processing** (`POST /api/squad/from-screenshot`):
+  - Accepts `{ imageBase64: string, mimeType: string }` (base64 read client-side via `FileReader`)
+  - JSON body limit raised to `10mb` (`express.json({ limit: '10mb' })`)
+  - Calls `claude-haiku-4-5-20251001` Vision with tight JSON-only system prompt
+  - Parses `{ players: string[] }` from model response (regex-extracts JSON block)
+  - Each name matched against `wc.players` via `matchPlayersByName()` (ILIKE on `known_name` / `last_name` / `first_name`, LEFT JOIN teams + projections round 1 for xP)
+  - Returns `{ matched: SquadPlayer[], unmatched: string[], total: number }`
+  - Unmatched players silently dropped — caller fills remaining spots from optimal squad
+- **`matchPlayersByName(name)`** added to `web/server/db.ts` — single ILIKE query, returns full `SquadPlayer`-shaped row with `team_abbr` and `xp`
+- **`useSquadFromScreenshot()` mutation** added to `web/src/hooks/useWC.ts`
+- **`squadFromScreenshot(imageBase64, mimeType)`** added to `web/src/services/wcApi.ts`
+- **`appStore.ts`**: `wcOnboardingOpen: boolean` + `setWcOnboardingOpen(v)` — Squad page uses this to re-trigger the modal
+- **`App.tsx`**: mounts `<OnboardingModal>` at root; `showOnboarding = firstVisit || wcOnboardingOpen`
+- **`Squad.tsx`**: "Re-sync squad" button (bottom of page) sets `wcOnboardingOpen(true)` to reopen upload flow
+- **TypeScript:** clean (zero errors)
+
+**Pending Day 5 work:**
+  1. Fix `wc.teams` duplicate rows — `DELETE FROM wc.teams WHERE squad_id > 1000` before fifa upsert
+  2. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota — **do not skip, budget resets daily**)
+  3. `py -m engine.wc_run` — re-run model + optimizer with name override + better apif data
+  4. Top up Anthropic credits — required for `/api/chat` AND `/api/squad/from-screenshot` (both call Claude)
+  5. Test screenshot flow end-to-end once credits are live
+  6. Transfers page greedy swap cards (Day 6 in original schedule, now Day 5 target)
+
 ---
 
 ## Day-by-Day Build Schedule
@@ -154,9 +189,9 @@
 | 1 | Jun 4 | Repo scaffold + Phase 1 scrape (StatsBomb + API-Football Day 1) | ✅ Done |
 | 2 | Jun 5 | Engine pipeline (model+optimizer) + full web scaffold (5 pages, Express, hooks) | ✅ Done |
 | 3 | Jun 6 | Name-override review + Assistant page + UI quality pass (fpl-edge parity) | ✅ Done |
-| 4 | Jun 7 | API-Football Day 2 + re-run model + Captain/Transfers page polish | ← Start here |
-| 5 | Jun 8 | Squad page swap drawer + squadOptimizer.ts (Re-optimize endpoint) | |
-| 6 | Jun 9 | Transfers page (greedy cards) + Live page (match cards + captain banner) | |
+| 4 | Jun 7 | UI redesign (pitch layout, player profiles, WC banner) + onboarding flow (screenshot squad sync) | ✅ Done |
+| 5 | Jun 8 | Fix teams DB bug + apif Day 2 + model rerun + Transfers greedy cards | ← Start here |
+| 6 | Jun 9 | Live page polish + captain banner + squad swap drawer | |
 | 7 | Jun 10 | GitHub Actions engine.yml + Render deploy + smoke test | |
 | 8 | Jun 11 | Polish + final engine run + production smoke test | |
 
