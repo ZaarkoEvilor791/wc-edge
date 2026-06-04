@@ -71,25 +71,34 @@
   3. Build out Assistant page (AI chat with FIFA player context)
   4. Day 4: `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req) + re-run model
 
-**Session 5 (2026-06-06) — Day 3: name overrides done, wiring routes + Assistant page:**
+**Session 5 (2026-06-06) — Day 3 complete: name overrides + Assistant page shipped:**
 
-- **Name overrides complete** — `engine/data/name_overrides.json` has 13 entries covering major mismatches (Vinicius, Mbappé, Bellingham, Rodri, Raphinha, Pedri, Gavi, Dani Olmo, Lucas Paquetá, Rúben Dias, Son)
-- **Key insight on SB coverage:** SB data absent for (a) nations not at WC22/Euro24/Copa24/AFCON23 — Norway (Haaland, Ødegaard), Sweden (Isak, Gyökeres); (b) players <45 min at those tournaments — Toney, Gordon, Cherki, Doué
-- **Fixed broken override:** `"rodri"` was mapped to `"rodrigo hernández"` (wrong) → fixed to `"rodrigo hernandez cascante"` (actual sb_cache key)
-- **Express routes:** already wired to real DB queries in server.ts — no changes needed. Placeholders are `/api/squad/optimize` (Day 5) and `/api/transfers/suggest` (Day 6), intentional per schedule.
-- **Assistant page decisions (elite team):**
-  - Full-page chat layout (not card) — home page must feel premium
-  - Immediate-send chips (not pre-fill) — 1-click to value
-  - **Critical fix:** pass `squadNames: string[]` from frontend (not element IDs) — Haiku has no knowledge of FIFA element numbers
-  - Top-5 projections injected as context prefix on **first user message only** from frontend (no server changes)
-  - No streaming on Day 3 — pulsing "Edge is thinking…" gold dot instead
-  - 3 squad-context chips (shown if squad.length > 0): "Who should I captain?", "Which player should I transfer out?", "Rate my squad out of 10"
-  - 3 generic chips (always shown if no squad): "Best value picks for WC 2026?", "Which GK has the best fixtures round 1?", "Build me a £100m squad"
-  - User bubbles: right-aligned gold; AI bubbles: left-aligned slate-800; markdown bold + line breaks only
+- **Name overrides complete** — `engine/data/name_overrides.json` has 13 entries (Vinicius, Mbappé, Bellingham, Rodri, Raphinha, Pedri, Gavi, Dani Olmo, Lucas Paquetá, Rúben Dias, Son)
+- **Fixed broken override:** `"rodri"` → `"rodrigo hernandez cascante"` (was `"rodrigo hernández"` which doesn't match sb_cache key)
+- **SB coverage insight:** absent for (a) nations not at WC22/Euro24/Copa24/AFCON23 — Norway, Sweden; (b) players <45 min — Toney, Gordon, Cherki, Doué
+- **Express routes:** all already wired. Placeholders: `/api/squad/optimize` (Day 5), `/api/transfers/suggest` (Day 6) — intentional.
+- **Assistant page shipped** (`web/src/pages/Assistant.tsx`):
+  - Full-page chat, immediate-send chips, pulsing "Edge is thinking…" gold dots
+  - **Critical fix in `server.ts`:** accepts `squadNames: string[]` (not element IDs) — Haiku has no knowledge of FIFA element numbers
+  - Top-5 projections injected as context prefix on first user message only (no extra server latency)
+  - No streaming — pulsing loading state sufficient for Day 3
+  - 3 squad chips (if squad loaded): "Who should I captain?", "Which player to transfer out?", "Rate my squad out of 10"
+  - 3 generic chips (no squad): "Best value picks for WC 2026?", "Best GK fixtures round 1?", "Build me a £100m squad"
+  - `Layout.tsx`: changed `overflow-auto` → `overflow-hidden` on main so chat's pinned input works
+  - `index.css`: pulse keyframe for thinking dots
+- **`web/.env` created** (gitignored) — `DATABASE_URL` + `ANTHROPIC_API_KEY` required locally
+- **Test results (Day 3):**
+  - `/api/rounds` ✅ 8 rows
+  - `/api/players` ✅ 1,481 rows, name field derived
+  - `/api/projections?round=1` ✅ 11,848 rows, sorted xP DESC
+  - `/api/squad/suggest` ✅ 15 players, £98.9m, 77.6 xP
+  - `/api/chat` ✅ routing correct — blocked by **Anthropic account needs credits** (not a code bug)
+- **Known DB bug (pre-existing from Day 2):** `wc.teams` has 80 rows instead of 48 — duplicate entries with FIFA entity IDs (43817+) alongside correct sequential IDs (1-48). Fix: re-run `py -m engine.wc_ingest --source fifa` on Day 4 after adding a DELETE before upsert.
 - **Next session starts here (Day 4):**
-  1. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota)
-  2. `py -m engine.wc_run` — re-run model + optimizer with name override improvements
-  3. Captain/Transfers page polish
+  1. Fix `wc.teams` duplicate rows — add `DELETE FROM wc.teams WHERE squad_id > 1000` before fifa upsert, or clean up manually
+  2. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota)
+  3. `py -m engine.wc_run` — re-run model + optimizer with name override improvements
+  4. Top up Anthropic credits to enable AI chat testing
 
 ---
 
@@ -114,8 +123,10 @@
 ```bash
 # Day 1 (DONE): statsbomb + apif day 1
 # Day 2 (DONE): fifa source (re-run with position fix), model + optimizer
-# Day 3 (DONE): name overrides (13 entries), wire Express routes, Assistant page
-# DB state: 1481 players, 48 teams, 8 rounds, 571 player_stats, 11848 projections, 1 suggested_squad
+# Day 3 (DONE): name overrides (13 entries), Assistant page, server.ts squadNames fix
+# DB state: 1481 players, 80 teams (bug: 32 duplicate FIFA entity ID rows), 8 rounds,
+#           571 player_stats, 11848 projections, 1 suggested_squad
+# Day 4 fix needed: clean wc.teams duplicates before re-running fifa ingest
 ```
 
 ### Day 4 — API-Football Day 2 + re-run model
