@@ -211,7 +211,9 @@
   4. Top up Anthropic credits — required for `/api/chat` AND `/api/squad/from-screenshot` (both call Claude)
   5. Test screenshot flow end-to-end once credits are live
 
-**Session 11 (2026-06-10) — Day 7: PRD gap fill — Captain/Transfers/Assistant/Squad polish:**
+**Session 11 (2026-06-10) — Day 7: PRD gap fill + Live fallback + bug fixes:**
+
+### PRD gaps filled
 
 - **Captain page fully upgraded:**
   - **Variance column** (`±X.X`) — cross-references `useProjections(round)` by element ID, hidden on mobile (`hidden sm:block`)
@@ -221,7 +223,8 @@
 
 - **Transfers page upgraded:**
   - **−3 pts badge** — red pill badge on SwapCard header when `index >= freeTransfers`
-  - **Undo last swap** — `prevSquads: SquadPlayer[][]` stack pushed before each Accept; `handleUndo()` pops snapshot, reverses squad store + `accepted` array + decrements index; "↩ Undo" button appears in-progress when `canUndo` and in DoneState as "↩ Undo last"
+  - **Undo last swap** — `prevSquads: SquadPlayer[][]` stack pushed before each Accept; `handleUndo()` pops snapshot, reverses squad store + `accepted` array + decrements index; "↩ Undo" in-progress when `canUndo`; "↩ Undo last" in DoneState
+  - **Button layout** — SwapCard action row uses `grid` with `auto 1fr 1fr` (canUndo) or `1fr 1fr` (no undo) so Skip/Accept stay equal-width when Undo button is present
 
 - **Assistant system prompt enriched** (`server.ts`):
   - Full scoring rules: Goal pts by position (GK=9, DEF=7, MID=6, FWD=5), CS, assists, appearance, saves, cards, scouting bonus
@@ -229,15 +232,27 @@
   - Country limit rules by round, budget rules (£100m group / £105m R32+)
 
 - **Squad page upgraded:**
-  - **Budget bar** — live progress bar `£X.Xm / £100m`, turns rose-500 when >95% used; replaces static stat card value with live-computed total cost
-  - **Country-count warnings** — compact strip above pitch: shows `ABBR ×N` chips in amber for any team with ≥3 players; "max 3 in group stage" reminder; hidden when no violations
+  - **Budget bar** — live progress bar `£X.Xm / £100m`, turns rose-500 when >95% used; live-computed total cost (not static)
+  - **Country-count warnings** — compact amber strip showing `ABBR ×N` for any team with ≥3 players; hidden when no violations
 
-- **New backend** (`server.ts`): `GET /api/fdr?round=N` — returns `{squad_id, fdr}[]`; imported `getTeamFdr` from `db.ts`
-- **New DB query** (`db.ts`): `getTeamFdr(round)` — `SELECT squad_id, lambda_posterior FROM team_fdr WHERE round = $1`
+- **New backend** (`server.ts`): `GET /api/fdr?round=N` — returns `{squad_id, fdr}[]`
+- **New DB query** (`db.ts`): `getTeamFdr(round)`
 - **New type** (`wc.ts`): `TeamFdr { squad_id: number; fdr: number }`
 - **New hook** (`useWC.ts`): `useTeamFdr(round)` — 30min stale time
 - **New API method** (`wcApi.ts`): `teamFdr(round)`
-- **TypeScript:** clean (zero errors)
+
+### Bug fixes (same session)
+
+- **Live page fallback** (`server.ts` + `Live.tsx`): Community API `worldcup2026-api.vercel.app` returns 404 pre-tournament. Server now catches the error and falls back to parsing FIFA Fantasy `rounds.json` fixture schedule, returning `{ matches, stale: true, source: 'schedule' }`. `MatchCard` renders scheduled fixtures with kickoff date/time. Subtitle updates to "showing fixture schedule" in stale mode.
+
+- **Logo trophy colour** (`Logo.tsx`): SVG stroke was hardcoded to old teal `#00D8CB` — missed in Session 7 accent revert. Fixed to WC gold `#C8A84C`.
+
+- **Squad store corruption guard** (`squadStore.ts` + `Squad.tsx`):
+  - `setSquad` now deduplicates by element before storing (prevents corrupt data entering store)
+  - `Squad.tsx` useEffect detects corrupt localStorage squad (duplicate elements, wrong size, wrong position counts: not 2GK/5DEF/5MID/3FWD) and resets from DB suggested_squad
+  - **Root cause:** stale Zustand localStorage from earlier sessions could persist invalid data since `squad.length > 0` skipped DB reload
+
+- **TypeScript:** clean (zero errors) across all changes
 
 **Session 10 (2026-06-08) — Day 6: Live polish + captain banner + squad swap drawer:**
 
@@ -301,7 +316,7 @@ Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
 ### Complex / data-dependent (stretch)
 14. **Live: squad player filtering** — community API (`worldcup2026-api.vercel.app`) likely doesn't return per-player live points. Skip unless API supports it.
 15. **Live: auto-sub pairings** — static display of bench order from squadStore. e.g. "Bench GK auto-subs if starter doesn't play". Simple static text, just needs bench state.
-16. **Live: stale mode** — server should return `{ matches, stale: true, lastUpdated: ISO }` when community API fails, using last cached values. Currently returns 503 error.
+16. ✅ **Live: stale mode** — server returns `{ matches, stale: true, source: 'schedule'|'unavailable' }` when community API fails; falls back to FIFA Fantasy `rounds.json` fixture schedule. Done Day 7.
 
 ---
 
@@ -322,19 +337,26 @@ Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
 
 ## How to Start (Day 8 — next session)
 
-### What's already done (do not re-run)
-```bash
-# Day 1–7 (DONE): full engine + all UI pages + all PRD gaps filled
-# DB state: 1481 players, 8 rounds, 11848 projections, 384 team_fdr rows, 1 suggested_squad
-# Pending engine work (from Day 5, still deferred): apif day 2 run + model rerun
+### What is done — do not redo
+```
+Day 1–7 complete. All 5 pages built and polished. All PRD gaps filled.
+DB: 1481 players, 8 rounds, 11848 projections, 384 team_fdr rows, 1 suggested_squad.
+Vite dev server runs on :5174 (5173 in use by another process).
+Express runs on :3001.
+Squad composition is correct: 2GK/5DEF/5MID/3FWD (Ramírez + Osako as GKs — both correct).
 ```
 
 ### Day 8 priorities (in order)
-1. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; triggers `py -m engine.wc_run`; post-group bonus run June 27
-2. **Render deploy** — push main, confirm `https://wc-edge.onrender.com` smoke test
-3. **ELIMINATED badge** — add `is_active BOOLEAN DEFAULT TRUE` to `wc.teams` schema; expose via `GET /api/teams`; show on Transfers swap card when OUT player's team is inactive
-4. **Final engine run** (if apif budget available): `py -m engine.wc_ingest --source apif --day 2` + `py -m engine.wc_run`
-5. **Production smoke test** — all 5 pages, chat (needs Anthropic credits), screenshot upload
+1. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; triggers `py -m engine.wc_run`; post-group bonus run June 27. Use GitHub secrets `DATABASE_URL` and `API_FOOTBALL_KEY`.
+2. **Render deploy** — `git push origin main`, confirm `https://wc-edge.onrender.com` loads correctly.
+3. **Production smoke test** — all 5 pages, `/api/fdr`, `/api/live` (should show schedule), chat (needs Anthropic credits), screenshot upload.
+4. **ELIMINATED badge** (medium effort) — add `is_active BOOLEAN DEFAULT TRUE` to `wc.teams`; `ALTER TABLE wc.teams ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;`; update `GET /api/teams` to include it; show "ELIMINATED" badge on Transfers swap card OUT player if their team is inactive.
+5. **Final engine run** (if apif budget available): `py -m engine.wc_ingest --source apif --day 2` then `py -m engine.wc_run` to refresh projections with better club stats.
+
+### Known deferred items (still outstanding)
+- `wc.teams` may have 80 rows (32 duplicates with FIFA entity IDs > 1000). Check: `SELECT COUNT(*) FROM wc.teams`. Fix if needed: `DELETE FROM wc.teams WHERE squad_id > 1000;` then re-run `py -m engine.wc_ingest --source fifa`.
+- Anthropic credits needed for `/api/chat` and `/api/squad/from-screenshot` (both call Claude Haiku).
+- `apif_budget.json`: `day1_used: 80, day2_used: 0` — Day 2 run still available.
 
 ### Full pipeline from scratch (if needed)
 ```bash
@@ -393,7 +415,7 @@ engine/              Python backend
 
 web/                 React + Express (ALL FILES WRITTEN — TypeScript clean)
 ├── server/
-│   ├── server.ts        11 routes: 3 FIFA proxies + 8 DB/AI routes — all wired to DB
+│   ├── server.ts        12 routes: 3 FIFA proxies + 9 DB/AI routes — all wired to DB
 │   └── db.ts            pg.Pool, search_path=wc,public, all query functions
 ├── src/
 │   ├── types/wc.ts           Player, Team, Round, Projection, SquadPlayer, SuggestedSquad
@@ -456,7 +478,8 @@ web/                 React + Express (ALL FILES WRITTEN — TypeScript clean)
 | /api/squad/suggest | GET | Pre-computed from suggested_squad table |
 | /api/squad/optimize | POST | Live HiGHS-WASM solve |
 | /api/transfers/suggest | POST | Sequential greedy, body: {squad, round, freeTransfers} |
-| /api/live?round=N | GET | Community API proxy, 60s TTL |
+| /api/fdr?round=N | GET | FDR 1-5 per team, quintiles of team_fdr.lambda_posterior |
+| /api/live?round=N | GET | Community API proxy (60s TTL); falls back to FIFA schedule on failure |
 | /api/chat | POST | Edge AI, body: {messages, squad?} |
 
 ---
