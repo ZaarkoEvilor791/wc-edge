@@ -32,13 +32,29 @@
 - `render.yaml` created — DB stanza removed (Render free tier allows only 1 DB; reusing fpl-edge Postgres)
 - Render web service live at `https://wc-edge.onrender.com`
 - **Database:** reusing fpl-edge Postgres (`fpledge` DB). Internal URL set in Render env. External URL in `engine/.env`.
-- `engine/.env` created (gitignored) with `API_FOOTBALL_KEY` and `DATABASE_URL`
-- `engine/engine/wc_schema.sql` written — 6 tables: `players`, `teams`, `rounds`, `player_stats`, `projections`, `team_fdr`, `suggested_squad`
-- **Pending before Phase 1 can run:**
-  1. Apply schema: `python -c "import psycopg, pathlib; conn = psycopg.connect('...external_url...'); conn.autocommit = True; conn.execute(pathlib.Path('engine/engine/wc_schema.sql').read_text()); conn.close()"`
-  2. Set GitHub Actions secret: `echo "665c3fb9bea5334f061a619ba38a9190" | gh secret set API_FOOTBALL_KEY --repo ZaarkoEvilor791/wc-edge`
-  3. Write `wc_ingest.py` — next task
-- **Next session starts here:** write `engine/engine/wc_ingest.py` + `config.py` + `db.py`, then run Phase 1 scrapes (statsbomb → sofascore → fifa → apif --day 1)
+
+**Session 3 (2026-06-04) — Day 1 engine complete, Phase 1 scrape done:**
+
+- All engine foundation files written: `config.py`, `db.py`, `__init__.py`, `requirements.txt`
+- **Schema updated:** all tables now under `wc` Postgres schema (`CREATE SCHEMA IF NOT EXISTS wc`) to avoid collision with fpl-edge's `players`/`teams` tables on the shared DB. All queries use `wc.tablename`.
+- `db.py` sets `search_path=wc,public` on connect — no schema prefix needed in SQL
+- **`wc_ingest.py` written** — all 4 sources: statsbomb, sofascore, fifa, apif
+- **Phase 1 scrape complete (Day 1):**
+  - StatsBomb: 199 match files, 1,441 unique players cached → `engine/data/sb_cache.json`
+  - Sofascore: **403 blocked** (Cloudflare). AFCON 2025 players fall back to AFCON 2023 StatsBomb data.
+  - FIFA Fantasy: 1,481 players (48-team WC 2026), 8 rounds, 32 squads upserted to DB
+  - API-Football: 107 players with club stats upserted. **Budget used: 80/100 today.**
+- **DB state after Day 1:**
+  - `wc.players`: 1,481 rows
+  - `wc.teams`: 32 rows
+  - `wc.rounds`: 8 rows
+  - `wc.player_stats`: 571 rows (520 with tournament stats, 106 with club stats, 56 with both)
+  - `engine/data/unmatched_players.json`: 961 players for Day 3 review
+- **Known bugs fixed during this session:**
+  1. API-Football `/players/topscorers` has no `page` parameter — `&page=1` returns error. Fixed to single request per league, no pagination.
+  2. Abbreviated API-Football names ("A. Isak") added last-name-only fallback in `_resolve_element()`
+  3. All `wc_schema.sql` tables prefixed with `wc.` namespace
+- **Next session starts here (Day 2):** Run `python -m engine.wc_ingest --source apif --day 2` (fresh 100 req/day budget) + scaffold web/ directory (TypeScript types, React Query hooks, sidebar icons)
 
 ---
 
@@ -74,16 +90,22 @@ DATABASE_URL=<render-external-connection-string — set after Render deploy>
 ### 3. Run Phase 1 scrape
 ```bash
 cd engine
-pip install httpx psycopg[binary] python-dotenv rapidfuzz highspy
-python -m engine.wc_ingest --source statsbomb   # 199 match files, ~2 min, free
-python -m engine.wc_ingest --source sofascore    # AFCON 2025, ~80 players, free
-python -m engine.wc_ingest --source fifa         # players.json + rounds + squads, free
-python -m engine.wc_ingest --source apif --day 1 # burns Day 1 API-Football budget (100 req)
+py -m pip install -r requirements.txt   # Windows: use py launcher, not python
+py -m engine.wc_ingest --source statsbomb   # 199 match files, ~2 min, free (DONE Day 1)
+py -m engine.wc_ingest --source sofascore   # AFCON 2025 — currently 403 blocked, skip
+py -m engine.wc_ingest --source fifa        # players.json + rounds + squads, free (DONE Day 1)
+py -m engine.wc_ingest --source apif --day 1 # Day 1 budget used (80/100). DONE.
+py -m engine.wc_ingest --source apif --day 2 # Run Day 2 on June 5 — fresh 100 req quota
 ```
+
+**IMPORTANT — API-Football notes:**
+- `/players/topscorers` has NO `page` parameter — already handled in code
+- Budget file: `engine/data/apif_budget.json` tracks day1_used (80 already) and day2_used
+- Day 2 run uses `--day 2` flag to use day2_used counter
 
 ### 4. Check unmatched players
 ```bash
-python -m engine.wc_ingest --report  # prints unmatched_players.json sorted by price
+py -m engine.wc_ingest --report  # prints unmatched_players.json sorted by price
 ```
 Review manually on Day 3. Add hard cases to `engine/data/name_overrides.json`.
 

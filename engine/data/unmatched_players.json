@@ -1,0 +1,5768 @@
+[
+  {
+    "element": 855,
+    "name": "Erling Haaland",
+    "normalized": "erling haaland",
+    "price": 10.5
+  },
+  {
+    "element": 517,
+    "name": "Michael Olise",
+    "normalized": "michael olise",
+    "price": 9.5
+  },
+  {
+    "element": 1366,
+    "name": "Raphinha",
+    "normalized": "raphinha",
+    "price": 8.2
+  },
+  {
+    "element": 1106,
+    "name": "Pedri",
+    "normalized": "pedri",
+    "price": 8.1
+  },
+  {
+    "element": 516,
+    "name": "Rayan Cherki",
+    "normalized": "rayan cherki",
+    "price": 8
+  },
+  {
+    "element": 1520,
+    "name": "Alexander Isak",
+    "normalized": "alexander isak",
+    "price": 8
+  },
+  {
+    "element": 1710,
+    "name": "Eberechi Eze",
+    "normalized": "eberechi eze",
+    "price": 8
+  },
+  {
+    "element": 1124,
+    "name": "Viktor Gyökeres",
+    "normalized": "viktor gyokeres",
+    "price": 7.8
+  },
+  {
+    "element": 1105,
+    "name": "Dani Olmo",
+    "normalized": "dani olmo",
+    "price": 7.7
+  },
+  {
+    "element": 1684,
+    "name": "Martin Ødegaard",
+    "normalized": "martin degaard",
+    "price": 7.7
+  },
+  {
+    "element": 505,
+    "name": "Désiré Doué",
+    "normalized": "desire doue",
+    "price": 7.5
+  },
+  {
+    "element": 1104,
+    "name": "Rodri",
+    "normalized": "rodri",
+    "price": 7.5
+  },
+  {
+    "element": 1712,
+    "name": "Ivan Toney",
+    "normalized": "ivan toney",
+    "price": 7.5
+  },
+  {
+    "element": 174,
+    "name": "Matheus Cunha",
+    "normalized": "matheus cunha",
+    "price": 7.3
+  },
+  {
+    "element": 475,
+    "name": "Morgan Rogers",
+    "normalized": "morgan rogers",
+    "price": 7.2
+  },
+  {
+    "element": 532,
+    "name": "Nick Woltemade",
+    "normalized": "nick woltemade",
+    "price": 7.2
+  },
+  {
+    "element": 474,
+    "name": "Anthony Gordon",
+    "normalized": "anthony gordon",
+    "price": 7
+  },
+  {
+    "element": 817,
+    "name": "Quinten Timber",
+    "normalized": "quinten timber",
+    "price": 6.8
+  },
+  {
+    "element": 856,
+    "name": "Alexander Sørloth",
+    "normalized": "alexander s rloth",
+    "price": 6.8
+  },
+  {
+    "element": 913,
+    "name": "Diego Gómez",
+    "normalized": "diego gomez",
+    "price": 6.8
+  },
+  {
+    "element": 1095,
+    "name": "Borja Iglesias",
+    "normalized": "borja iglesias",
+    "price": 6.8
+  },
+  {
+    "element": 531,
+    "name": "Deniz Undav",
+    "normalized": "deniz undav",
+    "price": 6.6
+  },
+  {
+    "element": 55,
+    "name": "Thiago Almada",
+    "normalized": "thiago almada",
+    "price": 6.5
+  },
+  {
+    "element": 190,
+    "name": "Lucas Paquetá",
+    "normalized": "lucas paqueta",
+    "price": 6.5
+  },
+  {
+    "element": 348,
+    "name": "Martin Baturina",
+    "normalized": "martin baturina",
+    "price": 6.5
+  },
+  {
+    "element": 486,
+    "name": "Elliot Anderson",
+    "normalized": "elliot anderson",
+    "price": 6.5
+  },
+  {
+    "element": 902,
+    "name": "Antonio Sanabria",
+    "normalized": "antonio sanabria",
+    "price": 6.5
+  },
+  {
+    "element": 1306,
+    "name": "Eldor Shomurodov",
+    "normalized": "eldor shomurodov",
+    "price": 6.5
+  },
+  {
+    "element": 1327,
+    "name": "Emiliano Buendía",
+    "normalized": "emiliano buendia",
+    "price": 6.5
+  },
+  {
+    "element": 1432,
+    "name": "Jean-Philippe Mateta",
+    "normalized": "jean philippe mateta",
+    "price": 6.5
+  },
+  {
+    "element": 1493,
+    "name": "Chris Wood",
+    "normalized": "chris wood",
+    "price": 6.5
+  },
+  {
+    "element": 1683,
+    "name": "Fredrik Aursnes",
+    "normalized": "fredrik aursnes",
+    "price": 6.5
+  },
+  {
+    "element": 1999,
+    "name": "Gavi",
+    "normalized": "gavi",
+    "price": 6.5
+  },
+  {
+    "element": 2042,
+    "name": "Justin Kluivert",
+    "normalized": "justin kluivert",
+    "price": 6.5
+  },
+  {
+    "element": 514,
+    "name": "Maghnes Akliouche",
+    "normalized": "maghnes akliouche",
+    "price": 6.4
+  },
+  {
+    "element": 763,
+    "name": "Álvaro Fidalgo",
+    "normalized": "alvaro fidalgo",
+    "price": 6.4
+  },
+  {
+    "element": 936,
+    "name": "Vitinha",
+    "normalized": "vitinha",
+    "price": 6.4
+  },
+  {
+    "element": 1223,
+    "name": "Maxi Araújo",
+    "normalized": "maxi araujo",
+    "price": 6.4
+  },
+  {
+    "element": 1603,
+    "name": "Jamie Leweling",
+    "normalized": "jamie leweling",
+    "price": 6.4
+  },
+  {
+    "element": 1990,
+    "name": "Abdul Fatawu",
+    "normalized": "abdul fatawu",
+    "price": 6.4
+  },
+  {
+    "element": 2020,
+    "name": "Brahim Díaz",
+    "normalized": "brahim diaz",
+    "price": 6.4
+  },
+  {
+    "element": 188,
+    "name": "Casemiro",
+    "normalized": "casemiro",
+    "price": 6.3
+  },
+  {
+    "element": 1396,
+    "name": "Cucho Hernández",
+    "normalized": "cucho hernandez",
+    "price": 6.3
+  },
+  {
+    "element": 1599,
+    "name": "Nadiem Amiri",
+    "normalized": "nadiem amiri",
+    "price": 6.3
+  },
+  {
+    "element": 9,
+    "name": "Mohammed Amoura",
+    "normalized": "mohammed amoura",
+    "price": 6.2
+  },
+  {
+    "element": 10,
+    "name": "Amine Gouiri",
+    "normalized": "amine gouiri",
+    "price": 6.2
+  },
+  {
+    "element": 53,
+    "name": "Valentín Barco",
+    "normalized": "valentin barco",
+    "price": 6.2
+  },
+  {
+    "element": 146,
+    "name": "Ermedin Demirovic",
+    "normalized": "ermedin demirovic",
+    "price": 6.2
+  },
+  {
+    "element": 857,
+    "name": "Andreas Schjelderup",
+    "normalized": "andreas schjelderup",
+    "price": 6.2
+  },
+  {
+    "element": 864,
+    "name": "Kristian Thorstvedt",
+    "normalized": "kristian thorstvedt",
+    "price": 6.2
+  },
+  {
+    "element": 1056,
+    "name": "Habib Diarra",
+    "normalized": "habib diarra",
+    "price": 6.2
+  },
+  {
+    "element": 1238,
+    "name": "Brian Rodríguez",
+    "normalized": "brian rodriguez",
+    "price": 6.2
+  },
+  {
+    "element": 1257,
+    "name": "Johnny Cardoso",
+    "normalized": "johnny cardoso",
+    "price": 6.2
+  },
+  {
+    "element": 1292,
+    "name": "Abbosbek Fayzullaev",
+    "normalized": "abbosbek fayzullaev",
+    "price": 6.2
+  },
+  {
+    "element": 1335,
+    "name": "Matías Soulé",
+    "normalized": "matias soule",
+    "price": 6.2
+  },
+  {
+    "element": 147,
+    "name": "Edin Dzeko",
+    "normalized": "edin dzeko",
+    "price": 6.1
+  },
+  {
+    "element": 177,
+    "name": "Luiz Henrique",
+    "normalized": "luiz henrique",
+    "price": 6.1
+  },
+  {
+    "element": 271,
+    "name": "Jorge Carrascal",
+    "normalized": "jorge carrascal",
+    "price": 6.1
+  },
+  {
+    "element": 476,
+    "name": "Noni Madueke",
+    "normalized": "noni madueke",
+    "price": 6.1
+  },
+  {
+    "element": 511,
+    "name": "Warren Zaïre-Emery",
+    "normalized": "warren zaire emery",
+    "price": 6.1
+  },
+  {
+    "element": 512,
+    "name": "Manu Koné",
+    "normalized": "manu kone",
+    "price": 6.1
+  },
+  {
+    "element": 812,
+    "name": "Ryan Gravenberch",
+    "normalized": "ryan gravenberch",
+    "price": 6.1
+  },
+  {
+    "element": 863,
+    "name": "Antonio Nusa",
+    "normalized": "antonio nusa",
+    "price": 6.1
+  },
+  {
+    "element": 1117,
+    "name": "Mattias Svanberg",
+    "normalized": "mattias svanberg",
+    "price": 6.1
+  },
+  {
+    "element": 1206,
+    "name": "Baris Alper Yilmaz",
+    "normalized": "baris alper yilmaz",
+    "price": 6.1
+  },
+  {
+    "element": 1254,
+    "name": "Malik Tillman",
+    "normalized": "malik tillman",
+    "price": 6.1
+  },
+  {
+    "element": 1291,
+    "name": "Jaloliddin Masharipov",
+    "normalized": "jaloliddin masharipov",
+    "price": 6.1
+  },
+  {
+    "element": 1307,
+    "name": "Igor Sergeev",
+    "normalized": "igor sergeev",
+    "price": 6.1
+  },
+  {
+    "element": 1581,
+    "name": "Christian Fassnacht",
+    "normalized": "christian fassnacht",
+    "price": 6.1
+  },
+  {
+    "element": 97,
+    "name": "Sasa Kalajdzic",
+    "normalized": "sasa kalajdzic",
+    "price": 6
+  },
+  {
+    "element": 583,
+    "name": "Duckens Nazon",
+    "normalized": "duckens nazon",
+    "price": 6
+  },
+  {
+    "element": 1082,
+    "name": "Álex Baena",
+    "normalized": "alex baena",
+    "price": 6
+  },
+  {
+    "element": 1340,
+    "name": "Santiago Castro",
+    "normalized": "santiago castro",
+    "price": 6
+  },
+  {
+    "element": 1519,
+    "name": "Ken Sema",
+    "normalized": "ken sema",
+    "price": 6
+  },
+  {
+    "element": 1947,
+    "name": "Nilson Angulo",
+    "normalized": "nilson angulo",
+    "price": 6
+  },
+  {
+    "element": 2050,
+    "name": "Cristian Volpato",
+    "normalized": "cristian volpato",
+    "price": 6
+  },
+  {
+    "element": 2065,
+    "name": "Rodrigo Zalazar",
+    "normalized": "rodrigo zalazar",
+    "price": 6
+  },
+  {
+    "element": 51,
+    "name": "Nico Paz",
+    "normalized": "nico paz",
+    "price": 5.9
+  },
+  {
+    "element": 178,
+    "name": "Igor Thiago",
+    "normalized": "igor thiago",
+    "price": 5.9
+  },
+  {
+    "element": 307,
+    "name": "Yan Diomande",
+    "normalized": "yan diomande",
+    "price": 5.9
+  },
+  {
+    "element": 309,
+    "name": "Elye Wahi",
+    "normalized": "elye wahi",
+    "price": 5.9
+  },
+  {
+    "element": 310,
+    "name": "Amad Diallo",
+    "normalized": "amad diallo",
+    "price": 5.9
+  },
+  {
+    "element": 456,
+    "name": "Ibrahim Adel",
+    "normalized": "ibrahim adel",
+    "price": 5.9
+  },
+  {
+    "element": 627,
+    "name": "Mohammad Mohebi",
+    "normalized": "mohammad mohebi",
+    "price": 5.9
+  },
+  {
+    "element": 629,
+    "name": "Mehdi Ghayedi",
+    "normalized": "mehdi ghayedi",
+    "price": 5.9
+  },
+  {
+    "element": 735,
+    "name": "Bae Jun-Ho",
+    "normalized": "bae jun ho",
+    "price": 5.9
+  },
+  {
+    "element": 806,
+    "name": "Noa Lang",
+    "normalized": "noa lang",
+    "price": 5.9
+  },
+  {
+    "element": 862,
+    "name": "Jens Petter Hauge",
+    "normalized": "jens petter hauge",
+    "price": 5.9
+  },
+  {
+    "element": 926,
+    "name": "Trincão",
+    "normalized": "trincao",
+    "price": 5.9
+  },
+  {
+    "element": 1081,
+    "name": "Yéremy Pino",
+    "normalized": "yeremy pino",
+    "price": 5.9
+  },
+  {
+    "element": 1150,
+    "name": "Noah Okafor",
+    "normalized": "noah okafor",
+    "price": 5.9
+  },
+  {
+    "element": 1191,
+    "name": "Irfan Can Kahveci",
+    "normalized": "irfan can kahveci",
+    "price": 5.9
+  },
+  {
+    "element": 1237,
+    "name": "Federico Viñas",
+    "normalized": "federico vinas",
+    "price": 5.9
+  },
+  {
+    "element": 1470,
+    "name": "Marcel Ruiz",
+    "normalized": "marcel ruiz",
+    "price": 5.9
+  },
+  {
+    "element": 1472,
+    "name": "Diego Lainez",
+    "normalized": "diego lainez",
+    "price": 5.9
+  },
+  {
+    "element": 1688,
+    "name": "Isidro Pitta",
+    "normalized": "isidro pitta",
+    "price": 5.9
+  },
+  {
+    "element": 1705,
+    "name": "Patrick Maswanganyi",
+    "normalized": "patrick maswanganyi",
+    "price": 5.9
+  },
+  {
+    "element": 44,
+    "name": "Franco Mastantuono",
+    "normalized": "franco mastantuono",
+    "price": 5.8
+  },
+  {
+    "element": 519,
+    "name": "Angelo Stiller",
+    "normalized": "angelo stiller",
+    "price": 5.8
+  },
+  {
+    "element": 927,
+    "name": "Gonçalo Guedes",
+    "normalized": "goncalo guedes",
+    "price": 5.8
+  },
+  {
+    "element": 1125,
+    "name": "Anthony Elanga",
+    "normalized": "anthony elanga",
+    "price": 5.8
+  },
+  {
+    "element": 128,
+    "name": "Alexis Saelemaekers",
+    "normalized": "alexis saelemaekers",
+    "price": 5.7
+  },
+  {
+    "element": 244,
+    "name": "Marcelo Flores",
+    "normalized": "marcelo flores",
+    "price": 5.7
+  },
+  {
+    "element": 807,
+    "name": "Brian Brobbey",
+    "normalized": "brian brobbey",
+    "price": 5.7
+  },
+  {
+    "element": 1290,
+    "name": "Jamshid Iskanderov",
+    "normalized": "jamshid iskanderov",
+    "price": 5.7
+  },
+  {
+    "element": 1672,
+    "name": "Imrân Louza",
+    "normalized": "imran louza",
+    "price": 5.7
+  },
+  {
+    "element": 1687,
+    "name": "Carlos González",
+    "normalized": "carlos gonzalez",
+    "price": 5.7
+  },
+  {
+    "element": 25,
+    "name": "Adil Aouchiche",
+    "normalized": "adil aouchiche",
+    "price": 5.6
+  },
+  {
+    "element": 40,
+    "name": "Gianluca Prestianni",
+    "normalized": "gianluca prestianni",
+    "price": 5.6
+  },
+  {
+    "element": 41,
+    "name": "Giuliano Simeone",
+    "normalized": "giuliano simeone",
+    "price": 5.6
+  },
+  {
+    "element": 42,
+    "name": "Nico González",
+    "normalized": "nico gonzalez",
+    "price": 5.6
+  },
+  {
+    "element": 49,
+    "name": "Máximo Perrone",
+    "normalized": "maximo perrone",
+    "price": 5.6
+  },
+  {
+    "element": 82,
+    "name": "Awer Mabil",
+    "normalized": "awer mabil",
+    "price": 5.6
+  },
+  {
+    "element": 110,
+    "name": "Paul Wanner",
+    "normalized": "paul wanner",
+    "price": 5.6
+  },
+  {
+    "element": 129,
+    "name": "Charles De Ketelaere",
+    "normalized": "charles de ketelaere",
+    "price": 5.6
+  },
+  {
+    "element": 148,
+    "name": "Jovo Lukic",
+    "normalized": "jovo lukic",
+    "price": 5.6
+  },
+  {
+    "element": 267,
+    "name": "Juan Fernando Quintero",
+    "normalized": "juan fernando quintero",
+    "price": 5.6
+  },
+  {
+    "element": 296,
+    "name": "Edo Kayembe",
+    "normalized": "edo kayembe",
+    "price": 5.6
+  },
+  {
+    "element": 343,
+    "name": "Nikola Moro",
+    "normalized": "nikola moro",
+    "price": 5.6
+  },
+  {
+    "element": 344,
+    "name": "Kristijan Jakic",
+    "normalized": "kristijan jakic",
+    "price": 5.6
+  },
+  {
+    "element": 395,
+    "name": "Michal Sadílek",
+    "normalized": "michal sadilek",
+    "price": 5.6
+  },
+  {
+    "element": 447,
+    "name": "Trezeguet",
+    "normalized": "trezeguet",
+    "price": 5.6
+  },
+  {
+    "element": 656,
+    "name": "Zidane Iqbal",
+    "normalized": "zidane iqbal",
+    "price": 5.6
+  },
+  {
+    "element": 657,
+    "name": "Ibrahim Bayesh",
+    "normalized": "ibrahim bayesh",
+    "price": 5.6
+  },
+  {
+    "element": 701,
+    "name": "Mousa Al Tamari",
+    "normalized": "mousa al tamari",
+    "price": 5.6
+  },
+  {
+    "element": 732,
+    "name": "Paik Seung-Ho",
+    "normalized": "paik seung ho",
+    "price": 5.6
+  },
+  {
+    "element": 733,
+    "name": "Jens Castrop",
+    "normalized": "jens castrop",
+    "price": 5.6
+  },
+  {
+    "element": 749,
+    "name": "Germán Berterame",
+    "normalized": "german berterame",
+    "price": 5.6
+  },
+  {
+    "element": 759,
+    "name": "Érik Lira",
+    "normalized": "erik lira",
+    "price": 5.6
+  },
+  {
+    "element": 823,
+    "name": "Marko Stamenic",
+    "normalized": "marko stamenic",
+    "price": 5.6
+  },
+  {
+    "element": 844,
+    "name": "Morten Thorsby",
+    "normalized": "morten thorsby",
+    "price": 5.6
+  },
+  {
+    "element": 845,
+    "name": "Patrick Berg",
+    "normalized": "patrick berg",
+    "price": 5.6
+  },
+  {
+    "element": 858,
+    "name": "Jørgen Strand Larsen",
+    "normalized": "j rgen strand larsen",
+    "price": 5.6
+  },
+  {
+    "element": 869,
+    "name": "Aníbal Godoy",
+    "normalized": "anibal godoy",
+    "price": 5.6
+  },
+  {
+    "element": 891,
+    "name": "Lucas Romero",
+    "normalized": "lucas romero",
+    "price": 5.6
+  },
+  {
+    "element": 892,
+    "name": "Braian Ojeda",
+    "normalized": "braian ojeda",
+    "price": 5.6
+  },
+  {
+    "element": 915,
+    "name": "Samú Costa",
+    "normalized": "samu costa",
+    "price": 5.6
+  },
+  {
+    "element": 982,
+    "name": "Aiman Yahya",
+    "normalized": "aiman yahya",
+    "price": 5.6
+  },
+  {
+    "element": 1116,
+    "name": "Jesper Karlström",
+    "normalized": "jesper karlstrom",
+    "price": 5.6
+  },
+  {
+    "element": 1133,
+    "name": "Johan Manzambi",
+    "normalized": "johan manzambi",
+    "price": 5.6
+  },
+  {
+    "element": 1239,
+    "name": "Rodrigo Aguirre",
+    "normalized": "rodrigo aguirre",
+    "price": 5.6
+  },
+  {
+    "element": 1251,
+    "name": "Tanner Tessmann",
+    "normalized": "tanner tessmann",
+    "price": 5.6
+  },
+  {
+    "element": 1252,
+    "name": "Aidan Morris",
+    "normalized": "aidan morris",
+    "price": 5.6
+  },
+  {
+    "element": 1289,
+    "name": "Oston Urunov",
+    "normalized": "oston urunov",
+    "price": 5.6
+  },
+  {
+    "element": 1525,
+    "name": "Matias Fernandez-Pardo",
+    "normalized": "matias fernandez pardo",
+    "price": 5.6
+  },
+  {
+    "element": 1601,
+    "name": "Felix Nmecha",
+    "normalized": "felix nmecha",
+    "price": 5.6
+  },
+  {
+    "element": 2019,
+    "name": "Neil El Aynaoui",
+    "normalized": "neil el aynaoui",
+    "price": 5.6
+  },
+  {
+    "element": 2023,
+    "name": "Soufiane Rahimi",
+    "normalized": "soufiane rahimi",
+    "price": 5.6
+  },
+  {
+    "element": 111,
+    "name": "Xaver Schlager",
+    "normalized": "xaver schlager",
+    "price": 5.5
+  },
+  {
+    "element": 162,
+    "name": "Amir Hadziahmetovic",
+    "normalized": "amir hadziahmetovic",
+    "price": 5.5
+  },
+  {
+    "element": 164,
+    "name": "Gabriel Magalhães",
+    "normalized": "gabriel magalhaes",
+    "price": 5.5
+  },
+  {
+    "element": 268,
+    "name": "Jaminton Campaz",
+    "normalized": "jaminton campaz",
+    "price": 5.5
+  },
+  {
+    "element": 392,
+    "name": "Pavel Bucha",
+    "normalized": "pavel bucha",
+    "price": 5.5
+  },
+  {
+    "element": 671,
+    "name": "Keito Nakamura",
+    "normalized": "keito nakamura",
+    "price": 5.5
+  },
+  {
+    "element": 1085,
+    "name": "Pedro Porro",
+    "normalized": "pedro porro",
+    "price": 5.5
+  },
+  {
+    "element": 1334,
+    "name": "Claudio Echeverri",
+    "normalized": "claudio echeverri",
+    "price": 5.5
+  },
+  {
+    "element": 1484,
+    "name": "Efraín Álvarez",
+    "normalized": "efrain alvarez",
+    "price": 5.5
+  },
+  {
+    "element": 1510,
+    "name": "Ahmed Alaa",
+    "normalized": "ahmed alaa",
+    "price": 5.5
+  },
+  {
+    "element": 1524,
+    "name": "Hans Vanaken",
+    "normalized": "hans vanaken",
+    "price": 5.5
+  },
+  {
+    "element": 1580,
+    "name": "Lawrence Shankland",
+    "normalized": "lawrence shankland",
+    "price": 5.5
+  },
+  {
+    "element": 1602,
+    "name": "Aleksandar Pavlovic",
+    "normalized": "aleksandar pavlovic",
+    "price": 5.5
+  },
+  {
+    "element": 1674,
+    "name": "Ayyoub Bouaddi",
+    "normalized": "ayyoub bouaddi",
+    "price": 5.5
+  },
+  {
+    "element": 1682,
+    "name": "Thelo Aasgaard",
+    "normalized": "thelo aasgaard",
+    "price": 5.5
+  },
+  {
+    "element": 1685,
+    "name": "Lorenzo Melgarejo",
+    "normalized": "lorenzo melgarejo",
+    "price": 5.5
+  },
+  {
+    "element": 1958,
+    "name": "Mohammed Abu Al Shamat",
+    "normalized": "mohammed abu al shamat",
+    "price": 5.5
+  },
+  {
+    "element": 2035,
+    "name": "Álex Zendejas",
+    "normalized": "alex zendejas",
+    "price": 5.5
+  },
+  {
+    "element": 12,
+    "name": "Ibrahim Maza",
+    "normalized": "ibrahim maza",
+    "price": 5.4
+  },
+  {
+    "element": 81,
+    "name": "Aiden O'Neill",
+    "normalized": "aiden o neill",
+    "price": 5.4
+  },
+  {
+    "element": 1071,
+    "name": "Lyle Foster",
+    "normalized": "lyle foster",
+    "price": 5.4
+  },
+  {
+    "element": 1240,
+    "name": "Facundo Torres",
+    "normalized": "facundo torres",
+    "price": 5.4
+  },
+  {
+    "element": 1579,
+    "name": "Ross Stewart",
+    "normalized": "ross stewart",
+    "price": 5.4
+  },
+  {
+    "element": 1583,
+    "name": "Cedric Itten",
+    "normalized": "cedric itten",
+    "price": 5.4
+  },
+  {
+    "element": 1970,
+    "name": "Promise David",
+    "normalized": "promise david",
+    "price": 5.4
+  },
+  {
+    "element": 13,
+    "name": "Anis Hadj Moussa",
+    "normalized": "anis hadj moussa",
+    "price": 5.3
+  },
+  {
+    "element": 43,
+    "name": "José Manuel López",
+    "normalized": "jose manuel lopez",
+    "price": 5.3
+  },
+  {
+    "element": 80,
+    "name": "Connor Metcalfe",
+    "normalized": "connor metcalfe",
+    "price": 5.3
+  },
+  {
+    "element": 104,
+    "name": "Alessandro Schöpf",
+    "normalized": "alessandro schopf",
+    "price": 5.3
+  },
+  {
+    "element": 135,
+    "name": "Nicolas Raskin",
+    "normalized": "nicolas raskin",
+    "price": 5.3
+  },
+  {
+    "element": 161,
+    "name": "Benjamin Tahirovic",
+    "normalized": "benjamin tahirovic",
+    "price": 5.3
+  },
+  {
+    "element": 266,
+    "name": "Gustavo Puerta",
+    "normalized": "gustavo puerta",
+    "price": 5.3
+  },
+  {
+    "element": 294,
+    "name": "Noah Sadiki",
+    "normalized": "noah sadiki",
+    "price": 5.3
+  },
+  {
+    "element": 312,
+    "name": "Evann Guessand",
+    "normalized": "evann guessand",
+    "price": 5.3
+  },
+  {
+    "element": 383,
+    "name": "Tomás Chory",
+    "normalized": "tomas chory",
+    "price": 5.3
+  },
+  {
+    "element": 390,
+    "name": "Lukás Cerv",
+    "normalized": "lukas cerv",
+    "price": 5.3
+  },
+  {
+    "element": 391,
+    "name": "Vladimír Darida",
+    "normalized": "vladimir darida",
+    "price": 5.3
+  },
+  {
+    "element": 455,
+    "name": "Mohanad Lasheen",
+    "normalized": "mohanad lasheen",
+    "price": 5.3
+  },
+  {
+    "element": 494,
+    "name": "Dayot Upamecano",
+    "normalized": "dayot upamecano",
+    "price": 5.3
+  },
+  {
+    "element": 624,
+    "name": "Omid Noorafkan",
+    "normalized": "omid noorafkan",
+    "price": 5.3
+  },
+  {
+    "element": 635,
+    "name": "Amir Al Ammari",
+    "normalized": "amir al ammari",
+    "price": 5.3
+  },
+  {
+    "element": 636,
+    "name": "Aimar Sher",
+    "normalized": "aimar sher",
+    "price": 5.3
+  },
+  {
+    "element": 646,
+    "name": "Aymen Hussein",
+    "normalized": "aymen hussein",
+    "price": 5.3
+  },
+  {
+    "element": 752,
+    "name": "Roberto Alvarado",
+    "normalized": "roberto alvarado",
+    "price": 5.3
+  },
+  {
+    "element": 766,
+    "name": "Oussama Targhalline",
+    "normalized": "oussama targhalline",
+    "price": 5.3
+  },
+  {
+    "element": 822,
+    "name": "Ryan Thomas",
+    "normalized": "ryan thomas",
+    "price": 5.3
+  },
+  {
+    "element": 948,
+    "name": "Mohammed Waad",
+    "normalized": "mohammed waad",
+    "price": 5.3
+  },
+  {
+    "element": 992,
+    "name": "Feras Al Brikan",
+    "normalized": "feras al brikan",
+    "price": 5.3
+  },
+  {
+    "element": 1114,
+    "name": "Yasin Ayari",
+    "normalized": "yasin ayari",
+    "price": 5.3
+  },
+  {
+    "element": 1241,
+    "name": "Agustín Canobbio",
+    "normalized": "agustin canobbio",
+    "price": 5.3
+  },
+  {
+    "element": 1242,
+    "name": "Facundo Martínez",
+    "normalized": "facundo martinez",
+    "price": 5.3
+  },
+  {
+    "element": 1287,
+    "name": "Aziz G'aniev",
+    "normalized": "aziz g aniev",
+    "price": 5.3
+  },
+  {
+    "element": 1288,
+    "name": "Odiljon Hamrobekov",
+    "normalized": "odiljon hamrobekov",
+    "price": 5.3
+  },
+  {
+    "element": 1475,
+    "name": "Jesús Angulo",
+    "normalized": "jesus angulo",
+    "price": 5.3
+  },
+  {
+    "element": 1494,
+    "name": "Sarpreet Singh",
+    "normalized": "sarpreet singh",
+    "price": 5.3
+  },
+  {
+    "element": 1589,
+    "name": "Can Uzun",
+    "normalized": "can uzun",
+    "price": 5.3
+  },
+  {
+    "element": 1692,
+    "name": "Robert Morales",
+    "normalized": "robert morales",
+    "price": 5.3
+  },
+  {
+    "element": 1707,
+    "name": "Iqraam Rayners",
+    "normalized": "iqraam rayners",
+    "price": 5.3
+  },
+  {
+    "element": 1959,
+    "name": "Saleh Abu Al Shamat",
+    "normalized": "saleh abu al shamat",
+    "price": 5.3
+  },
+  {
+    "element": 1984,
+    "name": "Elisha Owusu",
+    "normalized": "elisha owusu",
+    "price": 5.3
+  },
+  {
+    "element": 2024,
+    "name": "Abde Ezzalzouli",
+    "normalized": "abde ezzalzouli",
+    "price": 5.3
+  },
+  {
+    "element": 2044,
+    "name": "Crysencio Summerville",
+    "normalized": "crysencio summerville",
+    "price": 5.3
+  },
+  {
+    "element": 2058,
+    "name": "Víctor Griffith",
+    "normalized": "victor griffith",
+    "price": 5.3
+  },
+  {
+    "element": 2071,
+    "name": "Sebastian Nanasi",
+    "normalized": "sebastian nanasi",
+    "price": 5.3
+  },
+  {
+    "element": 165,
+    "name": "Marquinhos",
+    "normalized": "marquinhos",
+    "price": 5.2
+  },
+  {
+    "element": 186,
+    "name": "Fabinho",
+    "normalized": "fabinho",
+    "price": 5.2
+  },
+  {
+    "element": 429,
+    "name": "Pedro Vite",
+    "normalized": "pedro vite",
+    "price": 5.2
+  },
+  {
+    "element": 496,
+    "name": "Lucas Hernández",
+    "normalized": "lucas hernandez",
+    "price": 5.2
+  },
+  {
+    "element": 1139,
+    "name": "Ardon Jashari",
+    "normalized": "ardon jashari",
+    "price": 5.2
+  },
+  {
+    "element": 1243,
+    "name": "Agustín Álvarez",
+    "normalized": "agustin alvarez",
+    "price": 5.2
+  },
+  {
+    "element": 1709,
+    "name": "Reece James",
+    "normalized": "reece james",
+    "price": 5.2
+  },
+  {
+    "element": 1945,
+    "name": "Bruno Caicedo",
+    "normalized": "bruno caicedo",
+    "price": 5.2
+  },
+  {
+    "element": 1957,
+    "name": "Nasser Al Dawsari",
+    "normalized": "nasser al dawsari",
+    "price": 5.2
+  },
+  {
+    "element": 68,
+    "name": "Nestory Irankunda",
+    "normalized": "nestory irankunda",
+    "price": 5.1
+  },
+  {
+    "element": 69,
+    "name": "Martin Boyle",
+    "normalized": "martin boyle",
+    "price": 5.1
+  },
+  {
+    "element": 79,
+    "name": "Alex Robertson",
+    "normalized": "alex robertson",
+    "price": 5.1
+  },
+  {
+    "element": 149,
+    "name": "Haris Tabakovic",
+    "normalized": "haris tabakovic",
+    "price": 5.1
+  },
+  {
+    "element": 158,
+    "name": "Ivan Sunjic",
+    "normalized": "ivan sunjic",
+    "price": 5.1
+  },
+  {
+    "element": 159,
+    "name": "Armin Gigovic",
+    "normalized": "armin gigovic",
+    "price": 5.1
+  },
+  {
+    "element": 160,
+    "name": "Ivan Basic",
+    "normalized": "ivan basic",
+    "price": 5.1
+  },
+  {
+    "element": 219,
+    "name": "Laros Duarte",
+    "normalized": "laros duarte",
+    "price": 5.1
+  },
+  {
+    "element": 241,
+    "name": "Nathan Saliba",
+    "normalized": "nathan saliba",
+    "price": 5.1
+  },
+  {
+    "element": 336,
+    "name": "Petar Musa",
+    "normalized": "petar musa",
+    "price": 5.1
+  },
+  {
+    "element": 372,
+    "name": "Juninho Bacuna",
+    "normalized": "juninho bacuna",
+    "price": 5.1
+  },
+  {
+    "element": 499,
+    "name": "Malo Gusto",
+    "normalized": "malo gusto",
+    "price": 5.1
+  },
+  {
+    "element": 596,
+    "name": "Mohammad Ghorbani",
+    "normalized": "mohammad ghorbani",
+    "price": 5.1
+  },
+  {
+    "element": 633,
+    "name": "Peter Gwargis",
+    "normalized": "peter gwargis",
+    "price": 5.1
+  },
+  {
+    "element": 634,
+    "name": "Kevin Yakob",
+    "normalized": "kevin yakob",
+    "price": 5.1
+  },
+  {
+    "element": 821,
+    "name": "Joe Bell",
+    "normalized": "joe bell",
+    "price": 5.1
+  },
+  {
+    "element": 843,
+    "name": "Oscar Bobb",
+    "normalized": "oscar bobb",
+    "price": 5.1
+  },
+  {
+    "element": 980,
+    "name": "Abdullah Al Khaibari",
+    "normalized": "abdullah al khaibari",
+    "price": 5.1
+  },
+  {
+    "element": 1062,
+    "name": "Yaya Sithole",
+    "normalized": "yaya sithole",
+    "price": 5.1
+  },
+  {
+    "element": 1113,
+    "name": "Lucas Bergvall",
+    "normalized": "lucas bergvall",
+    "price": 5.1
+  },
+  {
+    "element": 1285,
+    "name": "Umarali Rakhmonaliev",
+    "normalized": "umarali rakhmonaliev",
+    "price": 5.1
+  },
+  {
+    "element": 1286,
+    "name": "Dostonbek Khamdamov",
+    "normalized": "dostonbek khamdamov",
+    "price": 5.1
+  },
+  {
+    "element": 1308,
+    "name": "Sherzod Temirov",
+    "normalized": "sherzod temirov",
+    "price": 5.1
+  },
+  {
+    "element": 1471,
+    "name": "Jordán Carrillo",
+    "normalized": "jordan carrillo",
+    "price": 5.1
+  },
+  {
+    "element": 1512,
+    "name": "Sebastián Soria",
+    "normalized": "sebastian soria",
+    "price": 5.1
+  },
+  {
+    "element": 1703,
+    "name": "Lebohang Maboe",
+    "normalized": "lebohang maboe",
+    "price": 5.1
+  },
+  {
+    "element": 1993,
+    "name": "Brandon Thomas-Asante",
+    "normalized": "brandon thomas asante",
+    "price": 5.1
+  },
+  {
+    "element": 102,
+    "name": "Carney Chukwuemeka",
+    "normalized": "carney chukwuemeka",
+    "price": 5
+  },
+  {
+    "element": 498,
+    "name": "Lucas Digne",
+    "normalized": "lucas digne",
+    "price": 5
+  },
+  {
+    "element": 582,
+    "name": "Wilson Isidor",
+    "normalized": "wilson isidor",
+    "price": 5
+  },
+  {
+    "element": 680,
+    "name": "Yuito Suzuki",
+    "normalized": "yuito suzuki",
+    "price": 5
+  },
+  {
+    "element": 758,
+    "name": "Brian Gutiérrez",
+    "normalized": "brian gutierrez",
+    "price": 5
+  },
+  {
+    "element": 881,
+    "name": "Cecilio Waterman",
+    "normalized": "cecilio waterman",
+    "price": 5
+  },
+  {
+    "element": 1089,
+    "name": "Pau Cubarsí",
+    "normalized": "pau cubarsi",
+    "price": 5
+  },
+  {
+    "element": 1163,
+    "name": "Mortadha Ben Ouanes",
+    "normalized": "mortadha ben ouanes",
+    "price": 5
+  },
+  {
+    "element": 1208,
+    "name": "Oguz Aydin",
+    "normalized": "oguz aydin",
+    "price": 5
+  },
+  {
+    "element": 1221,
+    "name": "Nicolás Fonseca",
+    "normalized": "nicolas fonseca",
+    "price": 5
+  },
+  {
+    "element": 1284,
+    "name": "Otabek Shukurov",
+    "normalized": "otabek shukurov",
+    "price": 5
+  },
+  {
+    "element": 1328,
+    "name": "Aníbal Moreno",
+    "normalized": "anibal moreno",
+    "price": 5
+  },
+  {
+    "element": 1329,
+    "name": "Equi Fernández",
+    "normalized": "equi fernandez",
+    "price": 5
+  },
+  {
+    "element": 1331,
+    "name": "Alan Varela",
+    "normalized": "alan varela",
+    "price": 5
+  },
+  {
+    "element": 1333,
+    "name": "Nicolás Domínguez",
+    "normalized": "nicolas dominguez",
+    "price": 5
+  },
+  {
+    "element": 1336,
+    "name": "Nicolás Capaldo",
+    "normalized": "nicolas capaldo",
+    "price": 5
+  },
+  {
+    "element": 1339,
+    "name": "Mateo Pellegrino",
+    "normalized": "mateo pellegrino",
+    "price": 5
+  },
+  {
+    "element": 1492,
+    "name": "Matthew Garbett",
+    "normalized": "matthew garbett",
+    "price": 5
+  },
+  {
+    "element": 1509,
+    "name": "Jassem Gaber",
+    "normalized": "jassem gaber",
+    "price": 5
+  },
+  {
+    "element": 1590,
+    "name": "Yusuf Sari",
+    "normalized": "yusuf sari",
+    "price": 5
+  },
+  {
+    "element": 1620,
+    "name": "Enso González",
+    "normalized": "enso gonzalez",
+    "price": 5
+  },
+  {
+    "element": 1621,
+    "name": "Diego González",
+    "normalized": "diego gonzalez",
+    "price": 5
+  },
+  {
+    "element": 1680,
+    "name": "Yanis Begraoui",
+    "normalized": "yanis begraoui",
+    "price": 5
+  },
+  {
+    "element": 1686,
+    "name": "Rubén Lezcano",
+    "normalized": "ruben lezcano",
+    "price": 5
+  },
+  {
+    "element": 1691,
+    "name": "Ronaldo Martínez",
+    "normalized": "ronaldo martinez",
+    "price": 5
+  },
+  {
+    "element": 1946,
+    "name": "Luis Fragozo",
+    "normalized": "luis fragozo",
+    "price": 5
+  },
+  {
+    "element": 1956,
+    "name": "Alaa Al Hejji",
+    "normalized": "alaa al hejji",
+    "price": 5
+  },
+  {
+    "element": 1960,
+    "name": "Abdullah Al Salem",
+    "normalized": "abdullah al salem",
+    "price": 5
+  },
+  {
+    "element": 1969,
+    "name": "Jayden Nelson",
+    "normalized": "jayden nelson",
+    "price": 5
+  },
+  {
+    "element": 1988,
+    "name": "Ernest Nuamah",
+    "normalized": "ernest nuamah",
+    "price": 5
+  },
+  {
+    "element": 2006,
+    "name": "Mohamed Touré",
+    "normalized": "mohamed toure",
+    "price": 5
+  },
+  {
+    "element": 78,
+    "name": "Patrick Yazbek",
+    "normalized": "patrick yazbek",
+    "price": 4.9
+  },
+  {
+    "element": 157,
+    "name": "Dzenis Burnic",
+    "normalized": "dzenis burnic",
+    "price": 4.9
+  },
+  {
+    "element": 208,
+    "name": "Dailon Livramento",
+    "normalized": "dailon livramento",
+    "price": 4.9
+  },
+  {
+    "element": 217,
+    "name": "Telmo Arcanjo",
+    "normalized": "telmo arcanjo",
+    "price": 4.9
+  },
+  {
+    "element": 230,
+    "name": "Tani Oluwaseyi",
+    "normalized": "tani oluwaseyi",
+    "price": 4.9
+  },
+  {
+    "element": 239,
+    "name": "Ralph Priso",
+    "normalized": "ralph priso",
+    "price": 4.9
+  },
+  {
+    "element": 240,
+    "name": "Niko Sigur",
+    "normalized": "niko sigur",
+    "price": 4.9
+  },
+  {
+    "element": 261,
+    "name": "Andrés Gómez",
+    "normalized": "andres gomez",
+    "price": 4.9
+  },
+  {
+    "element": 292,
+    "name": "Ngal'ayel Mukau",
+    "normalized": "ngal ayel mukau",
+    "price": 4.9
+  },
+  {
+    "element": 319,
+    "name": "Parfait Guiagon",
+    "normalized": "parfait guiagon",
+    "price": 4.9
+  },
+  {
+    "element": 337,
+    "name": "Igor Matanovic",
+    "normalized": "igor matanovic",
+    "price": 4.9
+  },
+  {
+    "element": 342,
+    "name": "Toni Fruk",
+    "normalized": "toni fruk",
+    "price": 4.9
+  },
+  {
+    "element": 373,
+    "name": "Denis Visinsky",
+    "normalized": "denis visinsky",
+    "price": 4.9
+  },
+  {
+    "element": 398,
+    "name": "Denil Castillo",
+    "normalized": "denil castillo",
+    "price": 4.9
+  },
+  {
+    "element": 399,
+    "name": "Jordy Alcívar",
+    "normalized": "jordy alcivar",
+    "price": 4.9
+  },
+  {
+    "element": 417,
+    "name": "Jordy Caicedo",
+    "normalized": "jordy caicedo",
+    "price": 4.9
+  },
+  {
+    "element": 436,
+    "name": "Mahmoud Saber",
+    "normalized": "mahmoud saber",
+    "price": 4.9
+  },
+  {
+    "element": 647,
+    "name": "Mohanad Ali",
+    "normalized": "mohanad ali",
+    "price": 4.9
+  },
+  {
+    "element": 648,
+    "name": "Ali Jasim",
+    "normalized": "ali jasim",
+    "price": 4.9
+  },
+  {
+    "element": 659,
+    "name": "Kaishu Sano",
+    "normalized": "kaishu sano",
+    "price": 4.9
+  },
+  {
+    "element": 673,
+    "name": "Koki Ogawa",
+    "normalized": "koki ogawa",
+    "price": 4.9
+  },
+  {
+    "element": 689,
+    "name": "Nizar Al Rashdan",
+    "normalized": "nizar al rashdan",
+    "price": 4.9
+  },
+  {
+    "element": 713,
+    "name": "Park Jin-Seob",
+    "normalized": "park jin seob",
+    "price": 4.9
+  },
+  {
+    "element": 726,
+    "name": "Oh Hyeon-Gyu",
+    "normalized": "oh hyeon gyu",
+    "price": 4.9
+  },
+  {
+    "element": 794,
+    "name": "Luciano Valente",
+    "normalized": "luciano valente",
+    "price": 4.9
+  },
+  {
+    "element": 820,
+    "name": "Alex Rufer",
+    "normalized": "alex rufer",
+    "price": 4.9
+  },
+  {
+    "element": 879,
+    "name": "Ismael Díaz",
+    "normalized": "ismael diaz",
+    "price": 4.9
+  },
+  {
+    "element": 905,
+    "name": "Gabriel Ávalos",
+    "normalized": "gabriel avalos",
+    "price": 4.9
+  },
+  {
+    "element": 960,
+    "name": "Edmílson Junior",
+    "normalized": "edmilson junior",
+    "price": 4.9
+  },
+  {
+    "element": 977,
+    "name": "Ziyad Al Johani",
+    "normalized": "ziyad al johani",
+    "price": 4.9
+  },
+  {
+    "element": 993,
+    "name": "Abdullah Al Hamddan",
+    "normalized": "abdullah al hamddan",
+    "price": 4.9
+  },
+  {
+    "element": 994,
+    "name": "Khalid Al Ghannam",
+    "normalized": "khalid al ghannam",
+    "price": 4.9
+  },
+  {
+    "element": 1046,
+    "name": "Assane Diao",
+    "normalized": "assane diao",
+    "price": 4.9
+  },
+  {
+    "element": 1047,
+    "name": "Cherif Ndiaye",
+    "normalized": "cherif ndiaye",
+    "price": 4.9
+  },
+  {
+    "element": 1060,
+    "name": "Thalente Mbatha",
+    "normalized": "thalente mbatha",
+    "price": 4.9
+  },
+  {
+    "element": 1061,
+    "name": "Tshepang Moremi",
+    "normalized": "tshepang moremi",
+    "price": 4.9
+  },
+  {
+    "element": 1072,
+    "name": "Relebohile Mofokeng",
+    "normalized": "relebohile mofokeng",
+    "price": 4.9
+  },
+  {
+    "element": 1073,
+    "name": "Oswin Appollis",
+    "normalized": "oswin appollis",
+    "price": 4.9
+  },
+  {
+    "element": 1111,
+    "name": "Taha Ali",
+    "normalized": "taha ali",
+    "price": 4.9
+  },
+  {
+    "element": 1112,
+    "name": "Eric Smith",
+    "normalized": "eric smith",
+    "price": 4.9
+  },
+  {
+    "element": 1126,
+    "name": "Benjamin Nygren",
+    "normalized": "benjamin nygren",
+    "price": 4.9
+  },
+  {
+    "element": 1127,
+    "name": "Gustaf Nilsson",
+    "normalized": "gustaf nilsson",
+    "price": 4.9
+  },
+  {
+    "element": 1162,
+    "name": "Hadj Mahmoud",
+    "normalized": "hadj mahmoud",
+    "price": 4.9
+  },
+  {
+    "element": 1268,
+    "name": "Patrick Agyemang",
+    "normalized": "patrick agyemang",
+    "price": 4.9
+  },
+  {
+    "element": 1310,
+    "name": "Azizbek Amanov",
+    "normalized": "azizbek amanov",
+    "price": 4.9
+  },
+  {
+    "element": 1445,
+    "name": "Augustine Boakye",
+    "normalized": "augustine boakye",
+    "price": 4.9
+  },
+  {
+    "element": 1480,
+    "name": "Kevin Castañeda",
+    "normalized": "kevin castaneda",
+    "price": 4.9
+  },
+  {
+    "element": 1481,
+    "name": "Alexis Gutiérrez",
+    "normalized": "alexis gutierrez",
+    "price": 4.9
+  },
+  {
+    "element": 1486,
+    "name": "Jorge Ruvalcaba",
+    "normalized": "jorge ruvalcaba",
+    "price": 4.9
+  },
+  {
+    "element": 1521,
+    "name": "Alexander Bernhardsson",
+    "normalized": "alexander bernhardsson",
+    "price": 4.9
+  },
+  {
+    "element": 1531,
+    "name": "Hélio Varela",
+    "normalized": "helio varela",
+    "price": 4.9
+  },
+  {
+    "element": 1534,
+    "name": "Ange-Yoan Bonny",
+    "normalized": "ange yoan bonny",
+    "price": 4.9
+  },
+  {
+    "element": 1550,
+    "name": "Lee Dong-Gyeong",
+    "normalized": "lee dong gyeong",
+    "price": 4.9
+  },
+  {
+    "element": 1578,
+    "name": "Ben Gannon-Doak",
+    "normalized": "ben gannon doak",
+    "price": 4.9
+  },
+  {
+    "element": 1673,
+    "name": "Soufiane El-Faouzi",
+    "normalized": "soufiane el faouzi",
+    "price": 4.9
+  },
+  {
+    "element": 2038,
+    "name": "Guus Til",
+    "normalized": "guus til",
+    "price": 4.9
+  },
+  {
+    "element": 518,
+    "name": "Lennart Karl",
+    "normalized": "lennart karl",
+    "price": 4.8
+  },
+  {
+    "element": 890,
+    "name": "Matías Galarza",
+    "normalized": "matias galarza",
+    "price": 4.8
+  },
+  {
+    "element": 1008,
+    "name": "Kenny McLean",
+    "normalized": "kenny mclean",
+    "price": 4.8
+  },
+  {
+    "element": 1028,
+    "name": "Lewis Ferguson",
+    "normalized": "lewis ferguson",
+    "price": 4.8
+  },
+  {
+    "element": 1555,
+    "name": "Hannibal Mejbri",
+    "normalized": "hannibal mejbri",
+    "price": 4.8
+  },
+  {
+    "element": 1615,
+    "name": "Hugo Cuenca",
+    "normalized": "hugo cuenca",
+    "price": 4.8
+  },
+  {
+    "element": 1619,
+    "name": "Rodney Redes",
+    "normalized": "rodney redes",
+    "price": 4.8
+  },
+  {
+    "element": 1713,
+    "name": "Amine Sbaï",
+    "normalized": "amine sbai",
+    "price": 4.8
+  },
+  {
+    "element": 1943,
+    "name": "Darwin Guagua",
+    "normalized": "darwin guagua",
+    "price": 4.8
+  },
+  {
+    "element": 2039,
+    "name": "Mats Wieffer",
+    "normalized": "mats wieffer",
+    "price": 4.8
+  },
+  {
+    "element": 22,
+    "name": "Yacine Titraoui",
+    "normalized": "yacine titraoui",
+    "price": 4.7
+  },
+  {
+    "element": 29,
+    "name": "Marcos Senesi",
+    "normalized": "marcos senesi",
+    "price": 4.7
+  },
+  {
+    "element": 77,
+    "name": "Paul Okon",
+    "normalized": "paul okon",
+    "price": 4.7
+  },
+  {
+    "element": 114,
+    "name": "Maxim De Cuyper",
+    "normalized": "maxim de cuyper",
+    "price": 4.7
+  },
+  {
+    "element": 150,
+    "name": "Esmir Bajraktarevic",
+    "normalized": "esmir bajraktarevic",
+    "price": 4.7
+  },
+  {
+    "element": 156,
+    "name": "Amar Memic",
+    "normalized": "amar memic",
+    "price": 4.7
+  },
+  {
+    "element": 196,
+    "name": "Yannick Semedo",
+    "normalized": "yannick semedo",
+    "price": 4.7
+  },
+  {
+    "element": 209,
+    "name": "Nuno da Costa",
+    "normalized": "nuno da costa",
+    "price": 4.7
+  },
+  {
+    "element": 351,
+    "name": "Godfried Roemeratoe",
+    "normalized": "godfried roemeratoe",
+    "price": 4.7
+  },
+  {
+    "element": 457,
+    "name": "Nico O'Reilly",
+    "normalized": "nico o reilly",
+    "price": 4.7
+  },
+  {
+    "element": 522,
+    "name": "Malick Thiaw",
+    "normalized": "malick thiaw",
+    "price": 4.7
+  },
+  {
+    "element": 525,
+    "name": "Nathaniel Brown",
+    "normalized": "nathaniel brown",
+    "price": 4.7
+  },
+  {
+    "element": 533,
+    "name": "Alexander Nübel",
+    "normalized": "alexander nubel",
+    "price": 4.7
+  },
+  {
+    "element": 571,
+    "name": "Jean-Ricner Bellegarde",
+    "normalized": "jean ricner bellegarde",
+    "price": 4.7
+  },
+  {
+    "element": 572,
+    "name": "Carl Sainté",
+    "normalized": "carl sainte",
+    "price": 4.7
+  },
+  {
+    "element": 573,
+    "name": "Danley Jean Jacques",
+    "normalized": "danley jean jacques",
+    "price": 4.7
+  },
+  {
+    "element": 584,
+    "name": "Frantzdy Pierrot",
+    "normalized": "frantzdy pierrot",
+    "price": 4.7
+  },
+  {
+    "element": 595,
+    "name": "Hadi Habibinejad",
+    "normalized": "hadi habibinejad",
+    "price": 4.7
+  },
+  {
+    "element": 632,
+    "name": "Hasan Abdulkareem",
+    "normalized": "hasan abdulkareem",
+    "price": 4.7
+  },
+  {
+    "element": 649,
+    "name": "Ali Al Hamadi",
+    "normalized": "ali al hamadi",
+    "price": 4.7
+  },
+  {
+    "element": 687,
+    "name": "Mohammad Al Daoud",
+    "normalized": "mohammad al daoud",
+    "price": 4.7
+  },
+  {
+    "element": 688,
+    "name": "Noor Al Rawabdeh",
+    "normalized": "noor al rawabdeh",
+    "price": 4.7
+  },
+  {
+    "element": 727,
+    "name": "Yang Hyun-Jun",
+    "normalized": "yang hyun jun",
+    "price": 4.7
+  },
+  {
+    "element": 738,
+    "name": "Obed Vargas",
+    "normalized": "obed vargas",
+    "price": 4.7
+  },
+  {
+    "element": 765,
+    "name": "Samir El Mourabet",
+    "normalized": "samir el mourabet",
+    "price": 4.7
+  },
+  {
+    "element": 793,
+    "name": "Kees Smit",
+    "normalized": "kees smit",
+    "price": 4.7
+  },
+  {
+    "element": 810,
+    "name": "Mark Flekken",
+    "normalized": "mark flekken",
+    "price": 4.7
+  },
+  {
+    "element": 818,
+    "name": "Callum McCowatt",
+    "normalized": "callum mccowatt",
+    "price": 4.7
+  },
+  {
+    "element": 841,
+    "name": "Sander Berge",
+    "normalized": "sander berge",
+    "price": 4.7
+  },
+  {
+    "element": 889,
+    "name": "Alejandro Romero",
+    "normalized": "alejandro romero",
+    "price": 4.7
+  },
+  {
+    "element": 931,
+    "name": "Rui Silva",
+    "normalized": "rui silva",
+    "price": 4.7
+  },
+  {
+    "element": 932,
+    "name": "José Sá",
+    "normalized": "jose sa",
+    "price": 4.7
+  },
+  {
+    "element": 944,
+    "name": "Ahmed Fathy",
+    "normalized": "ahmed fathy",
+    "price": 4.7
+  },
+  {
+    "element": 1033,
+    "name": "Mamadou Sarr",
+    "normalized": "mamadou sarr",
+    "price": 4.7
+  },
+  {
+    "element": 1109,
+    "name": "Besfort Zeneli",
+    "normalized": "besfort zeneli",
+    "price": 4.7
+  },
+  {
+    "element": 1110,
+    "name": "Elliot Stroud",
+    "normalized": "elliot stroud",
+    "price": 4.7
+  },
+  {
+    "element": 1161,
+    "name": "Rani Khedira",
+    "normalized": "rani khedira",
+    "price": 4.7
+  },
+  {
+    "element": 1190,
+    "name": "Atakan Karazor",
+    "normalized": "atakan karazor",
+    "price": 4.7
+  },
+  {
+    "element": 1220,
+    "name": "Luciano González",
+    "normalized": "luciano gonzalez",
+    "price": 4.7
+  },
+  {
+    "element": 1249,
+    "name": "Cristian Roldan",
+    "normalized": "cristian roldan",
+    "price": 4.7
+  },
+  {
+    "element": 1250,
+    "name": "Sebastian Berhalter",
+    "normalized": "sebastian berhalter",
+    "price": 4.7
+  },
+  {
+    "element": 1278,
+    "name": "Sherzod Esanov",
+    "normalized": "sherzod esanov",
+    "price": 4.7
+  },
+  {
+    "element": 1279,
+    "name": "Jasurbek Jaloliddinov",
+    "normalized": "jasurbek jaloliddinov",
+    "price": 4.7
+  },
+  {
+    "element": 1280,
+    "name": "Ruslanbek Jiyanov",
+    "normalized": "ruslanbek jiyanov",
+    "price": 4.7
+  },
+  {
+    "element": 1282,
+    "name": "Akmal Mozgovoy",
+    "normalized": "akmal mozgovoy",
+    "price": 4.7
+  },
+  {
+    "element": 1385,
+    "name": "Juan Portilla",
+    "normalized": "juan portilla",
+    "price": 4.7
+  },
+  {
+    "element": 1482,
+    "name": "Jeremy Márquez",
+    "normalized": "jeremy marquez",
+    "price": 4.7
+  },
+  {
+    "element": 1527,
+    "name": "Diego Moreira",
+    "normalized": "diego moreira",
+    "price": 4.7
+  },
+  {
+    "element": 1562,
+    "name": "Kasra Taheri",
+    "normalized": "kasra taheri",
+    "price": 4.7
+  },
+  {
+    "element": 1587,
+    "name": "Aral Simsir",
+    "normalized": "aral simsir",
+    "price": 4.7
+  },
+  {
+    "element": 1612,
+    "name": "Robert Piris Da Motta",
+    "normalized": "robert piris da motta",
+    "price": 4.7
+  },
+  {
+    "element": 1675,
+    "name": "Marwane Saadane",
+    "normalized": "marwane saadane",
+    "price": 4.7
+  },
+  {
+    "element": 1677,
+    "name": "Soufiane Benjdida",
+    "normalized": "soufiane benjdida",
+    "price": 4.7
+  },
+  {
+    "element": 1678,
+    "name": "Othmane Maamma",
+    "normalized": "othmane maamma",
+    "price": 4.7
+  },
+  {
+    "element": 1679,
+    "name": "Tawfik Bentayeb",
+    "normalized": "tawfik bentayeb",
+    "price": 4.7
+  },
+  {
+    "element": 1982,
+    "name": "Caleb Yirenkyi",
+    "normalized": "caleb yirenkyi",
+    "price": 4.7
+  },
+  {
+    "element": 1985,
+    "name": "Kwasi Sibo",
+    "normalized": "kwasi sibo",
+    "price": 4.7
+  },
+  {
+    "element": 2003,
+    "name": "Cameron Devlin",
+    "normalized": "cameron devlin",
+    "price": 4.7
+  },
+  {
+    "element": 2060,
+    "name": "Tyler Fletcher",
+    "normalized": "tyler fletcher",
+    "price": 4.7
+  },
+  {
+    "element": 2069,
+    "name": "Shahriyar Moghanlou",
+    "normalized": "shahriyar moghanlou",
+    "price": 4.7
+  },
+  {
+    "element": 85,
+    "name": "David Alaba",
+    "normalized": "david alaba",
+    "price": 4.6
+  },
+  {
+    "element": 98,
+    "name": "Alexander Schlager",
+    "normalized": "alexander schlager",
+    "price": 4.6
+  },
+  {
+    "element": 132,
+    "name": "Senne Lammens",
+    "normalized": "senne lammens",
+    "price": 4.6
+  },
+  {
+    "element": 298,
+    "name": "Christ Inao Oulaï",
+    "normalized": "christ inao oulai",
+    "price": 4.6
+  },
+  {
+    "element": 448,
+    "name": "Haissem Hassan",
+    "normalized": "haissem hassan",
+    "price": 4.6
+  },
+  {
+    "element": 459,
+    "name": "Tino Livramento",
+    "normalized": "tino livramento",
+    "price": 4.6
+  },
+  {
+    "element": 614,
+    "name": "Ali Alipour",
+    "normalized": "ali alipour",
+    "price": 4.6
+  },
+  {
+    "element": 615,
+    "name": "Dennis Dargahi",
+    "normalized": "dennis dargahi",
+    "price": 4.6
+  },
+  {
+    "element": 728,
+    "name": "Eom Ji-Sung",
+    "normalized": "eom ji sung",
+    "price": 4.6
+  },
+  {
+    "element": 729,
+    "name": "Jo Hyeon-Woo",
+    "normalized": "jo hyeon woo",
+    "price": 4.6
+  },
+  {
+    "element": 888,
+    "name": "Maurício Magalhães Prado",
+    "normalized": "mauricio magalhaes prado",
+    "price": 4.6
+  },
+  {
+    "element": 893,
+    "name": "Gustavo Gómez",
+    "normalized": "gustavo gomez",
+    "price": 4.6
+  },
+  {
+    "element": 961,
+    "name": "Hassan Al Haydos",
+    "normalized": "hassan al haydos",
+    "price": 4.6
+  },
+  {
+    "element": 1021,
+    "name": "George Hirst",
+    "normalized": "george hirst",
+    "price": 4.6
+  },
+  {
+    "element": 1022,
+    "name": "Lyndon Dykes",
+    "normalized": "lyndon dykes",
+    "price": 4.6
+  },
+  {
+    "element": 1174,
+    "name": "Ismaël Gharbi",
+    "normalized": "ismael gharbi",
+    "price": 4.6
+  },
+  {
+    "element": 1613,
+    "name": "Óscar Romero",
+    "normalized": "oscar romero",
+    "price": 4.6
+  },
+  {
+    "element": 1617,
+    "name": "Álvaro Campuzano",
+    "normalized": "alvaro campuzano",
+    "price": 4.6
+  },
+  {
+    "element": 2036,
+    "name": "Robin Roefs",
+    "normalized": "robin roefs",
+    "price": 4.6
+  },
+  {
+    "element": 46,
+    "name": "Gerónimo Rulli",
+    "normalized": "geronimo rulli",
+    "price": 4.5
+  },
+  {
+    "element": 151,
+    "name": "Samed Bazdar",
+    "normalized": "samed bazdar",
+    "price": 4.5
+  },
+  {
+    "element": 232,
+    "name": "Jacen Russell-Rowe",
+    "normalized": "jacen russell rowe",
+    "price": 4.5
+  },
+  {
+    "element": 287,
+    "name": "Nathanaël Mbuku",
+    "normalized": "nathanael mbuku",
+    "price": 4.5
+  },
+  {
+    "element": 314,
+    "name": "Bazoumana Touré",
+    "normalized": "bazoumana toure",
+    "price": 4.5
+  },
+  {
+    "element": 360,
+    "name": "Livano Comenencia",
+    "normalized": "livano comenencia",
+    "price": 4.5
+  },
+  {
+    "element": 371,
+    "name": "Kevin Felida",
+    "normalized": "kevin felida",
+    "price": 4.5
+  },
+  {
+    "element": 462,
+    "name": "Dan Burn",
+    "normalized": "dan burn",
+    "price": 4.5
+  },
+  {
+    "element": 467,
+    "name": "Djed Spence",
+    "normalized": "djed spence",
+    "price": 4.5
+  },
+  {
+    "element": 493,
+    "name": "Maxence Lacroix",
+    "normalized": "maxence lacroix",
+    "price": 4.5
+  },
+  {
+    "element": 508,
+    "name": "Brice Samba",
+    "normalized": "brice samba",
+    "price": 4.5
+  },
+  {
+    "element": 616,
+    "name": "Amirhossein Hosseinzadeh",
+    "normalized": "amirhossein hosseinzadeh",
+    "price": 4.5
+  },
+  {
+    "element": 761,
+    "name": "Érick Sánchez",
+    "normalized": "erick sanchez",
+    "price": 4.5
+  },
+  {
+    "element": 997,
+    "name": "Sultan Mandash",
+    "normalized": "sultan mandash",
+    "price": 4.5
+  },
+  {
+    "element": 1118,
+    "name": "Daniel Svensson",
+    "normalized": "daniel svensson",
+    "price": 4.5
+  },
+  {
+    "element": 1175,
+    "name": "Elias Saad",
+    "normalized": "elias saad",
+    "price": 4.5
+  },
+  {
+    "element": 1218,
+    "name": "Juan Manuel Sanabria",
+    "normalized": "juan manuel sanabria",
+    "price": 4.5
+  },
+  {
+    "element": 1316,
+    "name": "Walter Benítez",
+    "normalized": "walter benitez",
+    "price": 4.5
+  },
+  {
+    "element": 1343,
+    "name": "Weverton",
+    "normalized": "weverton",
+    "price": 4.5
+  },
+  {
+    "element": 1346,
+    "name": "Wesley",
+    "normalized": "wesley",
+    "price": 4.5
+  },
+  {
+    "element": 1411,
+    "name": "Alexandr Sojka",
+    "normalized": "alexandr sojka",
+    "price": 4.5
+  },
+  {
+    "element": 1423,
+    "name": "Christophe Kabongo",
+    "normalized": "christophe kabongo",
+    "price": 4.5
+  },
+  {
+    "element": 1476,
+    "name": "Gilberto Mora",
+    "normalized": "gilberto mora",
+    "price": 4.5
+  },
+  {
+    "element": 1479,
+    "name": "Elías Montiel",
+    "normalized": "elias montiel",
+    "price": 4.5
+  },
+  {
+    "element": 1483,
+    "name": "Alexéi Domínguez",
+    "normalized": "alexei dominguez",
+    "price": 4.5
+  },
+  {
+    "element": 1513,
+    "name": "Tahsin Jamshid",
+    "normalized": "tahsin jamshid",
+    "price": 4.5
+  },
+  {
+    "element": 1546,
+    "name": "Raja'ei Ayed",
+    "normalized": "raja ei ayed",
+    "price": 4.5
+  },
+  {
+    "element": 1548,
+    "name": "Lee Gi-Hyuk",
+    "normalized": "lee gi hyuk",
+    "price": 4.5
+  },
+  {
+    "element": 1689,
+    "name": "Adrián Alcaraz",
+    "normalized": "adrian alcaraz",
+    "price": 4.5
+  },
+  {
+    "element": 1695,
+    "name": "Bara Sapoko Ndiaye",
+    "normalized": "bara sapoko ndiaye",
+    "price": 4.5
+  },
+  {
+    "element": 1704,
+    "name": "Kamogelo Sebelebele",
+    "normalized": "kamogelo sebelebele",
+    "price": 4.5
+  },
+  {
+    "element": 1991,
+    "name": "Christopher Bonsu Baah",
+    "normalized": "christopher bonsu baah",
+    "price": 4.5
+  },
+  {
+    "element": 1995,
+    "name": "Eric García",
+    "normalized": "eric garcia",
+    "price": 4.5
+  },
+  {
+    "element": 2016,
+    "name": "Issa Diop",
+    "normalized": "issa diop",
+    "price": 4.5
+  },
+  {
+    "element": 2030,
+    "name": "Tomás Rodríguez",
+    "normalized": "tomas rodriguez",
+    "price": 4.5
+  },
+  {
+    "element": 2063,
+    "name": "Joaquín Piquerez",
+    "normalized": "joaquin piquerez",
+    "price": 4.5
+  },
+  {
+    "element": 14,
+    "name": "Farès Ghedjemis",
+    "normalized": "fares ghedjemis",
+    "price": 4.4
+  },
+  {
+    "element": 70,
+    "name": "Nishan Velupillay",
+    "normalized": "nishan velupillay",
+    "price": 4.4
+  },
+  {
+    "element": 362,
+    "name": "Brandley Kuwas",
+    "normalized": "brandley kuwas",
+    "price": 4.4
+  },
+  {
+    "element": 363,
+    "name": "Sontje Hansen",
+    "normalized": "sontje hansen",
+    "price": 4.4
+  },
+  {
+    "element": 386,
+    "name": "Tomás Ladra",
+    "normalized": "tomas ladra",
+    "price": 4.4
+  },
+  {
+    "element": 419,
+    "name": "John Mercado",
+    "normalized": "john mercado",
+    "price": 4.4
+  },
+  {
+    "element": 585,
+    "name": "Derrick Etienne",
+    "normalized": "derrick etienne",
+    "price": 4.4
+  },
+  {
+    "element": 630,
+    "name": "Zaid Ismael",
+    "normalized": "zaid ismael",
+    "price": 4.4
+  },
+  {
+    "element": 631,
+    "name": "Marko Farji",
+    "normalized": "marko farji",
+    "price": 4.4
+  },
+  {
+    "element": 650,
+    "name": "Youssef Amyn",
+    "normalized": "youssef amyn",
+    "price": 4.4
+  },
+  {
+    "element": 662,
+    "name": "Yukinari Sugawara",
+    "normalized": "yukinari sugawara",
+    "price": 4.4
+  },
+  {
+    "element": 686,
+    "name": "Ibrahim Sadeh",
+    "normalized": "ibrahim sadeh",
+    "price": 4.4
+  },
+  {
+    "element": 754,
+    "name": "Armando González",
+    "normalized": "armando gonzalez",
+    "price": 4.4
+  },
+  {
+    "element": 831,
+    "name": "Kosta Barbarouses",
+    "normalized": "kosta barbarouses",
+    "price": 4.4
+  },
+  {
+    "element": 882,
+    "name": "César Yanis",
+    "normalized": "cesar yanis",
+    "price": 4.4
+  },
+  {
+    "element": 943,
+    "name": "Ayoub Al Oui",
+    "normalized": "ayoub al oui",
+    "price": 4.4
+  },
+  {
+    "element": 962,
+    "name": "Yusuf Abdurisag",
+    "normalized": "yusuf abdurisag",
+    "price": 4.4
+  },
+  {
+    "element": 1049,
+    "name": "Ibrahim Mbaye",
+    "normalized": "ibrahim mbaye",
+    "price": 4.4
+  },
+  {
+    "element": 1176,
+    "name": "Firas Chaouat",
+    "normalized": "firas chaouat",
+    "price": 4.4
+  },
+  {
+    "element": 1177,
+    "name": "Sebastian Tounekti",
+    "normalized": "sebastian tounekti",
+    "price": 4.4
+  },
+  {
+    "element": 1210,
+    "name": "Deniz Gül",
+    "normalized": "deniz gul",
+    "price": 4.4
+  },
+  {
+    "element": 1269,
+    "name": "Max Arfsten",
+    "normalized": "max arfsten",
+    "price": 4.4
+  },
+  {
+    "element": 1535,
+    "name": "Dominik Kotarski",
+    "normalized": "dominik kotarski",
+    "price": 4.4
+  },
+  {
+    "element": 1567,
+    "name": "Jussef Nasrawe",
+    "normalized": "jussef nasrawe",
+    "price": 4.4
+  },
+  {
+    "element": 1568,
+    "name": "Ahmed Qasem",
+    "normalized": "ahmed qasem",
+    "price": 4.4
+  },
+  {
+    "element": 1586,
+    "name": "Çaglar Söyüncü",
+    "normalized": "caglar soyuncu",
+    "price": 4.4
+  },
+  {
+    "element": 1588,
+    "name": "Demir Ege Tiknaz",
+    "normalized": "demir ege tiknaz",
+    "price": 4.4
+  },
+  {
+    "element": 1708,
+    "name": "Jarell Quansah",
+    "normalized": "jarell quansah",
+    "price": 4.4
+  },
+  {
+    "element": 2008,
+    "name": "Brandon Borrello",
+    "normalized": "brandon borrello",
+    "price": 4.4
+  },
+  {
+    "element": 2025,
+    "name": "Chemsdine Talbi",
+    "normalized": "chemsdine talbi",
+    "price": 4.4
+  },
+  {
+    "element": 2029,
+    "name": "Azarías Londoño",
+    "normalized": "azarias londono",
+    "price": 4.4
+  },
+  {
+    "element": 2062,
+    "name": "Herman Johansson",
+    "normalized": "herman johansson",
+    "price": 4.4
+  },
+  {
+    "element": 33,
+    "name": "Lucas Martínez Quarta",
+    "normalized": "lucas martinez quarta",
+    "price": 4.3
+  },
+  {
+    "element": 47,
+    "name": "Juan Musso",
+    "normalized": "juan musso",
+    "price": 4.3
+  },
+  {
+    "element": 92,
+    "name": "Marco Friedl",
+    "normalized": "marco friedl",
+    "price": 4.3
+  },
+  {
+    "element": 139,
+    "name": "Sead Kolasinac",
+    "normalized": "sead kolasinac",
+    "price": 4.3
+  },
+  {
+    "element": 140,
+    "name": "Amar Dedic",
+    "normalized": "amar dedic",
+    "price": 4.3
+  },
+  {
+    "element": 168,
+    "name": "Douglas Santos",
+    "normalized": "douglas santos",
+    "price": 4.3
+  },
+  {
+    "element": 249,
+    "name": "Jhon Lucumí",
+    "normalized": "jhon lucumi",
+    "price": 4.3
+  },
+  {
+    "element": 272,
+    "name": "Aaron Wan-Bissaka",
+    "normalized": "aaron wan bissaka",
+    "price": 4.3
+  },
+  {
+    "element": 433,
+    "name": "Zizo",
+    "normalized": "zizo",
+    "price": 4.3
+  },
+  {
+    "element": 534,
+    "name": "Oliver Baumann",
+    "normalized": "oliver baumann",
+    "price": 4.3
+  },
+  {
+    "element": 663,
+    "name": "Tsuyoshi Watanabe",
+    "normalized": "tsuyoshi watanabe",
+    "price": 4.3
+  },
+  {
+    "element": 677,
+    "name": "Zion Suzuki",
+    "normalized": "zion suzuki",
+    "price": 4.3
+  },
+  {
+    "element": 802,
+    "name": "Jan Paul van Hecke",
+    "normalized": "jan paul van hecke",
+    "price": 4.3
+  },
+  {
+    "element": 803,
+    "name": "Jorrel Hato",
+    "normalized": "jorrel hato",
+    "price": 4.3
+  },
+  {
+    "element": 811,
+    "name": "Justin Bijlow",
+    "normalized": "justin bijlow",
+    "price": 4.3
+  },
+  {
+    "element": 846,
+    "name": "Kristoffer Ajer",
+    "normalized": "kristoffer ajer",
+    "price": 4.3
+  },
+  {
+    "element": 921,
+    "name": "Renato Veiga",
+    "normalized": "renato veiga",
+    "price": 4.3
+  },
+  {
+    "element": 1195,
+    "name": "Ferdi Kadioglu",
+    "normalized": "ferdi kadioglu",
+    "price": 4.3
+  },
+  {
+    "element": 1217,
+    "name": "Pablo Alcoba",
+    "normalized": "pablo alcoba",
+    "price": 4.3
+  },
+  {
+    "element": 1293,
+    "name": "Abdukodir Khusanov",
+    "normalized": "abdukodir khusanov",
+    "price": 4.3
+  },
+  {
+    "element": 1332,
+    "name": "Tomás Aranda",
+    "normalized": "tomas aranda",
+    "price": 4.3
+  },
+  {
+    "element": 1417,
+    "name": "Hugo Sochurek",
+    "normalized": "hugo sochurek",
+    "price": 4.3
+  },
+  {
+    "element": 1539,
+    "name": "Dominique Simon",
+    "normalized": "dominique simon",
+    "price": 4.3
+  },
+  {
+    "element": 1577,
+    "name": "Aaron Hickey",
+    "normalized": "aaron hickey",
+    "price": 4.3
+  },
+  {
+    "element": 1593,
+    "name": "Nabil Emad Dunga",
+    "normalized": "nabil emad dunga",
+    "price": 4.3
+  },
+  {
+    "element": 1595,
+    "name": "Aqtay Abdallah",
+    "normalized": "aqtay abdallah",
+    "price": 4.3
+  },
+  {
+    "element": 1596,
+    "name": "Hamza Abdelkarim",
+    "normalized": "hamza abdelkarim",
+    "price": 4.3
+  },
+  {
+    "element": 1676,
+    "name": "Ayoube Amaimouni-Echghouyab",
+    "normalized": "ayoube amaimouni echghouyab",
+    "price": 4.3
+  },
+  {
+    "element": 1706,
+    "name": "Brooklyn Poggenpoel",
+    "normalized": "brooklyn poggenpoel",
+    "price": 4.3
+  },
+  {
+    "element": 2007,
+    "name": "Tete Yengi",
+    "normalized": "tete yengi",
+    "price": 4.3
+  },
+  {
+    "element": 2057,
+    "name": "José Murillo",
+    "normalized": "jose murillo",
+    "price": 4.3
+  },
+  {
+    "element": 15,
+    "name": "Ahmed Benbouali",
+    "normalized": "ahmed benbouali",
+    "price": 4.2
+  },
+  {
+    "element": 71,
+    "name": "Deni Juric",
+    "normalized": "deni juric",
+    "price": 4.2
+  },
+  {
+    "element": 72,
+    "name": "Jacob Italiano",
+    "normalized": "jacob italiano",
+    "price": 4.2
+  },
+  {
+    "element": 120,
+    "name": "Koni De Winter",
+    "normalized": "koni de winter",
+    "price": 4.2
+  },
+  {
+    "element": 152,
+    "name": "Kerim Alajbegovic",
+    "normalized": "kerim alajbegovic",
+    "price": 4.2
+  },
+  {
+    "element": 170,
+    "name": "Léo Pereira",
+    "normalized": "leo pereira",
+    "price": 4.2
+  },
+  {
+    "element": 233,
+    "name": "Daniel Jebbison",
+    "normalized": "daniel jebbison",
+    "price": 4.2
+  },
+  {
+    "element": 288,
+    "name": "Brian Cipenga",
+    "normalized": "brian cipenga",
+    "price": 4.2
+  },
+  {
+    "element": 324,
+    "name": "Petar Sucic",
+    "normalized": "petar sucic",
+    "price": 4.2
+  },
+  {
+    "element": 350,
+    "name": "Tahith Chong",
+    "normalized": "tahith chong",
+    "price": 4.2
+  },
+  {
+    "element": 364,
+    "name": "Kenji Gorré",
+    "normalized": "kenji gorre",
+    "price": 4.2
+  },
+  {
+    "element": 365,
+    "name": "Jearl Margaritha",
+    "normalized": "jearl margaritha",
+    "price": 4.2
+  },
+  {
+    "element": 420,
+    "name": "Anthony Valencia",
+    "normalized": "anthony valencia",
+    "price": 4.2
+  },
+  {
+    "element": 478,
+    "name": "Dean Henderson",
+    "normalized": "dean henderson",
+    "price": 4.2
+  },
+  {
+    "element": 569,
+    "name": "Woodensky Pierre",
+    "normalized": "woodensky pierre",
+    "price": 4.2
+  },
+  {
+    "element": 570,
+    "name": "Leverton Pierre",
+    "normalized": "leverton pierre",
+    "price": 4.2
+  },
+  {
+    "element": 586,
+    "name": "Louicius Deedson",
+    "normalized": "louicius deedson",
+    "price": 4.2
+  },
+  {
+    "element": 588,
+    "name": "Yassin Fortuné",
+    "normalized": "yassin fortune",
+    "price": 4.2
+  },
+  {
+    "element": 589,
+    "name": "Josué Casimir",
+    "normalized": "josue casimir",
+    "price": 4.2
+  },
+  {
+    "element": 594,
+    "name": "Amir Mohammad Razzaghinia",
+    "normalized": "amir mohammad razzaghinia",
+    "price": 4.2
+  },
+  {
+    "element": 651,
+    "name": "Ali Yousif",
+    "normalized": "ali yousif",
+    "price": 4.2
+  },
+  {
+    "element": 675,
+    "name": "Keisuke Goto",
+    "normalized": "keisuke goto",
+    "price": 4.2
+  },
+  {
+    "element": 685,
+    "name": "Yousef Qashi",
+    "normalized": "yousef qashi",
+    "price": 4.2
+  },
+  {
+    "element": 702,
+    "name": "Mohammad Abu Zraiq",
+    "normalized": "mohammad abu zraiq",
+    "price": 4.2
+  },
+  {
+    "element": 703,
+    "name": "Mahmoud Al Mardi",
+    "normalized": "mahmoud al mardi",
+    "price": 4.2
+  },
+  {
+    "element": 716,
+    "name": "Seol Young-Woo",
+    "normalized": "seol young woo",
+    "price": 4.2
+  },
+  {
+    "element": 832,
+    "name": "Elijah Just",
+    "normalized": "elijah just",
+    "price": 4.2
+  },
+  {
+    "element": 833,
+    "name": "Ben Waine",
+    "normalized": "ben waine",
+    "price": 4.2
+  },
+  {
+    "element": 834,
+    "name": "Ben Old",
+    "normalized": "ben old",
+    "price": 4.2
+  },
+  {
+    "element": 847,
+    "name": "Julian Ryerson",
+    "normalized": "julian ryerson",
+    "price": 4.2
+  },
+  {
+    "element": 859,
+    "name": "Ørjan Nyland",
+    "normalized": "rjan nyland",
+    "price": 4.2
+  },
+  {
+    "element": 906,
+    "name": "Gustavo Caballero",
+    "normalized": "gustavo caballero",
+    "price": 4.2
+  },
+  {
+    "element": 942,
+    "name": "Mohammad Al Mannai",
+    "normalized": "mohammad al mannai",
+    "price": 4.2
+  },
+  {
+    "element": 963,
+    "name": "Ahmed Al Ganehi",
+    "normalized": "ahmed al ganehi",
+    "price": 4.2
+  },
+  {
+    "element": 1119,
+    "name": "Gabriel Gudmundsson",
+    "normalized": "gabriel gudmundsson",
+    "price": 4.2
+  },
+  {
+    "element": 1154,
+    "name": "Yvon Mvogo",
+    "normalized": "yvon mvogo",
+    "price": 4.2
+  },
+  {
+    "element": 1178,
+    "name": "Hazem Mastouri",
+    "normalized": "hazem mastouri",
+    "price": 4.2
+  },
+  {
+    "element": 1211,
+    "name": "Ugurcan Çakir",
+    "normalized": "ugurcan cakir",
+    "price": 4.2
+  },
+  {
+    "element": 1271,
+    "name": "Matt Freese",
+    "normalized": "matt freese",
+    "price": 4.2
+  },
+  {
+    "element": 1275,
+    "name": "Abdulla Abdullaev",
+    "normalized": "abdulla abdullaev",
+    "price": 4.2
+  },
+  {
+    "element": 1337,
+    "name": "Milton Delgado",
+    "normalized": "milton delgado",
+    "price": 4.2
+  },
+  {
+    "element": 1342,
+    "name": "Ermin Mahmic",
+    "normalized": "ermin mahmic",
+    "price": 4.2
+  },
+  {
+    "element": 1540,
+    "name": "Lenny Joseph",
+    "normalized": "lenny joseph",
+    "price": 4.2
+  },
+  {
+    "element": 1547,
+    "name": "Ali Olwan",
+    "normalized": "ali olwan",
+    "price": 4.2
+  },
+  {
+    "element": 1594,
+    "name": "Mostafa Zico",
+    "normalized": "mostafa zico",
+    "price": 4.2
+  },
+  {
+    "element": 1942,
+    "name": "Ederson Castillo",
+    "normalized": "ederson castillo",
+    "price": 4.2
+  },
+  {
+    "element": 1996,
+    "name": "Marc Pubill",
+    "normalized": "marc pubill",
+    "price": 4.2
+  },
+  {
+    "element": 2028,
+    "name": "Alberto Quintero",
+    "normalized": "alberto quintero",
+    "price": 4.2
+  },
+  {
+    "element": 2046,
+    "name": "Oussama Benbot",
+    "normalized": "oussama benbot",
+    "price": 4.2
+  },
+  {
+    "element": 316,
+    "name": "Alban Lafont",
+    "normalized": "alban lafont",
+    "price": 4.1
+  },
+  {
+    "element": 387,
+    "name": "Matej Kovár",
+    "normalized": "matej kovar",
+    "price": 4.1
+  },
+  {
+    "element": 848,
+    "name": "Marcus Pedersen",
+    "normalized": "marcus pedersen",
+    "price": 4.1
+  },
+  {
+    "element": 849,
+    "name": "Leo Østigård",
+    "normalized": "leo stigard",
+    "price": 4.1
+  },
+  {
+    "element": 894,
+    "name": "Júnior Alonso",
+    "normalized": "junior alonso",
+    "price": 4.1
+  },
+  {
+    "element": 922,
+    "name": "Tomás Araújo",
+    "normalized": "tomas araujo",
+    "price": 4.1
+  },
+  {
+    "element": 972,
+    "name": "Musab Al Juwayr",
+    "normalized": "musab al juwayr",
+    "price": 4.1
+  },
+  {
+    "element": 983,
+    "name": "Saud Abdulhamid",
+    "normalized": "saud abdulhamid",
+    "price": 4.1
+  },
+  {
+    "element": 1035,
+    "name": "El Hadji Malick Diouf",
+    "normalized": "el hadji malick diouf",
+    "price": 4.1
+  },
+  {
+    "element": 1120,
+    "name": "Carl Starfelt",
+    "normalized": "carl starfelt",
+    "price": 4.1
+  },
+  {
+    "element": 1165,
+    "name": "Moutaz Neffati",
+    "normalized": "moutaz neffati",
+    "price": 4.1
+  },
+  {
+    "element": 1184,
+    "name": "Abdelmouhib Chamakh",
+    "normalized": "abdelmouhib chamakh",
+    "price": 4.1
+  },
+  {
+    "element": 1232,
+    "name": "Santiago Bueno",
+    "normalized": "santiago bueno",
+    "price": 4.1
+  },
+  {
+    "element": 1245,
+    "name": "Fernando Muslera",
+    "normalized": "fernando muslera",
+    "price": 4.1
+  },
+  {
+    "element": 1489,
+    "name": "Liberato Cacace",
+    "normalized": "liberato cacace",
+    "price": 4.1
+  },
+  {
+    "element": 1496,
+    "name": "Carlos Coronel",
+    "normalized": "carlos coronel",
+    "price": 4.1
+  },
+  {
+    "element": 1517,
+    "name": "Emil Holm",
+    "normalized": "emil holm",
+    "price": 4.1
+  },
+  {
+    "element": 1518,
+    "name": "Isak Hien",
+    "normalized": "isak hien",
+    "price": 4.1
+  },
+  {
+    "element": 1560,
+    "name": "Jürgen Locadia",
+    "normalized": "jurgen locadia",
+    "price": 4.1
+  },
+  {
+    "element": 1940,
+    "name": "Deinner Ordóñez",
+    "normalized": "deinner ordonez",
+    "price": 4.1
+  },
+  {
+    "element": 1954,
+    "name": "Moteb Al Harbi",
+    "normalized": "moteb al harbi",
+    "price": 4.1
+  },
+  {
+    "element": 2017,
+    "name": "Zakaria El Ouahdi",
+    "normalized": "zakaria el ouahdi",
+    "price": 4.1
+  },
+  {
+    "element": 16,
+    "name": "Amin Chiakha",
+    "normalized": "amin chiakha",
+    "price": 4
+  },
+  {
+    "element": 21,
+    "name": "Adil Boulbina",
+    "normalized": "adil boulbina",
+    "price": 4
+  },
+  {
+    "element": 35,
+    "name": "Gabriel Rojas",
+    "normalized": "gabriel rojas",
+    "price": 4
+  },
+  {
+    "element": 58,
+    "name": "Jordan Bos",
+    "normalized": "jordan bos",
+    "price": 4
+  },
+  {
+    "element": 73,
+    "name": "Ante Suto",
+    "normalized": "ante suto",
+    "price": 4
+  },
+  {
+    "element": 153,
+    "name": "Nikola Vasilj",
+    "normalized": "nikola vasilj",
+    "price": 4
+  },
+  {
+    "element": 263,
+    "name": "David Ospina",
+    "normalized": "david ospina",
+    "price": 4
+  },
+  {
+    "element": 275,
+    "name": "Axel Tuanzebe",
+    "normalized": "axel tuanzebe",
+    "price": 4
+  },
+  {
+    "element": 327,
+    "name": "Duje Caleta-Car",
+    "normalized": "duje caleta car",
+    "price": 4
+  },
+  {
+    "element": 352,
+    "name": "Leandro Bacuna",
+    "normalized": "leandro bacuna",
+    "price": 4
+  },
+  {
+    "element": 366,
+    "name": "Gervane Kastaneer",
+    "normalized": "gervane kastaneer",
+    "price": 4
+  },
+  {
+    "element": 367,
+    "name": "Jeremy Antonisse",
+    "normalized": "jeremy antonisse",
+    "price": 4
+  },
+  {
+    "element": 421,
+    "name": "Jeremy Arévalo",
+    "normalized": "jeremy arevalo",
+    "price": 4
+  },
+  {
+    "element": 479,
+    "name": "James Trafford",
+    "normalized": "james trafford",
+    "price": 4
+  },
+  {
+    "element": 590,
+    "name": "Ruben Providence",
+    "normalized": "ruben providence",
+    "price": 4
+  },
+  {
+    "element": 618,
+    "name": "Amirhossein Mahmoudi",
+    "normalized": "amirhossein mahmoudi",
+    "price": 4
+  },
+  {
+    "element": 652,
+    "name": "Karar Nabeel",
+    "normalized": "karar nabeel",
+    "price": 4
+  },
+  {
+    "element": 676,
+    "name": "Kento Shiogai",
+    "normalized": "kento shiogai",
+    "price": 4
+  },
+  {
+    "element": 678,
+    "name": "Keisuke Osako",
+    "normalized": "keisuke osako",
+    "price": 4
+  },
+  {
+    "element": 705,
+    "name": "Ibrahim Sabra",
+    "normalized": "ibrahim sabra",
+    "price": 4
+  },
+  {
+    "element": 707,
+    "name": "Ali Azaizeh",
+    "normalized": "ali azaizeh",
+    "price": 4
+  },
+  {
+    "element": 708,
+    "name": "Odeh Fakhoury",
+    "normalized": "odeh fakhoury",
+    "price": 4
+  },
+  {
+    "element": 756,
+    "name": "Carlos Acevedo",
+    "normalized": "carlos acevedo",
+    "price": 4
+  },
+  {
+    "element": 770,
+    "name": "Souffian El Karouani",
+    "normalized": "souffian el karouani",
+    "price": 4
+  },
+  {
+    "element": 782,
+    "name": "Gessime Yassine",
+    "normalized": "gessime yassine",
+    "price": 4
+  },
+  {
+    "element": 783,
+    "name": "Rayane Bounida",
+    "normalized": "rayane bounida",
+    "price": 4
+  },
+  {
+    "element": 784,
+    "name": "Yassir Zabiri",
+    "normalized": "yassir zabiri",
+    "price": 4
+  },
+  {
+    "element": 835,
+    "name": "Jesse Randall",
+    "normalized": "jesse randall",
+    "price": 4
+  },
+  {
+    "element": 836,
+    "name": "Lachlan Bayliss",
+    "normalized": "lachlan bayliss",
+    "price": 4
+  },
+  {
+    "element": 850,
+    "name": "David Møller Wolfe",
+    "normalized": "david m ller wolfe",
+    "price": 4
+  },
+  {
+    "element": 851,
+    "name": "Fredrik Bjørkan",
+    "normalized": "fredrik bj rkan",
+    "price": 4
+  },
+  {
+    "element": 883,
+    "name": "Kadir Barría",
+    "normalized": "kadir barria",
+    "price": 4
+  },
+  {
+    "element": 884,
+    "name": "Luis Mejía",
+    "normalized": "luis mejia",
+    "price": 4
+  },
+  {
+    "element": 907,
+    "name": "Alexandro Maidana",
+    "normalized": "alexandro maidana",
+    "price": 4
+  },
+  {
+    "element": 933,
+    "name": "Ricardo Velho",
+    "normalized": "ricardo velho",
+    "price": 4
+  },
+  {
+    "element": 966,
+    "name": "Mubarak Shanan",
+    "normalized": "mubarak shanan",
+    "price": 4
+  },
+  {
+    "element": 999,
+    "name": "Nawaf Al Aqidi",
+    "normalized": "nawaf al aqidi",
+    "price": 4
+  },
+  {
+    "element": 1011,
+    "name": "Nathan Patterson",
+    "normalized": "nathan patterson",
+    "price": 4
+  },
+  {
+    "element": 1023,
+    "name": "Findlay Curtis",
+    "normalized": "findlay curtis",
+    "price": 4
+  },
+  {
+    "element": 1057,
+    "name": "Jayden Adams",
+    "normalized": "jayden adams",
+    "price": 4
+  },
+  {
+    "element": 1097,
+    "name": "Víctor Muñoz",
+    "normalized": "victor munoz",
+    "price": 4
+  },
+  {
+    "element": 1101,
+    "name": "Joan García",
+    "normalized": "joan garcia",
+    "price": 4
+  },
+  {
+    "element": 1121,
+    "name": "Victor Lindelöf",
+    "normalized": "victor lindelof",
+    "price": 4
+  },
+  {
+    "element": 1145,
+    "name": "Miro Muheim",
+    "normalized": "miro muheim",
+    "price": 4
+  },
+  {
+    "element": 1181,
+    "name": "Rayan Elloumi",
+    "normalized": "rayan elloumi",
+    "price": 4
+  },
+  {
+    "element": 1183,
+    "name": "Khalil Ayari",
+    "normalized": "khalil ayari",
+    "price": 4
+  },
+  {
+    "element": 1198,
+    "name": "Ozan Kabak",
+    "normalized": "ozan kabak",
+    "price": 4
+  },
+  {
+    "element": 1199,
+    "name": "Eren Elmali",
+    "normalized": "eren elmali",
+    "price": 4
+  },
+  {
+    "element": 1264,
+    "name": "Alexander Freeman",
+    "normalized": "alexander freeman",
+    "price": 4
+  },
+  {
+    "element": 1270,
+    "name": "Matt Turner",
+    "normalized": "matt turner",
+    "price": 4
+  },
+  {
+    "element": 1311,
+    "name": "Abduvokhid Ne'matov",
+    "normalized": "abduvokhid ne matov",
+    "price": 4
+  },
+  {
+    "element": 1315,
+    "name": "Facundo Cambeses",
+    "normalized": "facundo cambeses",
+    "price": 4
+  },
+  {
+    "element": 1317,
+    "name": "Santiago Beltrán",
+    "normalized": "santiago beltran",
+    "price": 4
+  },
+  {
+    "element": 1320,
+    "name": "Facundo Medina",
+    "normalized": "facundo medina",
+    "price": 4
+  },
+  {
+    "element": 1325,
+    "name": "Leonardo Balerdi",
+    "normalized": "leonardo balerdi",
+    "price": 4
+  },
+  {
+    "element": 1462,
+    "name": "Julián Araujo",
+    "normalized": "julian araujo",
+    "price": 4
+  },
+  {
+    "element": 1584,
+    "name": "Ersin Destanoglu",
+    "normalized": "ersin destanoglu",
+    "price": 4
+  },
+  {
+    "element": 1585,
+    "name": "Yusuf Akçiçek",
+    "normalized": "yusuf akcicek",
+    "price": 4
+  },
+  {
+    "element": 1665,
+    "name": "Munir El Kajoui",
+    "normalized": "munir el kajoui",
+    "price": 4
+  },
+  {
+    "element": 1669,
+    "name": "Soufiane Bouftini",
+    "normalized": "soufiane bouftini",
+    "price": 4
+  },
+  {
+    "element": 1714,
+    "name": "Sondre Langås",
+    "normalized": "sondre langas",
+    "price": 4
+  },
+  {
+    "element": 1939,
+    "name": "Cristhian Loor",
+    "normalized": "cristhian loor",
+    "price": 4
+  },
+  {
+    "element": 1941,
+    "name": "Fricio Caicedo",
+    "normalized": "fricio caicedo",
+    "price": 4
+  },
+  {
+    "element": 1950,
+    "name": "Abdulquddus Atiah",
+    "normalized": "abdulquddus atiah",
+    "price": 4
+  },
+  {
+    "element": 1952,
+    "name": "Zakaria Hawsawi",
+    "normalized": "zakaria hawsawi",
+    "price": 4
+  },
+  {
+    "element": 1953,
+    "name": "Jehad Thikri",
+    "normalized": "jehad thikri",
+    "price": 4
+  },
+  {
+    "element": 1989,
+    "name": "Prince Adu",
+    "normalized": "prince adu",
+    "price": 4
+  },
+  {
+    "element": 2032,
+    "name": "Miles Robinson",
+    "normalized": "miles robinson",
+    "price": 4
+  },
+  {
+    "element": 2045,
+    "name": "Abdelatif Ramdane",
+    "normalized": "abdelatif ramdane",
+    "price": 4
+  },
+  {
+    "element": 2047,
+    "name": "Samir Chergui",
+    "normalized": "samir chergui",
+    "price": 4
+  },
+  {
+    "element": 2051,
+    "name": "Christopher Opéri",
+    "normalized": "christopher operi",
+    "price": 4
+  },
+  {
+    "element": 2054,
+    "name": "Jonas Urbig",
+    "normalized": "jonas urbig",
+    "price": 4
+  },
+  {
+    "element": 2055,
+    "name": "JD Gunn",
+    "normalized": "jd gunn",
+    "price": 4
+  },
+  {
+    "element": 2056,
+    "name": "Iván Anderson",
+    "normalized": "ivan anderson",
+    "price": 4
+  },
+  {
+    "element": 2059,
+    "name": "Abdulrahman Al Sanbi",
+    "normalized": "abdulrahman al sanbi",
+    "price": 4
+  },
+  {
+    "element": 60,
+    "name": "Alessandro Circati",
+    "normalized": "alessandro circati",
+    "price": 3.9
+  },
+  {
+    "element": 93,
+    "name": "David Affengruber",
+    "normalized": "david affengruber",
+    "price": 3.9
+  },
+  {
+    "element": 121,
+    "name": "Brandon Mechele",
+    "normalized": "brandon mechele",
+    "price": 3.9
+  },
+  {
+    "element": 122,
+    "name": "Joaquin Seys",
+    "normalized": "joaquin seys",
+    "price": 3.9
+  },
+  {
+    "element": 141,
+    "name": "Tarik Muharemovic",
+    "normalized": "tarik muharemovic",
+    "price": 3.9
+  },
+  {
+    "element": 214,
+    "name": "Vozinha",
+    "normalized": "vozinha",
+    "price": 3.9
+  },
+  {
+    "element": 303,
+    "name": "Guéla Doué",
+    "normalized": "guela doue",
+    "price": 3.9
+  },
+  {
+    "element": 304,
+    "name": "Emmanuel Agbadou",
+    "normalized": "emmanuel agbadou",
+    "price": 3.9
+  },
+  {
+    "element": 329,
+    "name": "Martin Erlic",
+    "normalized": "martin erlic",
+    "price": 3.9
+  },
+  {
+    "element": 339,
+    "name": "Ivor Pandur",
+    "normalized": "ivor pandur",
+    "price": 3.9
+  },
+  {
+    "element": 368,
+    "name": "Eloy Room",
+    "normalized": "eloy room",
+    "price": 3.9
+  },
+  {
+    "element": 379,
+    "name": "Jaroslav Zeleny",
+    "normalized": "jaroslav zeleny",
+    "price": 3.9
+  },
+  {
+    "element": 404,
+    "name": "Joel Ordóñez",
+    "normalized": "joel ordonez",
+    "price": 3.9
+  },
+  {
+    "element": 406,
+    "name": "José Hurtado",
+    "normalized": "jose hurtado",
+    "price": 3.9
+  },
+  {
+    "element": 424,
+    "name": "Moisés Ramírez",
+    "normalized": "moises ramirez",
+    "price": 3.9
+  },
+  {
+    "element": 438,
+    "name": "Ahmed Fatouh",
+    "normalized": "ahmed fatouh",
+    "price": 3.9
+  },
+  {
+    "element": 527,
+    "name": "Waldemar Anton",
+    "normalized": "waldemar anton",
+    "price": 3.9
+  },
+  {
+    "element": 591,
+    "name": "Johny Placide",
+    "normalized": "johny placide",
+    "price": 3.9
+  },
+  {
+    "element": 621,
+    "name": "Payam Niazmand",
+    "normalized": "payam niazmand",
+    "price": 3.9
+  },
+  {
+    "element": 709,
+    "name": "Yazeed  Abulaila",
+    "normalized": "yazeed abulaila",
+    "price": 3.9
+  },
+  {
+    "element": 717,
+    "name": "Cho Yu-Min",
+    "normalized": "cho yu min",
+    "price": 3.9
+  },
+  {
+    "element": 731,
+    "name": "Song Bum-Keun",
+    "normalized": "song bum keun",
+    "price": 3.9
+  },
+  {
+    "element": 745,
+    "name": "Jesús Angulo",
+    "normalized": "jesus angulo",
+    "price": 3.9
+  },
+  {
+    "element": 746,
+    "name": "Richard Ledezma",
+    "normalized": "richard ledezma",
+    "price": 3.9
+  },
+  {
+    "element": 757,
+    "name": "Raúl Rangel",
+    "normalized": "raul rangel",
+    "price": 3.9
+  },
+  {
+    "element": 773,
+    "name": "Anass Salah-Eddine",
+    "normalized": "anass salah eddine",
+    "price": 3.9
+  },
+  {
+    "element": 838,
+    "name": "Max Crocombe",
+    "normalized": "max crocombe",
+    "price": 3.9
+  },
+  {
+    "element": 872,
+    "name": "Éric Davis",
+    "normalized": "eric davis",
+    "price": 3.9
+  },
+  {
+    "element": 1000,
+    "name": "Ahmed Al Kassar",
+    "normalized": "ahmed al kassar",
+    "price": 3.9
+  },
+  {
+    "element": 1052,
+    "name": "Yehvann Diouf",
+    "normalized": "yehvann diouf",
+    "price": 3.9
+  },
+  {
+    "element": 1129,
+    "name": "Kristoffer Nordfeldt",
+    "normalized": "kristoffer nordfeldt",
+    "price": 3.9
+  },
+  {
+    "element": 1202,
+    "name": "Mustafa Eskihellaç",
+    "normalized": "mustafa eskihellac",
+    "price": 3.9
+  },
+  {
+    "element": 1214,
+    "name": "Muhammed Sengezer",
+    "normalized": "muhammed sengezer",
+    "price": 3.9
+  },
+  {
+    "element": 1262,
+    "name": "Mark McKenzie",
+    "normalized": "mark mckenzie",
+    "price": 3.9
+  },
+  {
+    "element": 1263,
+    "name": "Auston Trusty",
+    "normalized": "auston trusty",
+    "price": 3.9
+  },
+  {
+    "element": 1312,
+    "name": "Utkir Yusupov",
+    "normalized": "utkir yusupov",
+    "price": 3.9
+  },
+  {
+    "element": 1405,
+    "name": "David Zima",
+    "normalized": "david zima",
+    "price": 3.9
+  },
+  {
+    "element": 1498,
+    "name": "Blás Riveros",
+    "normalized": "blas riveros",
+    "price": 3.9
+  },
+  {
+    "element": 1514,
+    "name": "Viktor Johansson",
+    "normalized": "viktor johansson",
+    "price": 3.9
+  },
+  {
+    "element": 1553,
+    "name": "Yan Valery",
+    "normalized": "yan valery",
+    "price": 3.9
+  },
+  {
+    "element": 1592,
+    "name": "Karim Hafez",
+    "normalized": "karim hafez",
+    "price": 3.9
+  },
+  {
+    "element": 1611,
+    "name": "Mateo Gamarra",
+    "normalized": "mateo gamarra",
+    "price": 3.9
+  },
+  {
+    "element": 2001,
+    "name": "Joe Gauci",
+    "normalized": "joe gauci",
+    "price": 3.9
+  },
+  {
+    "element": 2013,
+    "name": "Chadi Riad",
+    "normalized": "chadi riad",
+    "price": 3.9
+  },
+  {
+    "element": 18,
+    "name": "Luca Zidane",
+    "normalized": "luca zidane",
+    "price": 3.8
+  },
+  {
+    "element": 61,
+    "name": "Cameron Burgess",
+    "normalized": "cameron burgess",
+    "price": 3.8
+  },
+  {
+    "element": 94,
+    "name": "Michael Svoboda",
+    "normalized": "michael svoboda",
+    "price": 3.8
+  },
+  {
+    "element": 142,
+    "name": "Nikola Katic",
+    "normalized": "nikola katic",
+    "price": 3.8
+  },
+  {
+    "element": 200,
+    "name": "Wagner Pina",
+    "normalized": "wagner pina",
+    "price": 3.8
+  },
+  {
+    "element": 264,
+    "name": "Álvaro Montero",
+    "normalized": "alvaro montero",
+    "price": 3.8
+  },
+  {
+    "element": 353,
+    "name": "Riechedly Bazoer",
+    "normalized": "riechedly bazoer",
+    "price": 3.8
+  },
+  {
+    "element": 388,
+    "name": "Lukás Hornícek",
+    "normalized": "lukas hornicek",
+    "price": 3.8
+  },
+  {
+    "element": 565,
+    "name": "Benjamin Asare",
+    "normalized": "benjamin asare",
+    "price": 3.8
+  },
+  {
+    "element": 574,
+    "name": "Jean-Kévin Duverne",
+    "normalized": "jean kevin duverne",
+    "price": 3.8
+  },
+  {
+    "element": 575,
+    "name": "Carlens Arcus",
+    "normalized": "carlens arcus",
+    "price": 3.8
+  },
+  {
+    "element": 600,
+    "name": "Shoja Khalilzadeh",
+    "normalized": "shoja khalilzadeh",
+    "price": 3.8
+  },
+  {
+    "element": 637,
+    "name": "Merchas Doski",
+    "normalized": "merchas doski",
+    "price": 3.8
+  },
+  {
+    "element": 653,
+    "name": "Ahmed Basil",
+    "normalized": "ahmed basil",
+    "price": 3.8
+  },
+  {
+    "element": 667,
+    "name": "Ayumu Seko",
+    "normalized": "ayumu seko",
+    "price": 3.8
+  },
+  {
+    "element": 679,
+    "name": "Tomoki Hayakawa",
+    "normalized": "tomoki hayakawa",
+    "price": 3.8
+  },
+  {
+    "element": 839,
+    "name": "Alex Paulsen",
+    "normalized": "alex paulsen",
+    "price": 3.8
+  },
+  {
+    "element": 860,
+    "name": "Egil Selvik",
+    "normalized": "egil selvik",
+    "price": 3.8
+  },
+  {
+    "element": 897,
+    "name": "Alan Benítez",
+    "normalized": "alan benitez",
+    "price": 3.8
+  },
+  {
+    "element": 899,
+    "name": "Juan José Cáceres",
+    "normalized": "juan jose caceres",
+    "price": 3.8
+  },
+  {
+    "element": 909,
+    "name": "Gastón Olveira",
+    "normalized": "gaston olveira",
+    "price": 3.8
+  },
+  {
+    "element": 951,
+    "name": "Lucas Mendes",
+    "normalized": "lucas mendes",
+    "price": 3.8
+  },
+  {
+    "element": 1013,
+    "name": "John Souttar",
+    "normalized": "john souttar",
+    "price": 3.8
+  },
+  {
+    "element": 1053,
+    "name": "Mory Diaw",
+    "normalized": "mory diaw",
+    "price": 3.8
+  },
+  {
+    "element": 1167,
+    "name": "Omar Rekik",
+    "normalized": "omar rekik",
+    "price": 3.8
+  },
+  {
+    "element": 1324,
+    "name": "Kevin Mac Allister",
+    "normalized": "kevin mac allister",
+    "price": 3.8
+  },
+  {
+    "element": 1610,
+    "name": "Ronaldo Dejesús",
+    "normalized": "ronaldo dejesus",
+    "price": 3.8
+  },
+  {
+    "element": 1693,
+    "name": "Ilay Camara",
+    "normalized": "ilay camara",
+    "price": 3.8
+  },
+  {
+    "element": 1944,
+    "name": "Malcom DaCosta",
+    "normalized": "malcom dacosta",
+    "price": 3.8
+  },
+  {
+    "element": 1966,
+    "name": "Alfie Jones",
+    "normalized": "alfie jones",
+    "price": 3.8
+  },
+  {
+    "element": 1980,
+    "name": "Jerome Opoku",
+    "normalized": "jerome opoku",
+    "price": 3.8
+  },
+  {
+    "element": 2026,
+    "name": "Fidel Escobar",
+    "normalized": "fidel escobar",
+    "price": 3.8
+  },
+  {
+    "element": 2061,
+    "name": "Pape Sy",
+    "normalized": "pape sy",
+    "price": 3.8
+  },
+  {
+    "element": 2066,
+    "name": "Jaouen Hadjam",
+    "normalized": "jaouen hadjam",
+    "price": 3.8
+  },
+  {
+    "element": 4,
+    "name": "Mehdi Dorval",
+    "normalized": "mehdi dorval",
+    "price": 3.7
+  },
+  {
+    "element": 5,
+    "name": "Zinéddine Belaïd",
+    "normalized": "zineddine belaid",
+    "price": 3.7
+  },
+  {
+    "element": 36,
+    "name": "Agustín Giay",
+    "normalized": "agustin giay",
+    "price": 3.7
+  },
+  {
+    "element": 64,
+    "name": "Jason Geria",
+    "normalized": "jason geria",
+    "price": 3.7
+  },
+  {
+    "element": 123,
+    "name": "Nathan Ngoy",
+    "normalized": "nathan ngoy",
+    "price": 3.7
+  },
+  {
+    "element": 143,
+    "name": "Stjepan Radeljic",
+    "normalized": "stjepan radeljic",
+    "price": 3.7
+  },
+  {
+    "element": 201,
+    "name": "Pico",
+    "normalized": "pico",
+    "price": 3.7
+  },
+  {
+    "element": 223,
+    "name": "Joel Waterman",
+    "normalized": "joel waterman",
+    "price": 3.7
+  },
+  {
+    "element": 278,
+    "name": "Steve Kapuadi",
+    "normalized": "steve kapuadi",
+    "price": 3.7
+  },
+  {
+    "element": 290,
+    "name": "Matthieu Epolo",
+    "normalized": "matthieu epolo",
+    "price": 3.7
+  },
+  {
+    "element": 330,
+    "name": "Luka Vuskovic",
+    "normalized": "luka vuskovic",
+    "price": 3.7
+  },
+  {
+    "element": 354,
+    "name": "Joshua Brenet",
+    "normalized": "joshua brenet",
+    "price": 3.7
+  },
+  {
+    "element": 576,
+    "name": "Hannes Delcroix",
+    "normalized": "hannes delcroix",
+    "price": 3.7
+  },
+  {
+    "element": 603,
+    "name": "Saleh Hardani",
+    "normalized": "saleh hardani",
+    "price": 3.7
+  },
+  {
+    "element": 638,
+    "name": "Frans Putros",
+    "normalized": "frans putros",
+    "price": 3.7
+  },
+  {
+    "element": 639,
+    "name": "Rebin Sulaka",
+    "normalized": "rebin sulaka",
+    "price": 3.7
+  },
+  {
+    "element": 654,
+    "name": "Fahad Talib",
+    "normalized": "fahad talib",
+    "price": 3.7
+  },
+  {
+    "element": 690,
+    "name": "Yazan Al Arab",
+    "normalized": "yazan al arab",
+    "price": 3.7
+  },
+  {
+    "element": 719,
+    "name": "Lee Han-Beom",
+    "normalized": "lee han beom",
+    "price": 3.7
+  },
+  {
+    "element": 720,
+    "name": "Lee Tae-Seok",
+    "normalized": "lee tae seok",
+    "price": 3.7
+  },
+  {
+    "element": 840,
+    "name": "Michael Woud",
+    "normalized": "michael woud",
+    "price": 3.7
+  },
+  {
+    "element": 852,
+    "name": "Torbjørn Heggem",
+    "normalized": "torbj rn heggem",
+    "price": 3.7
+  },
+  {
+    "element": 874,
+    "name": "Andrés Andrade",
+    "normalized": "andres andrade",
+    "price": 3.7
+  },
+  {
+    "element": 969,
+    "name": "Salah Zakaria",
+    "normalized": "salah zakaria",
+    "price": 3.7
+  },
+  {
+    "element": 985,
+    "name": "Hassan Kadish",
+    "normalized": "hassan kadish",
+    "price": 3.7
+  },
+  {
+    "element": 1024,
+    "name": "Liam Kelly",
+    "normalized": "liam kelly",
+    "price": 3.7
+  },
+  {
+    "element": 1064,
+    "name": "Thabang Matuludi",
+    "normalized": "thabang matuludi",
+    "price": 3.7
+  },
+  {
+    "element": 1078,
+    "name": "Ricardo Goss",
+    "normalized": "ricardo goss",
+    "price": 3.7
+  },
+  {
+    "element": 1122,
+    "name": "Gustaf Lagerbielke",
+    "normalized": "gustaf lagerbielke",
+    "price": 3.7
+  },
+  {
+    "element": 1147,
+    "name": "Aurèle Amenda",
+    "normalized": "aurele amenda",
+    "price": 3.7
+  },
+  {
+    "element": 1155,
+    "name": "Marvin Keller",
+    "normalized": "marvin keller",
+    "price": 3.7
+  },
+  {
+    "element": 1234,
+    "name": "Brian Barboza",
+    "normalized": "brian barboza",
+    "price": 3.7
+  },
+  {
+    "element": 1294,
+    "name": "Rustam Ashurmatov",
+    "normalized": "rustam ashurmatov",
+    "price": 3.7
+  },
+  {
+    "element": 1295,
+    "name": "Sherzod Nasrullaev",
+    "normalized": "sherzod nasrullaev",
+    "price": 3.7
+  },
+  {
+    "element": 1341,
+    "name": "Dennis Hadzikadunic",
+    "normalized": "dennis hadzikadunic",
+    "price": 3.7
+  },
+  {
+    "element": 1379,
+    "name": "Willer Ditta",
+    "normalized": "willer ditta",
+    "price": 3.7
+  },
+  {
+    "element": 1459,
+    "name": "Antonio Rodríguez",
+    "normalized": "antonio rodriguez",
+    "price": 3.7
+  },
+  {
+    "element": 1488,
+    "name": "Michael Boxall",
+    "normalized": "michael boxall",
+    "price": 3.7
+  },
+  {
+    "element": 1490,
+    "name": "Nando Pijnaker",
+    "normalized": "nando pijnaker",
+    "price": 3.7
+  },
+  {
+    "element": 1500,
+    "name": "Agustín Sández",
+    "normalized": "agustin sandez",
+    "price": 3.7
+  },
+  {
+    "element": 1502,
+    "name": "Saúl Salcedo",
+    "normalized": "saul salcedo",
+    "price": 3.7
+  },
+  {
+    "element": 1504,
+    "name": "Tarek Salman",
+    "normalized": "tarek salman",
+    "price": 3.7
+  },
+  {
+    "element": 1507,
+    "name": "Sultan Al Brake",
+    "normalized": "sultan al brake",
+    "price": 3.7
+  },
+  {
+    "element": 1515,
+    "name": "Jacob Widell Zetterström",
+    "normalized": "jacob widell zetterstrom",
+    "price": 3.7
+  },
+  {
+    "element": 1516,
+    "name": "Hjalmar Ekdal",
+    "normalized": "hjalmar ekdal",
+    "price": 3.7
+  },
+  {
+    "element": 1558,
+    "name": "Armando Obispo",
+    "normalized": "armando obispo",
+    "price": 3.7
+  },
+  {
+    "element": 1559,
+    "name": "Deveron Fonville",
+    "normalized": "deveron fonville",
+    "price": 3.7
+  },
+  {
+    "element": 1575,
+    "name": "Fahad Younis",
+    "normalized": "fahad younis",
+    "price": 3.7
+  },
+  {
+    "element": 1694,
+    "name": "Moustapha Mbow",
+    "normalized": "moustapha mbow",
+    "price": 3.7
+  },
+  {
+    "element": 1698,
+    "name": "Sipho Chaine",
+    "normalized": "sipho chaine",
+    "price": 3.7
+  },
+  {
+    "element": 1962,
+    "name": "Zorhan Bassong",
+    "normalized": "zorhan bassong",
+    "price": 3.7
+  },
+  {
+    "element": 1965,
+    "name": "Jamie Knight-Lebel",
+    "normalized": "jamie knight lebel",
+    "price": 3.7
+  },
+  {
+    "element": 1977,
+    "name": "Abdul Mumin",
+    "normalized": "abdul mumin",
+    "price": 3.7
+  },
+  {
+    "element": 2068,
+    "name": "Derrick Luckassen",
+    "normalized": "derrick luckassen",
+    "price": 3.7
+  },
+  {
+    "element": 2070,
+    "name": "Cho Wi-Je",
+    "normalized": "cho wi je",
+    "price": 3.7
+  },
+  {
+    "element": 75,
+    "name": "Paul Izzo",
+    "normalized": "paul izzo",
+    "price": 3.6
+  },
+  {
+    "element": 144,
+    "name": "Nihad Mujakic",
+    "normalized": "nihad mujakic",
+    "price": 3.6
+  },
+  {
+    "element": 154,
+    "name": "Osman Hadzikic",
+    "normalized": "osman hadzikic",
+    "price": 3.6
+  },
+  {
+    "element": 202,
+    "name": "Kelvin Pires",
+    "normalized": "kelvin pires",
+    "price": 3.6
+  },
+  {
+    "element": 291,
+    "name": "Timothy Fayulu",
+    "normalized": "timothy fayulu",
+    "price": 3.6
+  },
+  {
+    "element": 306,
+    "name": "Clément Akpa",
+    "normalized": "clement akpa",
+    "price": 3.6
+  },
+  {
+    "element": 355,
+    "name": "Shurandy Sambo",
+    "normalized": "shurandy sambo",
+    "price": 3.6
+  },
+  {
+    "element": 356,
+    "name": "Sherel Floranus",
+    "normalized": "sherel floranus",
+    "price": 3.6
+  },
+  {
+    "element": 369,
+    "name": "Trevor Doornbusch",
+    "normalized": "trevor doornbusch",
+    "price": 3.6
+  },
+  {
+    "element": 425,
+    "name": "Gonzalo Valle",
+    "normalized": "gonzalo valle",
+    "price": 3.6
+  },
+  {
+    "element": 440,
+    "name": "Ramy Rabia",
+    "normalized": "ramy rabia",
+    "price": 3.6
+  },
+  {
+    "element": 441,
+    "name": "Hossam Abdelmaguid",
+    "normalized": "hossam abdelmaguid",
+    "price": 3.6
+  },
+  {
+    "element": 452,
+    "name": "El Mahdy Soliman",
+    "normalized": "el mahdy soliman",
+    "price": 3.6
+  },
+  {
+    "element": 592,
+    "name": "Alexandre Pierre",
+    "normalized": "alexandre pierre",
+    "price": 3.6
+  },
+  {
+    "element": 640,
+    "name": "Maytham Jabbar",
+    "normalized": "maytham jabbar",
+    "price": 3.6
+  },
+  {
+    "element": 641,
+    "name": "Hussein Ali",
+    "normalized": "hussein ali",
+    "price": 3.6
+  },
+  {
+    "element": 642,
+    "name": "Zaid Tahseen",
+    "normalized": "zaid tahseen",
+    "price": 3.6
+  },
+  {
+    "element": 691,
+    "name": "Abdallah Nasib",
+    "normalized": "abdallah nasib",
+    "price": 3.6
+  },
+  {
+    "element": 710,
+    "name": "Abdallah Al Fakhouri",
+    "normalized": "abdallah al fakhouri",
+    "price": 3.6
+  },
+  {
+    "element": 722,
+    "name": "Kim Tae-Hyeon",
+    "normalized": "kim tae hyeon",
+    "price": 3.6
+  },
+  {
+    "element": 825,
+    "name": "Tyler Bindon",
+    "normalized": "tyler bindon",
+    "price": 3.6
+  },
+  {
+    "element": 826,
+    "name": "Francis de Vries",
+    "normalized": "francis de vries",
+    "price": 3.6
+  },
+  {
+    "element": 827,
+    "name": "Tim Payne",
+    "normalized": "tim payne",
+    "price": 3.6
+  },
+  {
+    "element": 886,
+    "name": "César Samudio",
+    "normalized": "cesar samudio",
+    "price": 3.6
+  },
+  {
+    "element": 900,
+    "name": "José Canale",
+    "normalized": "jose canale",
+    "price": 3.6
+  },
+  {
+    "element": 970,
+    "name": "Shehab Ellethy",
+    "normalized": "shehab ellethy",
+    "price": 3.6
+  },
+  {
+    "element": 986,
+    "name": "Ali Majrashi",
+    "normalized": "ali majrashi",
+    "price": 3.6
+  },
+  {
+    "element": 1016,
+    "name": "Dominic Hyam",
+    "normalized": "dominic hyam",
+    "price": 3.6
+  },
+  {
+    "element": 1169,
+    "name": "Adem Arous",
+    "normalized": "adem arous",
+    "price": 3.6
+  },
+  {
+    "element": 1170,
+    "name": "Mohamed Amine Ben Hmida",
+    "normalized": "mohamed amine ben hmida",
+    "price": 3.6
+  },
+  {
+    "element": 1296,
+    "name": "Farrukh Sayfiev",
+    "normalized": "farrukh sayfiev",
+    "price": 3.6
+  },
+  {
+    "element": 1297,
+    "name": "Khojiakbar Alijonov",
+    "normalized": "khojiakbar alijonov",
+    "price": 3.6
+  },
+  {
+    "element": 1460,
+    "name": "Carlos Moreno",
+    "normalized": "carlos moreno",
+    "price": 3.6
+  },
+  {
+    "element": 1464,
+    "name": "Ramón Juárez",
+    "normalized": "ramon juarez",
+    "price": 3.6
+  },
+  {
+    "element": 1468,
+    "name": "Víctor Guzmán",
+    "normalized": "victor guzman",
+    "price": 3.6
+  },
+  {
+    "element": 1491,
+    "name": "Tommy Smith",
+    "normalized": "tommy smith",
+    "price": 3.6
+  },
+  {
+    "element": 1506,
+    "name": "Homam El Amin",
+    "normalized": "homam el amin",
+    "price": 3.6
+  },
+  {
+    "element": 1541,
+    "name": "Nour Bani Ateyah",
+    "normalized": "nour bani ateyah",
+    "price": 3.6
+  },
+  {
+    "element": 1542,
+    "name": "Ahmad Al Juaidi",
+    "normalized": "ahmad al juaidi",
+    "price": 3.6
+  },
+  {
+    "element": 1564,
+    "name": "Mustafa Saadoon",
+    "normalized": "mustafa saadoon",
+    "price": 3.6
+  },
+  {
+    "element": 1565,
+    "name": "Ahmed Yahya",
+    "normalized": "ahmed yahya",
+    "price": 3.6
+  },
+  {
+    "element": 1668,
+    "name": "Youssef Belammari",
+    "normalized": "youssef belammari",
+    "price": 3.6
+  },
+  {
+    "element": 1697,
+    "name": "Brandon Petersen",
+    "normalized": "brandon petersen",
+    "price": 3.6
+  },
+  {
+    "element": 1699,
+    "name": "Thabiso Monyane",
+    "normalized": "thabiso monyane",
+    "price": 3.6
+  },
+  {
+    "element": 1701,
+    "name": "Bradley Cross",
+    "normalized": "bradley cross",
+    "price": 3.6
+  },
+  {
+    "element": 1972,
+    "name": "Joseph Anang",
+    "normalized": "joseph anang",
+    "price": 3.6
+  },
+  {
+    "element": 6,
+    "name": "Sohaib Nair",
+    "normalized": "sohaib nair",
+    "price": 3.5
+  },
+  {
+    "element": 7,
+    "name": "Rafik Belghali",
+    "normalized": "rafik belghali",
+    "price": 3.5
+  },
+  {
+    "element": 8,
+    "name": "Achref Abada",
+    "normalized": "achref abada",
+    "price": 3.5
+  },
+  {
+    "element": 19,
+    "name": "Melvin Mastil",
+    "normalized": "melvin mastil",
+    "price": 3.5
+  },
+  {
+    "element": 20,
+    "name": "Kilian Belazzoug",
+    "normalized": "kilian belazzoug",
+    "price": 3.5
+  },
+  {
+    "element": 66,
+    "name": "Kai Trewin",
+    "normalized": "kai trewin",
+    "price": 3.5
+  },
+  {
+    "element": 67,
+    "name": "Lucas Herrington",
+    "normalized": "lucas herrington",
+    "price": 3.5
+  },
+  {
+    "element": 76,
+    "name": "Patrick Beach",
+    "normalized": "patrick beach",
+    "price": 3.5
+  },
+  {
+    "element": 101,
+    "name": "Florian Wiegele",
+    "normalized": "florian wiegele",
+    "price": 3.5
+  },
+  {
+    "element": 145,
+    "name": "Nidal Celik",
+    "normalized": "nidal celik",
+    "price": 3.5
+  },
+  {
+    "element": 155,
+    "name": "Martin Zlomislic",
+    "normalized": "martin zlomislic",
+    "price": 3.5
+  },
+  {
+    "element": 203,
+    "name": "Sidny Cabral",
+    "normalized": "sidny cabral",
+    "price": 3.5
+  },
+  {
+    "element": 205,
+    "name": "Diney",
+    "normalized": "diney",
+    "price": 3.5
+  },
+  {
+    "element": 216,
+    "name": "Márcio da Rosa",
+    "normalized": "marcio da rosa",
+    "price": 3.5
+  },
+  {
+    "element": 237,
+    "name": "Owen Goodman",
+    "normalized": "owen goodman",
+    "price": 3.5
+  },
+  {
+    "element": 357,
+    "name": "Roshon van Eijma",
+    "normalized": "roshon van eijma",
+    "price": 3.5
+  },
+  {
+    "element": 358,
+    "name": "Ar'Jany Martha",
+    "normalized": "ar jany martha",
+    "price": 3.5
+  },
+  {
+    "element": 359,
+    "name": "Juriën Gaari",
+    "normalized": "jurien gaari",
+    "price": 3.5
+  },
+  {
+    "element": 361,
+    "name": "Tyrese Noslin",
+    "normalized": "tyrese noslin",
+    "price": 3.5
+  },
+  {
+    "element": 370,
+    "name": "Tyrick Bodak",
+    "normalized": "tyrick bodak",
+    "price": 3.5
+  },
+  {
+    "element": 381,
+    "name": "Stepán Chaloupek",
+    "normalized": "stepan chaloupek",
+    "price": 3.5
+  },
+  {
+    "element": 411,
+    "name": "Yaimar Medina",
+    "normalized": "yaimar medina",
+    "price": 3.5
+  },
+  {
+    "element": 442,
+    "name": "Tarek Alaa",
+    "normalized": "tarek alaa",
+    "price": 3.5
+  },
+  {
+    "element": 444,
+    "name": "Yasser Ibrahim",
+    "normalized": "yasser ibrahim",
+    "price": 3.5
+  },
+  {
+    "element": 453,
+    "name": "Mostafa Shobeir",
+    "normalized": "mostafa shobeir",
+    "price": 3.5
+  },
+  {
+    "element": 577,
+    "name": "Ricardo Adé",
+    "normalized": "ricardo ade",
+    "price": 3.5
+  },
+  {
+    "element": 578,
+    "name": "Martin Expérience",
+    "normalized": "martin experience",
+    "price": 3.5
+  },
+  {
+    "element": 580,
+    "name": "Wilguens Paugain",
+    "normalized": "wilguens paugain",
+    "price": 3.5
+  },
+  {
+    "element": 581,
+    "name": "Duke Lacroix",
+    "normalized": "duke lacroix",
+    "price": 3.5
+  },
+  {
+    "element": 593,
+    "name": "Josué Duverger",
+    "normalized": "josue duverger",
+    "price": 3.5
+  },
+  {
+    "element": 606,
+    "name": "Ali Nemati",
+    "normalized": "ali nemati",
+    "price": 3.5
+  },
+  {
+    "element": 608,
+    "name": "Aria Yousefi",
+    "normalized": "aria yousefi",
+    "price": 3.5
+  },
+  {
+    "element": 609,
+    "name": "Danial Eiri",
+    "normalized": "danial eiri",
+    "price": 3.5
+  },
+  {
+    "element": 623,
+    "name": "Mohammad Khalifeh",
+    "normalized": "mohammad khalifeh",
+    "price": 3.5
+  },
+  {
+    "element": 643,
+    "name": "Munaf Younus",
+    "normalized": "munaf younus",
+    "price": 3.5
+  },
+  {
+    "element": 644,
+    "name": "Akam Hashim",
+    "normalized": "akam hashim",
+    "price": 3.5
+  },
+  {
+    "element": 645,
+    "name": "Ahmed Maknzi",
+    "normalized": "ahmed maknzi",
+    "price": 3.5
+  },
+  {
+    "element": 655,
+    "name": "Kumel Saadi",
+    "normalized": "kumel saadi",
+    "price": 3.5
+  },
+  {
+    "element": 668,
+    "name": "Junnosuke Suzuki",
+    "normalized": "junnosuke suzuki",
+    "price": 3.5
+  },
+  {
+    "element": 692,
+    "name": "Mohannad Abu Taha",
+    "normalized": "mohannad abu taha",
+    "price": 3.5
+  },
+  {
+    "element": 693,
+    "name": "Mohammad Abu Hasheesh",
+    "normalized": "mohammad abu hasheesh",
+    "price": 3.5
+  },
+  {
+    "element": 695,
+    "name": "Husam Abu Al Dahab",
+    "normalized": "husam abu al dahab",
+    "price": 3.5
+  },
+  {
+    "element": 696,
+    "name": "Mohammad Taha",
+    "normalized": "mohammad taha",
+    "price": 3.5
+  },
+  {
+    "element": 697,
+    "name": "Ahmad Assaf",
+    "normalized": "ahmad assaf",
+    "price": 3.5
+  },
+  {
+    "element": 698,
+    "name": "Saleem Obaid",
+    "normalized": "saleem obaid",
+    "price": 3.5
+  },
+  {
+    "element": 699,
+    "name": "Mohammad Abu Al Nadi",
+    "normalized": "mohammad abu al nadi",
+    "price": 3.5
+  },
+  {
+    "element": 700,
+    "name": "Amer Jamous",
+    "normalized": "amer jamous",
+    "price": 3.5
+  },
+  {
+    "element": 747,
+    "name": "Everardo López",
+    "normalized": "everardo lopez",
+    "price": 3.5
+  },
+  {
+    "element": 774,
+    "name": "Ismaël Baouf",
+    "normalized": "ismael baouf",
+    "price": 3.5
+  },
+  {
+    "element": 775,
+    "name": "Abdelhamid Aït Boudlal",
+    "normalized": "abdelhamid ait boudlal",
+    "price": 3.5
+  },
+  {
+    "element": 787,
+    "name": "El Mehdi Al Harrar",
+    "normalized": "el mehdi al harrar",
+    "price": 3.5
+  },
+  {
+    "element": 829,
+    "name": "Callan Elliot",
+    "normalized": "callan elliot",
+    "price": 3.5
+  },
+  {
+    "element": 830,
+    "name": "Finn Surman",
+    "normalized": "finn surman",
+    "price": 3.5
+  },
+  {
+    "element": 854,
+    "name": "Henrik Falchener",
+    "normalized": "henrik falchener",
+    "price": 3.5
+  },
+  {
+    "element": 876,
+    "name": "Jiovany Ramos",
+    "normalized": "jiovany ramos",
+    "price": 3.5
+  },
+  {
+    "element": 877,
+    "name": "Martín Krug",
+    "normalized": "martin krug",
+    "price": 3.5
+  },
+  {
+    "element": 878,
+    "name": "Jorge Gutiérrez",
+    "normalized": "jorge gutierrez",
+    "price": 3.5
+  },
+  {
+    "element": 910,
+    "name": "Orlando Gill",
+    "normalized": "orlando gill",
+    "price": 3.5
+  },
+  {
+    "element": 954,
+    "name": "Niall Mason",
+    "normalized": "niall mason",
+    "price": 3.5
+  },
+  {
+    "element": 955,
+    "name": "Hashmi Al Hussain",
+    "normalized": "hashmi al hussain",
+    "price": 3.5
+  },
+  {
+    "element": 957,
+    "name": "Issa Laye",
+    "normalized": "issa laye",
+    "price": 3.5
+  },
+  {
+    "element": 971,
+    "name": "Mahmud Abunada",
+    "normalized": "mahmud abunada",
+    "price": 3.5
+  },
+  {
+    "element": 987,
+    "name": "Nawaf Bu Washl",
+    "normalized": "nawaf bu washl",
+    "price": 3.5
+  },
+  {
+    "element": 991,
+    "name": "Ali Lajami",
+    "normalized": "ali lajami",
+    "price": 3.5
+  },
+  {
+    "element": 1067,
+    "name": "Mbekezeli Mbokazi",
+    "normalized": "mbekezeli mbokazi",
+    "price": 3.5
+  },
+  {
+    "element": 1068,
+    "name": "Khulumani Ndamane",
+    "normalized": "khulumani ndamane",
+    "price": 3.5
+  },
+  {
+    "element": 1069,
+    "name": "Ime Okon",
+    "normalized": "ime okon",
+    "price": 3.5
+  },
+  {
+    "element": 1070,
+    "name": "Samukele Kabini",
+    "normalized": "samukele kabini",
+    "price": 3.5
+  },
+  {
+    "element": 1148,
+    "name": "Luca Jaquez",
+    "normalized": "luca jaquez",
+    "price": 3.5
+  },
+  {
+    "element": 1172,
+    "name": "Raed Chikhaoui",
+    "normalized": "raed chikhaoui",
+    "price": 3.5
+  },
+  {
+    "element": 1187,
+    "name": "Sabri Ben Hessen",
+    "normalized": "sabri ben hessen",
+    "price": 3.5
+  },
+  {
+    "element": 1203,
+    "name": "Ahmetcan Kaplan",
+    "normalized": "ahmetcan kaplan",
+    "price": 3.5
+  },
+  {
+    "element": 1235,
+    "name": "Benjamín García",
+    "normalized": "benjamin garcia",
+    "price": 3.5
+  },
+  {
+    "element": 1246,
+    "name": "Santiago Mele",
+    "normalized": "santiago mele",
+    "price": 3.5
+  },
+  {
+    "element": 1272,
+    "name": "Patrick Schulte",
+    "normalized": "patrick schulte",
+    "price": 3.5
+  },
+  {
+    "element": 1273,
+    "name": "Chris Brady",
+    "normalized": "chris brady",
+    "price": 3.5
+  },
+  {
+    "element": 1300,
+    "name": "Umar Eshmurodov",
+    "normalized": "umar eshmurodov",
+    "price": 3.5
+  },
+  {
+    "element": 1302,
+    "name": "Avazbek O'lmasaliev",
+    "normalized": "avazbek o lmasaliev",
+    "price": 3.5
+  },
+  {
+    "element": 1303,
+    "name": "Bekhruz Karimov",
+    "normalized": "bekhruz karimov",
+    "price": 3.5
+  },
+  {
+    "element": 1305,
+    "name": "Jakhongir Urozov",
+    "normalized": "jakhongir urozov",
+    "price": 3.5
+  },
+  {
+    "element": 1314,
+    "name": "Botirali Ergashev",
+    "normalized": "botirali ergashev",
+    "price": 3.5
+  },
+  {
+    "element": 1321,
+    "name": "Zaid Romero",
+    "normalized": "zaid romero",
+    "price": 3.5
+  },
+  {
+    "element": 1322,
+    "name": "Lautaro Di Lollo",
+    "normalized": "lautaro di lollo",
+    "price": 3.5
+  },
+  {
+    "element": 1428,
+    "name": "Robin Risser",
+    "normalized": "robin risser",
+    "price": 3.5
+  },
+  {
+    "element": 1433,
+    "name": "Paul Reverson",
+    "normalized": "paul reverson",
+    "price": 3.5
+  },
+  {
+    "element": 1434,
+    "name": "Solomon Agbasi",
+    "normalized": "solomon agbasi",
+    "price": 3.5
+  },
+  {
+    "element": 1461,
+    "name": "Álex Padilla",
+    "normalized": "alex padilla",
+    "price": 3.5
+  },
+  {
+    "element": 1465,
+    "name": "Mateo Chávez",
+    "normalized": "mateo chavez",
+    "price": 3.5
+  },
+  {
+    "element": 1467,
+    "name": "Bryan González",
+    "normalized": "bryan gonzalez",
+    "price": 3.5
+  },
+  {
+    "element": 1495,
+    "name": "Juan Espínola",
+    "normalized": "juan espinola",
+    "price": 3.5
+  },
+  {
+    "element": 1497,
+    "name": "Santiago Rojas",
+    "normalized": "santiago rojas",
+    "price": 3.5
+  },
+  {
+    "element": 1499,
+    "name": "Alcides Benítez",
+    "normalized": "alcides benitez",
+    "price": 3.5
+  },
+  {
+    "element": 1501,
+    "name": "Alan Núñez",
+    "normalized": "alan nunez",
+    "price": 3.5
+  },
+  {
+    "element": 1503,
+    "name": "Diego León",
+    "normalized": "diego leon",
+    "price": 3.5
+  },
+  {
+    "element": 1505,
+    "name": "Rayyan Al Ali",
+    "normalized": "rayyan al ali",
+    "price": 3.5
+  },
+  {
+    "element": 1523,
+    "name": "Mike Penders",
+    "normalized": "mike penders",
+    "price": 3.5
+  },
+  {
+    "element": 1528,
+    "name": "Stopira",
+    "normalized": "stopira",
+    "price": 3.5
+  },
+  {
+    "element": 1538,
+    "name": "Keeto Thermoncy",
+    "normalized": "keeto thermoncy",
+    "price": 3.5
+  },
+  {
+    "element": 1543,
+    "name": "Ehsan Haddad",
+    "normalized": "ehsan haddad",
+    "price": 3.5
+  },
+  {
+    "element": 1544,
+    "name": "Saed Al Rosan",
+    "normalized": "saed al rosan",
+    "price": 3.5
+  },
+  {
+    "element": 1545,
+    "name": "Anas Badawi",
+    "normalized": "anas badawi",
+    "price": 3.5
+  },
+  {
+    "element": 1566,
+    "name": "Dario Naamo",
+    "normalized": "dario naamo",
+    "price": 3.5
+  },
+  {
+    "element": 1576,
+    "name": "Craig Gordon",
+    "normalized": "craig gordon",
+    "price": 3.5
+  },
+  {
+    "element": 1666,
+    "name": "Ibrahim Gomis",
+    "normalized": "ibrahim gomis",
+    "price": 3.5
+  },
+  {
+    "element": 1667,
+    "name": "Yanis Benchaouch",
+    "normalized": "yanis benchaouch",
+    "price": 3.5
+  },
+  {
+    "element": 1681,
+    "name": "Sander Tangvik",
+    "normalized": "sander tangvik",
+    "price": 3.5
+  },
+  {
+    "element": 1700,
+    "name": "Olwethu Makhanya",
+    "normalized": "olwethu makhanya",
+    "price": 3.5
+  },
+  {
+    "element": 1975,
+    "name": "Kojo Peprah Oppong",
+    "normalized": "kojo peprah oppong",
+    "price": 3.5
+  },
+  {
+    "element": 1976,
+    "name": "Jonas Adjetey",
+    "normalized": "jonas adjetey",
+    "price": 3.5
+  },
+  {
+    "element": 1979,
+    "name": "Marvin Senaya",
+    "normalized": "marvin senaya",
+    "price": 3.5
+  },
+  {
+    "element": 2009,
+    "name": "Ahmed Tagnaouti",
+    "normalized": "ahmed tagnaouti",
+    "price": 3.5
+  },
+  {
+    "element": 2015,
+    "name": "Redouane Halhal",
+    "normalized": "redouane halhal",
+    "price": 3.5
+  },
+  {
+    "element": 2067,
+    "name": "Mladen Jurkas",
+    "normalized": "mladen jurkas",
+    "price": 3.5
+  }
+]
