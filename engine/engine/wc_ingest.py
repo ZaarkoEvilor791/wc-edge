@@ -321,6 +321,12 @@ async def run_sofascore(dry_run: bool = False) -> None:
 # ---------------------------------------------------------------------------
 
 _POS_MAP = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
+_VALID_POS = {"GK", "DEF", "MID", "FWD"}
+
+def _parse_pos(raw) -> str:
+    if isinstance(raw, str) and raw.upper() in _VALID_POS:
+        return raw.upper()
+    return _POS_MAP.get(raw, "MID")
 
 
 def run_fifa(conn: psycopg.Connection, dry_run: bool = False) -> None:
@@ -336,7 +342,35 @@ def run_fifa(conn: psycopg.Connection, dry_run: bool = False) -> None:
         )
         return
 
-    print(f"[fifa] {len(players)} players | {len(rounds)} rounds | {len(squads)} squads")
+    # Build team map from rounds fixtures (sequential IDs matching player.squadId)
+    teams_map: dict[int, dict] = {}
+    for rnd in rounds:
+        for fix in rnd.get("tournaments", []):
+            for sid_key, name_key, abbr_key in [
+                ("homeSquadId", "homeSquadName", "homeSquadAbbr"),
+                ("awaySquadId", "awaySquadName", "awaySquadAbbr"),
+            ]:
+                sid = fix.get(sid_key)
+                if sid and sid not in teams_map:
+                    teams_map[sid] = {
+                        "id": sid,
+                        "name": fix.get(name_key),
+                        "abbr": fix.get(abbr_key),
+                        "seed": None,
+                        "group": None,
+                    }
+
+    # Enrich with seed/group from squads_fifa by name match
+    for sq in squads:
+        sq_norm = normalize(sq.get("name", ""))
+        for team in teams_map.values():
+            if normalize(team["name"] or "") == sq_norm:
+                team["seed"] = sq.get("seed")
+                raw_group = sq.get("group")
+                team["group"] = raw_group.upper() if raw_group else None
+                break
+
+    print(f"[fifa] {len(players)} players | {len(rounds)} rounds | {len(teams_map)} teams (from fixtures)")
 
     if dry_run:
         return
@@ -350,7 +384,7 @@ def run_fifa(conn: psycopg.Connection, dry_run: bool = False) -> None:
                 name = EXCLUDED.name, abbr = EXCLUDED.abbr,
                 seed = EXCLUDED.seed, group_name = EXCLUDED.group_name
             """,
-            [(s["id"], s.get("name"), s.get("abbr"), s.get("seed"), s.get("group")) for s in squads],
+            [(t["id"], t["name"], t["abbr"], t["seed"], t["group"]) for t in teams_map.values()],
         )
         cur.executemany(
             """
@@ -380,7 +414,7 @@ def run_fifa(conn: psycopg.Connection, dry_run: bool = False) -> None:
             [
                 (
                     p["id"], p.get("firstName"), p.get("lastName"), p.get("knownName"),
-                    p.get("squadId"), _POS_MAP.get(p.get("position"), "MID"),
+                    p.get("squadId"), _parse_pos(p.get("position")),
                     p.get("price"), p.get("status"), p.get("percentSelected"),
                 )
                 for p in players

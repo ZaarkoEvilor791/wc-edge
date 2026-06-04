@@ -1,0 +1,162 @@
+import { NavLink } from 'react-router-dom'
+import clsx from 'clsx'
+import { useAppStore } from '../../store/appStore'
+
+function Icon({ path, viewBox = '0 0 24 24' }: { path: React.ReactNode; viewBox?: string }) {
+  return (
+    <svg
+      viewBox={viewBox}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[18px] w-[18px]"
+      aria-hidden
+    >
+      {path}
+    </svg>
+  )
+}
+
+const Icons = {
+  assistant: (
+    <Icon path={<>
+      <polyline points="2,18 7,10 11,14 20,3" />
+      <polyline points="15,3 20,3 20,8" />
+    </>} />
+  ),
+  squad: (
+    <Icon path={<>
+      <circle cx="9" cy="7" r="3" />
+      <circle cx="17" cy="7" r="3" />
+      <path d="M2 21v-1a7 7 0 0 1 14 0v1" />
+      <path d="M22 21v-1a4 4 0 0 0-4-4" />
+    </>} />
+  ),
+  transfers: (
+    <Icon path={<>
+      <path d="M7 16V4m0 0L3 8m4-4 4 4" />
+      <path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+    </>} />
+  ),
+  captain: (
+    <Icon path={<>
+      <path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-.01z" />
+    </>} />
+  ),
+  live: (
+    <Icon path={<>
+      <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+      <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13" />
+    </>} />
+  ),
+}
+
+type IconKey = keyof typeof Icons
+
+const NAV: Array<{ to: string; label: string; icon: IconKey }> = [
+  { to: '/',          label: 'Assistant', icon: 'assistant' },
+  { to: '/squad',     label: 'Squad',     icon: 'squad'     },
+  { to: '/transfers', label: 'Transfers', icon: 'transfers' },
+  { to: '/captain',   label: 'Captain',   icon: 'captain'   },
+  { to: '/live',      label: 'Live',      icon: 'live'      },
+]
+
+export default function Sidebar() {
+  const collapsed        = useAppStore((s) => s.sidebarCollapsed)
+  const toggleSidebar    = useAppStore((s) => s.toggleSidebar)
+  const mobileMenuOpen   = useAppStore((s) => s.mobileMenuOpen)
+  const setMobileMenuOpen = useAppStore((s) => s.setMobileMenuOpen)
+
+  const isCollapsed = collapsed && !mobileMenuOpen
+
+  return (
+    <aside
+      className={clsx(
+        'fixed inset-y-0 left-0 z-20 flex shrink-0 flex-col border-r border-slate-800 bg-slate-900 transition-all duration-200',
+        'md:relative md:inset-auto md:z-auto md:translate-x-0',
+        mobileMenuOpen ? 'translate-x-0 w-52' : '-translate-x-full w-52',
+        collapsed ? 'md:w-[58px]' : 'md:w-52',
+      )}
+    >
+      {/* Logo / wordmark */}
+      <div className={clsx(
+        'flex h-14 items-center border-b border-slate-800/60',
+        isCollapsed ? 'justify-center' : 'px-5',
+      )}>
+        {isCollapsed ? (
+          <span className="text-base font-bold text-accent">W</span>
+        ) : (
+          <span className="text-base font-bold tracking-tight">
+            <span className="text-accent">wc</span>
+            <span className="text-slate-100">-edge</span>
+          </span>
+        )}
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(false)}
+            className="ml-auto rounded p-1 text-slate-400 hover:text-slate-200 md:hidden"
+            aria-label="Close menu"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav className={clsx('mt-3 flex flex-col gap-0.5', isCollapsed ? 'px-2' : 'px-3')}>
+        {NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            title={isCollapsed ? item.label : undefined}
+            onClick={() => setMobileMenuOpen(false)}
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center rounded-lg py-2 text-sm font-medium transition-colors',
+                isCollapsed ? 'justify-center px-0' : 'gap-2.5 px-3',
+                isActive
+                  ? 'bg-accent/15 text-accent'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100',
+              )
+            }
+          >
+            {Icons[item.icon]}
+            {!isCollapsed && item.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Collapse toggle — desktop only */}
+      <button
+        onClick={toggleSidebar}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className={clsx(
+          'absolute -right-3 top-[52px] z-10 hidden h-6 w-6 items-center justify-center',
+          'rounded-full border border-slate-700 bg-slate-900 text-slate-400',
+          'hover:border-accent hover:text-accent transition-colors shadow-sm',
+          'md:flex',
+        )}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={clsx('h-3 w-3 transition-transform duration-200', collapsed ? 'rotate-180' : 'rotate-0')}
+        >
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+    </aside>
+  )
+}
