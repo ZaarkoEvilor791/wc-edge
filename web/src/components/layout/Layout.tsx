@@ -10,8 +10,11 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       {/* FIFA WC 2026 banner */}
-      <div className="shrink-0 border-b border-accent/20 bg-slate-900 px-4 py-1.5 text-center text-xs font-medium tracking-wide text-accent/80">
-        ⚽&nbsp; FIFA World Cup 2026 · Fantasy Companion
+      <div className="shrink-0 flex items-center justify-between bg-gradient-to-r from-wc-navy via-slate-900 to-wc-navy px-4" style={{ height: '48px' }}>
+        <span className="text-xs font-semibold uppercase tracking-widest text-accent">
+          FIFA World Cup 2026™
+        </span>
+        <span className="hidden text-xs text-slate-400 sm:block">USA · Canada · Mexico</span>
       </div>
 
       {/* Sidebar + main content */}

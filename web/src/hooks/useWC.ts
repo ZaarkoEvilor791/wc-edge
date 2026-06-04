@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import { wcApi } from '../services/wcApi'
 
 export function usePlayers() {
@@ -36,6 +36,26 @@ export function useOptimizeSquad() {
     mutationFn: (body: { round?: number }) => wcApi.optimizeSquad(body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['suggestedSquad'] }),
   })
+}
+
+export function usePlayerProjectionsAllRounds(element: number) {
+  const queries = useQueries({
+    queries: [1, 2, 3, 4, 5, 6, 7, 8].map((round) => ({
+      queryKey: ['projections', round],
+      queryFn: () => wcApi.projections(round),
+      staleTime: 5 * 60_000,
+    })),
+  })
+  return queries.map((q, i) => ({
+    round: i + 1,
+    xp: q.data?.find((p) => p.element === element)?.xp ?? 0,
+    p_goal: q.data?.find((p) => p.element === element)?.p_goal ?? 0,
+    p_cs: q.data?.find((p) => p.element === element)?.p_cs ?? 0,
+    variance: q.data?.find((p) => p.element === element)?.variance ?? 0,
+    p_play: q.data?.find((p) => p.element === element)?.p_play ?? 0,
+    mf: q.data?.find((p) => p.element === element)?.mf ?? 0,
+    loading: q.isLoading,
+  }))
 }
 
 export function useCurrentRound() {

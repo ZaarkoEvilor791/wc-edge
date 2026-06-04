@@ -20,9 +20,12 @@ export default {
       colors: {
         slate: brandSlate,
         accent: {
-          DEFAULT: '#00D8CB',  // teal
+          DEFAULT: '#C8A84C',  // FIFA trophy gold
           fg: '#060D18',
         },
+        'wc-navy': '#0C1D3E',
+        'wc-red': '#DC2430',
+        'pitch-green': '#2D7A4F',
         brand: {
           dark: '#0A1321',
         },

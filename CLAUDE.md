@@ -116,6 +116,35 @@
   3. `py -m engine.wc_run` — re-run model + optimizer with name override improvements
   4. Top up Anthropic credits to enable AI chat end-to-end testing
 
+**Session 7 (2026-06-06) — UI redesign: FIFA WC 2026 branding + pitch layout + player profiles:**
+
+- **Accent reverted to gold:** teal (`#00D8CB`) → FIFA trophy gold (`#C8A84C`) in `tailwind.config.ts`
+- **New Tailwind tokens added:** `wc-navy: '#0C1D3E'`, `wc-red: '#DC2430'`, `pitch-green: '#2D7A4F'`
+- **FIFA WC 2026 banner reworked** (`Layout.tsx`): 48px navy gradient strip (`bg-gradient-to-r from-wc-navy`), gold "FIFA World Cup 2026™" left, "USA · Canada · Mexico" right — no trademarked images, text treatment only
+- **Pitch component shipped** (`web/src/components/shared/Pitch.tsx`):
+  - SVG pitch surface with white line markings (centre circle, penalty areas, spots), `bg-pitch-green`
+  - 4 formation rows: FWD (top) → MID → DEF → GK (bottom), 4-4-2 default
+  - Bench strip below pitch: 4 muted cards (1GK + 1DEF + 1MID + 1FWD)
+- **`PitchPlayerCard.tsx`** — compact card: surname / price / xP; `isBench` prop for muted styling; captain © badge
+- **`web/src/utils/squad.ts`** — `getXI(players, projections, round)` utility: sorts each position group by xP, returns `{xi: SquadPlayer[], bench: SquadPlayer[]}`
+- **Player profile modal shipped** (`web/src/components/shared/PlayerProfileModal.tsx`):
+  - React portal, click outside or ✕ to close
+  - 5 sections: header (team/name/position/price) → hero xP → 8-round xP chart → stats grid (P(Goal)/P(CS)/Variance/xMins)
+  - Zero new API endpoints — data from existing projections cache
+- **`RoundXpChart.tsx`** — 8-bar inline SVG: GROUP rounds in gold, R32→Final in red with increasing opacity
+- **`usePlayerProjectionsAllRounds(element)`** hook added to `useWC.ts` — uses React Query `useQueries` for 8 parallel round fetches, deduped by cache
+- **`Squad.tsx` fully reworked:**
+  - Pitch view is PRIMARY (default), list view preserved as toggle
+  - Toggle button: inline SVG pitch/list icons, `viewMode` state (local, not Zustand)
+  - Both views open `PlayerProfileModal` on player click
+- **TypeScript:** clean (zero errors)
+- **Next session starts here (Day 4 — continue):**
+  1. Login page design (plan convened this session — see plan file)
+  2. Fix `wc.teams` duplicate rows — `DELETE FROM wc.teams WHERE squad_id > 1000` before fifa upsert
+  3. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota)
+  4. `py -m engine.wc_run` — re-run model + optimizer
+  5. Top up Anthropic credits for AI chat end-to-end testing
+
 ---
 
 ## Day-by-Day Build Schedule
