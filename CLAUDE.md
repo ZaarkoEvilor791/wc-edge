@@ -94,11 +94,27 @@
   - `/api/squad/suggest` ✅ 15 players, £98.9m, 77.6 xP
   - `/api/chat` ✅ routing correct — blocked by **Anthropic account needs credits** (not a code bug)
 - **Known DB bug (pre-existing from Day 2):** `wc.teams` has 80 rows instead of 48 — duplicate entries with FIFA entity IDs (43817+) alongside correct sequential IDs (1-48). Fix: re-run `py -m engine.wc_ingest --source fifa` on Day 4 after adding a DELETE before upsert.
+**Session 6 (2026-06-06) — UI quality pass: fpl-edge parity + WC theme:**
+
+- **Accent changed:** gold (#E8B84B) → teal (#00D8CB) — `tailwind.config.ts`, cascades everywhere automatically
+- **FIFA WC 2026 banner:** slim strip at top of Layout spanning full width (`bg-slate-900 border-accent/20 text-accent/80`)
+- **Logo component:** `web/src/components/shared/Logo.tsx` — inline SVG trophy mark (collapsed) + "wc-edge" wordmark (expanded), mirrors fpl-edge pattern. Used in `Sidebar.tsx`.
+- **Shared component library created** (`web/src/components/shared/`):
+  - `Spinner.tsx` — spinning `border-t-accent` with label
+  - `StatCard.tsx` — `rounded-xl border-slate-800 bg-slate-900 p-4 text-center` with label/value/sub
+  - `Logo.tsx` — `LogoMark` (collapsed) + `Logo` (expanded) with trophy SVG
+- **Layout.tsx:** overflow-hidden → overflow-auto (chat still works via negative margin + internal scroll); WC banner added above sidebar+main row
+- **Assistant.tsx:** "Powered by Claude" badge in header; user bubbles → `bg-slate-700 text-slate-100` (not accent); ThinkingDots → `animate-bounce` staggered; border colors → slate-800
+- **Squad.tsx:** 3 StatCards header (Total xP / Squad Cost / Players); PlayerCard → `rounded-xl border-slate-800 bg-slate-900`; position headers show count
+- **Captain.tsx:** column headers row; TOP PICK label on #1; C badge; `border-accent/40` on top row; `rounded-xl border-slate-800 bg-slate-900` rows
+- **Live.tsx:** match card grid replacing raw JSON; dual API shape guard (`Array.isArray(data) || data?.matches`); dev-mode raw dump under `<details>`
+- **index.css:** `:root { color-scheme: dark }` added; orphan pulse keyframe removed
+- **TypeScript:** clean (zero errors after all changes)
 - **Next session starts here (Day 4):**
   1. Fix `wc.teams` duplicate rows — add `DELETE FROM wc.teams WHERE squad_id > 1000` before fifa upsert, or clean up manually
   2. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota)
   3. `py -m engine.wc_run` — re-run model + optimizer with name override improvements
-  4. Top up Anthropic credits to enable AI chat testing
+  4. Top up Anthropic credits to enable AI chat end-to-end testing
 
 ---
 
@@ -108,7 +124,7 @@
 |---|---|---|---|
 | 1 | Jun 4 | Repo scaffold + Phase 1 scrape (StatsBomb + API-Football Day 1) | ✅ Done |
 | 2 | Jun 5 | Engine pipeline (model+optimizer) + full web scaffold (5 pages, Express, hooks) | ✅ Done |
-| 3 | Jun 6 | Name-override review + wire Express routes + Assistant page (AI chat) | ✅ Done |
+| 3 | Jun 6 | Name-override review + Assistant page + UI quality pass (fpl-edge parity) | ✅ Done |
 | 4 | Jun 7 | API-Football Day 2 + re-run model + Captain/Transfers page polish | ← Start here |
 | 5 | Jun 8 | Squad page swap drawer + squadOptimizer.ts (Re-optimize endpoint) | |
 | 6 | Jun 9 | Transfers page (greedy cards) + Live page (match cards + captain banner) | |
@@ -123,10 +139,11 @@
 ```bash
 # Day 1 (DONE): statsbomb + apif day 1
 # Day 2 (DONE): fifa source (re-run with position fix), model + optimizer
-# Day 3 (DONE): name overrides (13 entries), Assistant page, server.ts squadNames fix
+# Day 3 (DONE): name overrides (13 entries), Assistant page, server.ts squadNames fix,
+#               full UI quality pass (teal accent, WC banner, shared components, fpl-edge parity)
 # DB state: 1481 players, 80 teams (bug: 32 duplicate FIFA entity ID rows), 8 rounds,
 #           571 player_stats, 11848 projections, 1 suggested_squad
-# Day 4 fix needed: clean wc.teams duplicates before re-running fifa ingest
+# Day 4 fix needed: DELETE FROM wc.teams WHERE squad_id > 1000 before re-running fifa ingest
 ```
 
 ### Day 4 — API-Football Day 2 + re-run model
