@@ -13,6 +13,7 @@ import {
   getSuggestedSquad,
   getCurrentRoundId,
   matchPlayersByName,
+  getTeamFdr,
 } from './db'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -225,6 +226,25 @@ app.post('/api/transfers/suggest', async (req, res) => {
   }
 })
 
+app.get('/api/fdr', async (req, res) => {
+  const round = Number(req.query.round)
+  if (!round || Number.isNaN(round)) {
+    return res.status(400).json({ error: 'round query param required' })
+  }
+  try {
+    const rows = await getTeamFdr(round)
+    if (rows.length === 0) return res.json([])
+    const sorted = [...rows].sort((a, b) => b.lambda_posterior - a.lambda_posterior)
+    const n = sorted.length
+    res.json(sorted.map((r, i) => ({
+      squad_id: r.squad_id,
+      fdr: Math.min(5, Math.floor((i / n) * 5) + 1),
+    })))
+  } catch (err) {
+    res.status(500).json({ error: String(err) })
+  }
+})
+
 app.get('/api/live', async (req, res) => {
   const round = Number(req.query.round) || await getCurrentRoundId()
   try {
@@ -256,10 +276,13 @@ app.post('/api/chat', async (req, res) => {
     'You are an expert FIFA WC 2026 Fantasy advisor called Edge.',
     'Give concise, actionable advice based on expected points projections, fixture difficulty, and player form.',
     'Keep responses focused and under 150 words unless the user asks for detail.',
+    'Scoring: Goal pts — GK 9, DEF 7, MID 6, FWD 5. Assist 3pts. Clean sheet — GK/DEF 5pts, MID 1pt, FWD 0pt. Appearance ≥60min 2pts, <60min 1pt. GK: +1pt per 3 saves. Yellow card −1pt, red card −2pt. Scouting bonus +2pts (≥4pts AND <5% ownership).',
+    'Available chips: Wildcard (reset full squad free), 12th Man (bench scores full points that round), Max Captain (3× captain multiplier instead of 2×), Qualification Booster (activates when your nation qualifies, boosts all their players), Mystery Booster (random effect revealed on activation).',
+    'Budget: £100m in group stage, £105m from Round of 32 onward. Country limit: max 3 players per nation in group stage (increases in knockouts: 4 in R32, 5 in R16, 6 in QF, 8 in SF/Final). Extra transfers beyond free allowance cost −3 pts each.',
     squadNames?.length
       ? `The user's current 15-player squad: ${squadNames.join(', ')}.`
       : 'The user has not yet set their squad.',
-  ].join(' ')
+  ].join('\n')
 
   try {
     const response = await anthropic.messages.create({

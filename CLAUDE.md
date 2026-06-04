@@ -211,6 +211,34 @@
   4. Top up Anthropic credits — required for `/api/chat` AND `/api/squad/from-screenshot` (both call Claude)
   5. Test screenshot flow end-to-end once credits are live
 
+**Session 11 (2026-06-10) — Day 7: PRD gap fill — Captain/Transfers/Assistant/Squad polish:**
+
+- **Captain page fully upgraded:**
+  - **Variance column** (`±X.X`) — cross-references `useProjections(round)` by element ID, hidden on mobile (`hidden sm:block`)
+  - **FDR badge** (1–5 colored pill) — new `GET /api/fdr?round=N` endpoint; quintiles of `lambda_posterior` from `wc.team_fdr` table; 1=green (easiest/most likely to score), 5=red; hidden on mobile; degrades to nothing if table empty
+  - **Round deadline + countdown** — `useCountdown(start_date)` hook with `setInterval(60s)`; shows "Deadline: DD Mon · Xh Ym remaining" card top-right; gracefully omitted when `start_date` null
+  - **"Set on FIFA Fantasy" footer** — pinned below list with external link to `play.fifa.com/fantasy/`
+
+- **Transfers page upgraded:**
+  - **−3 pts badge** — red pill badge on SwapCard header when `index >= freeTransfers`
+  - **Undo last swap** — `prevSquads: SquadPlayer[][]` stack pushed before each Accept; `handleUndo()` pops snapshot, reverses squad store + `accepted` array + decrements index; "↩ Undo" button appears in-progress when `canUndo` and in DoneState as "↩ Undo last"
+
+- **Assistant system prompt enriched** (`server.ts`):
+  - Full scoring rules: Goal pts by position (GK=9, DEF=7, MID=6, FWD=5), CS, assists, appearance, saves, cards, scouting bonus
+  - WC chip names: Wildcard, 12th Man, Max Captain, Qualification Booster, Mystery Booster
+  - Country limit rules by round, budget rules (£100m group / £105m R32+)
+
+- **Squad page upgraded:**
+  - **Budget bar** — live progress bar `£X.Xm / £100m`, turns rose-500 when >95% used; replaces static stat card value with live-computed total cost
+  - **Country-count warnings** — compact strip above pitch: shows `ABBR ×N` chips in amber for any team with ≥3 players; "max 3 in group stage" reminder; hidden when no violations
+
+- **New backend** (`server.ts`): `GET /api/fdr?round=N` — returns `{squad_id, fdr}[]`; imported `getTeamFdr` from `db.ts`
+- **New DB query** (`db.ts`): `getTeamFdr(round)` — `SELECT squad_id, lambda_posterior FROM team_fdr WHERE round = $1`
+- **New type** (`wc.ts`): `TeamFdr { squad_id: number; fdr: number }`
+- **New hook** (`useWC.ts`): `useTeamFdr(round)` — 30min stale time
+- **New API method** (`wcApi.ts`): `teamFdr(round)`
+- **TypeScript:** clean (zero errors)
+
 **Session 10 (2026-06-08) — Day 6: Live polish + captain banner + squad swap drawer:**
 
 - **Live page polished** (`web/src/pages/Live.tsx`):
@@ -242,34 +270,33 @@
 
 Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
 
-### High value / low effort (do first)
+### High value / low effort (DONE Day 7)
 
 **Captain page (`web/src/pages/Captain.tsx`):**
-1. **Variance column** — `variance` is in `projections` table, fetched via `useProjections(round)`. Add a column to the existing 15-row list. Show as ±X.X
-2. **FDR badge** — `team_fdr` table has `lambda_posterior` per `squad_id` per round. Need new server route `GET /api/fdr?round=N` → return `{squad_id, fdr}[]` where fdr = 1-5 bucket from quintiles of lambda. Add badge to each row in Captain.tsx
-3. **"Set on FIFA Fantasy" footer** — persistent reminder text below the list: "Remember to also set your captain at play.fifa.com/fantasy/" with a link
-4. **Round deadline + countdown** — use `currentRound.start_date` (already in rounds data) to show "Deadline: DD Mon · Xh Ym" with a live countdown (`setInterval` every minute)
+1. ✅ **Variance column** — `±X.X`, cross-references `useProjections(round)`, hidden on mobile
+2. ✅ **FDR badge** — new `GET /api/fdr?round=N` + `useTeamFdr(round)` hook; 1=green, 5=red; hidden on mobile; degrades gracefully
+3. ✅ **"Set on FIFA Fantasy" footer** — pinned below list with external link
+4. ✅ **Round deadline + countdown** — `useCountdown(start_date)` with `setInterval(60s)`
 
 **Transfers page (`web/src/pages/Transfers.tsx`):**
-5. **−3 pts badge** — when `currentSwapIndex >= freeTransfers`, show a red "−3 pts" badge on the swap card header
-6. **Undo last swap** — keep an `acceptedSwaps[]` stack; add "Undo" button in done state (and optionally after each Accept) that pops last swap from stack and reverses it in squad store
+5. ✅ **−3 pts badge** — red pill on SwapCard header when `index >= freeTransfers`
+6. ✅ **Undo last swap** — `prevSquads[]` stack; "↩ Undo" in-progress + in DoneState
 
 **Assistant system prompt (`web/server/server.ts`):**
-7. **WC chip names** — add to system prompt: "Chips available: Wildcard, 12th Man (bench scores full pts), Max Captain (3× not 2×), Qualification Booster, Mystery Booster"
-8. **Scoring rules** — add condensed scoring table to system prompt so Edge can answer rules questions accurately
-
-### Medium effort
-
-**Transfers page:**
-9. **ELIMINATED badge** — need `teams.isActive` flag. Currently not in schema (teams table has squad_id, name, abbr, seed, group_name). Add `is_active BOOLEAN DEFAULT TRUE` to teams. Expose via `GET /api/teams`. On the swap card, if the OUT player's team is inactive, show "ELIMINATED" badge. Server-side: eliminated players naturally surface as top sells (future xP=0) — badge is UI only.
-
-**Captain page:**
-10. **FDR data** — requires new `/api/fdr?round=N` endpoint + `useTeamFdr(round)` hook. `team_fdr` table already populated by engine.
+7. ✅ **WC chip names** — Wildcard, 12th Man, Max Captain, Qualification Booster, Mystery Booster
+8. ✅ **Scoring rules** — full scoring table (goals by position, CS, assists, appearance, saves, cards, scouting bonus)
 
 **Squad page:**
-11. **Budget bar** — show used/total budget as a progress bar (£X.Xm of £100m). Data: sum `displaySquad.map(p => p.price)`. No new API needed.
-12. **Country-count bar** — count players per `squad_id`, highlight in red any country with ≥3. Data available in `displaySquad`. No new API needed.
-13. **Swap drawer full player list** — PRD says swap drawer should show ALL players of same position sorted by xP delta, not just bench. Requires fetching `/api/projections?round=N` + `/api/players`, filtering by position, sorting by xP gain. Currently shows bench only.
+11. ✅ **Budget bar** — live `£X.Xm / £100m` progress bar, turns red >95%
+12. ✅ **Country-count bar** — amber strip warning any team with ≥3 players
+
+### Medium effort (Day 8)
+
+**Transfers page:**
+9. **ELIMINATED badge** — need `teams.is_active BOOLEAN DEFAULT TRUE`. Add column, expose via `GET /api/teams`. Badge is UI-only on swap card OUT player. Day 8.
+
+**Swap drawer:**
+13. **Full player list** — show ALL players of same position sorted by xP delta, not just bench. Requires fetching `/api/projections` + filtering by position. Day 8 stretch.
 
 ### Complex / data-dependent (stretch)
 14. **Live: squad player filtering** — community API (`worldcup2026-api.vercel.app`) likely doesn't return per-player live points. Skip unless API supports it.
@@ -288,37 +315,26 @@ Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
 | 4 | Jun 7 | UI redesign (pitch layout, player profiles, WC banner) + onboarding flow (screenshot squad sync) | ✅ Done |
 | 5 | Jun 8 | Fix teams DB bug + apif Day 2 + model rerun + Transfers greedy cards + Player profile modal redesign | ✅ Done (engine deferred to Day 9) |
 | 6 | Jun 9 | Live page polish + captain banner + squad swap drawer + onboarding fix | ✅ Done |
-| 7 | Jun 10 | PRD gap fill (Captain: variance/FDR/deadline/footer · Transfers: -3pts/undo · Assistant: chips/rules) + GitHub Actions engine.yml + Render deploy | ← Start here |
-| 8 | Jun 11 | Polish + ELIMINATED badge + squad budget/country bars + final engine run + production smoke test | |
+| 7 | Jun 10 | PRD gap fill (Captain: variance/FDR/deadline/footer · Transfers: -3pts/undo · Assistant: chips/rules · Squad: budget bar/country count) | ✅ Done |
+| 8 | Jun 11 | GitHub Actions engine.yml + Render deploy + ELIMINATED badge + final engine run + production smoke test | ← Start here |
 
 ---
 
-## How to Start (Day 7 — next session)
+## How to Start (Day 8 — next session)
 
 ### What's already done (do not re-run)
 ```bash
-# Day 1 (DONE): statsbomb + apif day 1
-# Day 2 (DONE): fifa source (re-run with position fix), model + optimizer
-# Day 3 (DONE): name overrides (13 entries), Assistant page, server.ts squadNames fix,
-#               full UI quality pass (teal accent, WC banner, shared components, fpl-edge parity)
-# DB state: 1481 players, 80 teams (bug: 32 duplicate FIFA entity ID rows), 8 rounds,
-#           571 player_stats, 11848 projections, 1 suggested_squad
-# Day 4 fix needed: DELETE FROM wc.teams WHERE squad_id > 1000 before re-running fifa ingest
+# Day 1–7 (DONE): full engine + all UI pages + all PRD gaps filled
+# DB state: 1481 players, 8 rounds, 11848 projections, 384 team_fdr rows, 1 suggested_squad
+# Pending engine work (from Day 5, still deferred): apif day 2 run + model rerun
 ```
 
-### Day 4 — API-Football Day 2 + re-run model
-```bash
-cd engine
-$env:PYTHONUTF8=1   # PowerShell — needed for Windows console
-py -m engine.wc_ingest --source apif --day 2   # fresh 100 req quota
-py -m engine.wc_run                             # re-run model + optimizer with better data
-```
-
-**IMPORTANT — API-Football notes:**
-- `/players/topscorers` has NO `page` parameter — already handled in code
-- Budget file: `engine/data/apif_budget.json` — day1_used=80, day2_used=0
-- Day 2 run uses `--day 2` flag to use day2_used counter
-- **Run AFTER Day 3 name overrides** to get maximum match benefit
+### Day 8 priorities (in order)
+1. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; triggers `py -m engine.wc_run`; post-group bonus run June 27
+2. **Render deploy** — push main, confirm `https://wc-edge.onrender.com` smoke test
+3. **ELIMINATED badge** — add `is_active BOOLEAN DEFAULT TRUE` to `wc.teams` schema; expose via `GET /api/teams`; show on Transfers swap card when OUT player's team is inactive
+4. **Final engine run** (if apif budget available): `py -m engine.wc_ingest --source apif --day 2` + `py -m engine.wc_run`
+5. **Production smoke test** — all 5 pages, chat (needs Anthropic credits), screenshot upload
 
 ### Full pipeline from scratch (if needed)
 ```bash

@@ -89,6 +89,13 @@ export async function matchPlayersByName(name: string) {
   return rows[0] ?? null
 }
 
+export async function getTeamFdr(round: number) {
+  return q<{ squad_id: number; lambda_posterior: number }>(
+    'SELECT squad_id, lambda_posterior FROM team_fdr WHERE round = $1',
+    [round]
+  )
+}
+
 export async function getCurrentRoundId(): Promise<number> {
   const rows = await q<{ id: number }>(
     "SELECT id FROM rounds WHERE status = 'active' ORDER BY id LIMIT 1"

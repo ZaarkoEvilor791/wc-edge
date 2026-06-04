@@ -167,6 +167,13 @@ export default function Squad() {
   const activeCaptain = captain ?? [...displaySquad].sort((a, b) => b.xp - a.xp)[0]?.element
   const { bench } = getXI(displaySquad, projections ?? [], round)
 
+  const totalCost = displaySquad.reduce((s, p) => s + p.price, 0)
+  const budgetPct = Math.min(100, (totalCost / 100) * 100)
+
+  const countByTeam: Record<string, number> = {}
+  displaySquad.forEach((p) => { countByTeam[p.team_abbr] = (countByTeam[p.team_abbr] ?? 0) + 1 })
+  const overLimit = Object.entries(countByTeam).filter(([, n]) => n >= 3)
+
   function handleSwap(replacement: SquadPlayer) {
     if (!swapTarget) return
     setSquad(displaySquad.map((p) => p.element === swapTarget.element ? replacement : p))
@@ -197,11 +204,40 @@ export default function Squad() {
       </div>
 
       {/* Stat cards */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label="Total xP" value={data.total_xp.toFixed(1)} sub="round 1 projected" />
-        <StatCard label="Squad Cost" value={`£${data.total_cost.toFixed(1)}m`} sub="of £100m" />
+        <StatCard label="Squad Cost" value={`£${totalCost.toFixed(1)}m`} sub="of £100m" />
         <StatCard label="Players" value={String(displaySquad.length)} sub="selected" />
       </div>
+
+      {/* Budget bar */}
+      <div className="mb-3">
+        <div className="mb-1 flex justify-between text-xs text-slate-500">
+          <span>Budget used</span>
+          <span className={budgetPct > 95 ? 'text-rose-400' : 'text-slate-400'}>
+            £{totalCost.toFixed(1)}m <span className="text-slate-600">/ £100m</span>
+          </span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-slate-800">
+          <div
+            className={clsx('h-full rounded-full transition-all', budgetPct > 95 ? 'bg-rose-500' : 'bg-accent')}
+            style={{ width: `${budgetPct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Country limit warnings */}
+      {overLimit.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-yellow-800/30 bg-yellow-900/10 px-3 py-2">
+          <span className="text-xs text-yellow-600">Country limit:</span>
+          {overLimit.map(([abbr, count]) => (
+            <span key={abbr} className="rounded bg-yellow-900/30 px-1.5 py-0.5 text-xs font-semibold text-yellow-300">
+              {abbr} ×{count}
+            </span>
+          ))}
+          <span className="text-xs text-yellow-700">max 3 in group stage</span>
+        </div>
+      )}
 
       {/* Pitch view */}
       {viewMode === 'pitch' && (

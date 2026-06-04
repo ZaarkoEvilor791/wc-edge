@@ -44,24 +44,38 @@ function SwapCard({
   suggestion,
   index,
   total,
+  freeTransfers,
+  canUndo,
   onAccept,
   onSkip,
+  onUndo,
 }: {
   suggestion: TransferSuggestion
   index: number
   total: number
+  freeTransfers: number
+  canUndo: boolean
   onAccept: () => void
   onSkip: () => void
+  onUndo: () => void
 }) {
   const priceDeltaSign = suggestion.price_delta >= 0 ? '+' : ''
   const priceDeltaColor = suggestion.price_delta >= 0 ? 'text-emerald-400' : 'text-rose-400'
+  const isCostly = index >= freeTransfers
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-xs text-slate-500">
-          Suggestion {index + 1} of {total}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">
+            Suggestion {index + 1} of {total}
+          </span>
+          {isCostly && (
+            <span className="rounded-full bg-rose-900/50 px-2.5 py-1 text-xs font-bold text-rose-400">
+              −3 pts
+            </span>
+          )}
+        </div>
         <div className="flex gap-3">
           <span className="rounded-full bg-accent/15 px-3 py-1 text-sm font-bold text-accent">
             +{suggestion.xp_gain.toFixed(1)} xP
@@ -87,12 +101,30 @@ function SwapCard({
       </div>
 
       <div className="mt-5 flex gap-3">
-        <button
-          onClick={onSkip}
-          className="flex-1 rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
-        >
-          Skip
-        </button>
+        {canUndo ? (
+          <button
+            onClick={onUndo}
+            className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-700 hover:text-slate-200"
+            title="Undo last accepted transfer"
+          >
+            ↩ Undo
+          </button>
+        ) : (
+          <button
+            onClick={onSkip}
+            className="flex-1 rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
+          >
+            Skip
+          </button>
+        )}
+        {canUndo && (
+          <button
+            onClick={onSkip}
+            className="flex-1 rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
+          >
+            Skip
+          </button>
+        )}
         <button
           onClick={onAccept}
           className="flex-1 rounded-xl bg-accent py-2.5 text-sm font-bold text-accent-fg transition-opacity hover:opacity-90"
@@ -107,10 +139,14 @@ function SwapCard({
 function DoneState({
   accepted,
   skipped,
+  canUndo,
+  onUndo,
   onReset,
 }: {
   accepted: TransferSuggestion[]
   skipped: TransferSuggestion[]
+  canUndo: boolean
+  onUndo: () => void
   onReset: () => void
 }) {
   return (
@@ -140,12 +176,22 @@ function DoneState({
         </div>
       )}
 
-      <button
-        onClick={onReset}
-        className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700"
-      >
-        Analyze again
-      </button>
+      <div className="flex gap-3">
+        {canUndo && (
+          <button
+            onClick={onUndo}
+            className="flex-1 rounded-xl border border-slate-700 bg-slate-800 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700"
+          >
+            ↩ Undo last
+          </button>
+        )}
+        <button
+          onClick={onReset}
+          className="flex-1 rounded-xl border border-slate-700 bg-slate-800 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700"
+        >
+          Analyze again
+        </button>
+      </div>
     </div>
   )
 }
@@ -160,6 +206,7 @@ export default function Transfers() {
   const [index, setIndex] = useState(0)
   const [accepted, setAccepted] = useState<TransferSuggestion[]>([])
   const [skipped, setSkipped] = useState<TransferSuggestion[]>([])
+  const [prevSquads, setPrevSquads] = useState<SquadPlayer[][]>([])
 
   const { mutate: suggest, isPending } = useTransferSuggest()
 
@@ -178,6 +225,7 @@ export default function Transfers() {
           setIndex(0)
           setAccepted([])
           setSkipped([])
+          setPrevSquads([])
         },
       },
     )
@@ -185,8 +233,8 @@ export default function Transfers() {
 
   function handleAccept() {
     const s = suggestions![index]
+    setPrevSquads((prev) => [...prev, squad])
     setAccepted((prev) => [...prev, s])
-    // update squad store: replace out with in
     const newSquad: SquadPlayer[] = squad.map((p) =>
       p.element === s.out.element
         ? {
@@ -202,16 +250,21 @@ export default function Transfers() {
         : p,
     )
     setSquad(newSquad)
-    advance()
+    setIndex((i) => i + 1)
   }
 
   function handleSkip() {
     setSkipped((prev) => [...prev, suggestions![index]])
-    advance()
+    setIndex((i) => i + 1)
   }
 
-  function advance() {
-    setIndex((i) => i + 1)
+  function handleUndo() {
+    if (prevSquads.length === 0) return
+    const prev = prevSquads[prevSquads.length - 1]
+    setPrevSquads((s) => s.slice(0, -1))
+    setSquad(prev)
+    setAccepted((a) => a.slice(0, -1))
+    setIndex((i) => Math.max(0, i - 1))
   }
 
   function reset() {
@@ -219,9 +272,11 @@ export default function Transfers() {
     setIndex(0)
     setAccepted([])
     setSkipped([])
+    setPrevSquads([])
   }
 
   const isDone = suggestions !== null && index >= suggestions.length
+  const canUndo = prevSquads.length > 0
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
@@ -299,13 +354,22 @@ export default function Transfers() {
           suggestion={suggestions[index]}
           index={index}
           total={suggestions.length}
+          freeTransfers={freeTransfers}
+          canUndo={canUndo}
           onAccept={handleAccept}
           onSkip={handleSkip}
+          onUndo={handleUndo}
         />
       )}
 
       {isDone && (
-        <DoneState accepted={accepted} skipped={skipped} onReset={reset} />
+        <DoneState
+          accepted={accepted}
+          skipped={skipped}
+          canUndo={canUndo}
+          onUndo={handleUndo}
+          onReset={reset}
+        />
       )}
     </div>
   )

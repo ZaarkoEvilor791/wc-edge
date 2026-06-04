@@ -100,6 +100,11 @@ export interface TransferSuggestResponse {
   transfers: TransferSuggestion[]
 }
 
+export interface TeamFdr {
+  squad_id: number
+  fdr: number  // 1-5, 1=easiest (highest attack lambda / most likely to score)
+}
+
 // Squad store shape (mirrors squadStore.ts)
 export type SquadState = {
   squad: SquadPlayer[]

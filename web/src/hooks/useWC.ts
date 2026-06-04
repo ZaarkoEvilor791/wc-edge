@@ -74,6 +74,15 @@ export function useFixtures(squadId: number) {
   })
 }
 
+export function useTeamFdr(round: number) {
+  return useQuery({
+    queryKey: ['teamFdr', round],
+    queryFn: () => wcApi.teamFdr(round),
+    staleTime: 30 * 60_000,
+    enabled: round > 0,
+  })
+}
+
 export function useTransferSuggest() {
   return useMutation({
     mutationFn: (body: { squad: number[]; round: number; freeTransfers: number; budget?: number }) =>

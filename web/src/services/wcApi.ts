@@ -1,4 +1,4 @@
-import type { Player, Round, Team, Projection, SuggestedSquad, TransferSuggestResponse, Fixture } from '../types/wc'
+import type { Player, Round, Team, Projection, SuggestedSquad, TransferSuggestResponse, Fixture, TeamFdr } from '../types/wc'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path)
@@ -34,6 +34,7 @@ export const wcApi = {
       { imageBase64, mimeType },
     ),
   fixtures: (squadId: number) => get<Fixture[]>(`/api/fixtures/${squadId}`),
+  teamFdr: (round: number) => get<TeamFdr[]>(`/api/fdr?round=${round}`),
   // FIFA Fantasy proxies
   fifaPlayers: () => get<unknown[]>('/wc/players.json'),
   fifaRounds: () => get<unknown[]>('/wc/rounds.json'),
