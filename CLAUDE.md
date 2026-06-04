@@ -254,6 +254,65 @@
 
 - **TypeScript:** clean (zero errors) across all changes
 
+**Session 12 (2026-06-11) — Day 8: Sub out + transfer flow audit (bugs found):**
+
+### Bugs found via Playwright e2e testing
+
+- **CRITICAL — Sub Out silently fails** (`web/src/pages/Squad.tsx:189` `handleSwap`):
+  - `handleSwap` replaces the target's slot with the bench player object, but the bench player already exists in `displaySquad`. Result: two entries with the same `element` ID.
+  - `setSquad` deduplicates → squad drops to 14 players → corruption guard detects wrong GK count → immediately resets back to DB suggested_squad.
+  - User sees drawer close (success UX) but squad is **silently unchanged**. No error shown.
+  - **Fix:** exchange both slots, not just replace:
+    ```ts
+    setSquad(displaySquad.map((p) => {
+      if (p.element === swapTarget.element) return replacement
+      if (p.element === replacement.element) return swapTarget  // ← add this
+      return p
+    }))
+    ```
+
+- **BUG — −3 pts badge is dead code** (`web/server/server.ts:186`, `web/src/pages/Transfers.tsx:64`):
+  - Server loop: `for (let i = 0; i < Math.min(freeTransfers, 6); i++)` — returns exactly `freeTransfers` suggestions.
+  - Badge condition: `const isCostly = index >= freeTransfers`. Since `index ∈ [0, freeTransfers-1]`, `index >= freeTransfers` is **never true**.
+  - Confirmed by test: ft=1 gives 1 suggestion at index 0; ft=2 gives 2 suggestions at indices 0,1 — badge never fires.
+  - **Fix:** server should always return up to 6 profitable swaps; keep `freeTransfers` only as the badge threshold:
+    ```ts
+    for (let i = 0; i < 6; i++) { ... }  // server: always up to 6
+    ```
+
+- **BUG — "Your squad is already optimal" message unreachable** (`web/src/pages/Transfers.tsx:269`):
+  - When server returns `[]`, `isDone = 0 >= 0 = true` immediately. The branch `!isDone && suggestions.length === 0` never fires.
+  - Users with the optimal squad see "No transfers applied / All suggestions skipped" — confusing (implies they skipped something).
+  - **Fix:** reorder render: check `suggestions.length === 0` first, before `isDone`:
+    ```tsx
+    {suggestions !== null && suggestions.length === 0 && <OptimalState />}
+    {suggestions !== null && suggestions.length > 0 && isDone && <DoneState />}
+    {suggestions !== null && suggestions.length > 0 && !isDone && <SwapCard />}
+    ```
+
+- **BUG — Country limit warning triggers on legal squads** (`web/src/pages/Squad.tsx:187`):
+  - `overLimit = Object.entries(countByTeam).filter(([, n]) => n >= 3)` — fires at 3, but 3 is the allowed maximum in group stage.
+  - Suggested squad has exactly 3 French players (Mbappé, Olise, Barcola) → shows "FRA ×3 max 3 in group stage" for a valid squad.
+  - **Fix:** `n > 3` for group stage (round ≤ 3); higher limits by round are already in the PRD.
+
+- **LATENT BUG — `getXI` xpMap always empty** (`web/src/utils/squad.ts:12`):
+  - `getProjections()` SQL does not SELECT `round`; `Projection.round` is always `undefined`.
+  - `if (p.round === round)` never matches → xpMap is never populated → bench sort falls back to `SquadPlayer.xp`.
+  - No visible impact in round 1 (same data), but bench ordering will be wrong for later rounds.
+  - **Fix:** add `round` to the SELECT in `db.ts:getProjections()`, or remove the round filter from `getXI` (data is already pre-filtered by round).
+
+### What was verified working correctly
+- Transfer page renders, round selector, FT stepper (clamps 1–6) ✓
+- Sequential greedy returns correct swaps, budget constraint enforced ✓
+- Accept updates squad store + Undo stack ✓
+- Skip advances to next card ✓
+- Undo reverts squad + decrements index ✓
+- Undo in DoneState works ✓
+- Transfer Out button navigates to `/transfers` ✓
+- Player profile modal: Captain/VC/Sub Out/Transfer Out/tabs all visible ✓
+- Fixtures tab loads and renders fixture rows ✓
+- FT stepper UI: `−` button uses U+2212 (minus sign), not U+002D (hyphen) — use `.nth(0)` selector not `:has-text("-")` to target it in tests
+
 **Session 10 (2026-06-08) — Day 6: Live polish + captain banner + squad swap drawer:**
 
 - **Live page polished** (`web/src/pages/Live.tsx`):
@@ -294,7 +353,7 @@ Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
 4. ✅ **Round deadline + countdown** — `useCountdown(start_date)` with `setInterval(60s)`
 
 **Transfers page (`web/src/pages/Transfers.tsx`):**
-5. ✅ **−3 pts badge** — red pill on SwapCard header when `index >= freeTransfers`
+5. ❌ **−3 pts badge** — logic exists (`index >= freeTransfers`) but badge is unreachable: server returns exactly `freeTransfers` suggestions so `index` is always `< freeTransfers`. Fix in Day 9: server returns up to 6 always.
 6. ✅ **Undo last swap** — `prevSquads[]` stack; "↩ Undo" in-progress + in DoneState
 
 **Assistant system prompt (`web/server/server.ts`):**
@@ -331,27 +390,59 @@ Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
 | 5 | Jun 8 | Fix teams DB bug + apif Day 2 + model rerun + Transfers greedy cards + Player profile modal redesign | ✅ Done (engine deferred to Day 9) |
 | 6 | Jun 9 | Live page polish + captain banner + squad swap drawer + onboarding fix | ✅ Done |
 | 7 | Jun 10 | PRD gap fill (Captain: variance/FDR/deadline/footer · Transfers: -3pts/undo · Assistant: chips/rules · Squad: budget bar/country count) | ✅ Done |
-| 8 | Jun 11 | GitHub Actions engine.yml + Render deploy + ELIMINATED badge + final engine run + production smoke test | ← Start here |
+| 8 | Jun 11 | GitHub Actions engine.yml + Render deploy + ELIMINATED badge + final engine run + production smoke test | Bugs found (see Session 12) |
+| 9 | Jun 11 | Fix 4 bugs found in Session 12 + GitHub Actions + Render deploy + production smoke test | ← Start here |
 
 ---
 
-## How to Start (Day 8 — next session)
+## How to Start (Day 9 — next session)
 
 ### What is done — do not redo
 ```
-Day 1–7 complete. All 5 pages built and polished. All PRD gaps filled.
+Day 1–8 complete. All 5 pages built and polished. All PRD gaps filled.
 DB: 1481 players, 8 rounds, 11848 projections, 384 team_fdr rows, 1 suggested_squad.
-Vite dev server runs on :5174 (5173 in use by another process).
-Express runs on :3001.
-Squad composition is correct: 2GK/5DEF/5MID/3FWD (Ramírez + Osako as GKs — both correct).
+Vite dev server: npm run dev in web/ → Express :3001 + Vite :5173.
+Squad composition correct: 2GK/5DEF/5MID/3FWD (Ramírez + Osako as GKs).
 ```
 
-### Day 8 priorities (in order)
-1. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; triggers `py -m engine.wc_run`; post-group bonus run June 27. Use GitHub secrets `DATABASE_URL` and `API_FOOTBALL_KEY`.
-2. **Render deploy** — `git push origin main`, confirm `https://wc-edge.onrender.com` loads correctly.
-3. **Production smoke test** — all 5 pages, `/api/fdr`, `/api/live` (should show schedule), chat (needs Anthropic credits), screenshot upload.
-4. **ELIMINATED badge** (medium effort) — add `is_active BOOLEAN DEFAULT TRUE` to `wc.teams`; `ALTER TABLE wc.teams ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;`; update `GET /api/teams` to include it; show "ELIMINATED" badge on Transfers swap card OUT player if their team is inactive.
-5. **Final engine run** (if apif budget available): `py -m engine.wc_ingest --source apif --day 2` then `py -m engine.wc_run` to refresh projections with better club stats.
+### Day 9 priorities (in order)
+
+**Bug fixes first — these are regressions in shipped features:**
+
+1. **Fix Sub Out silent failure** (`web/src/pages/Squad.tsx:189`):
+   - Change `handleSwap` to exchange both players' positions (not just replace):
+     ```ts
+     setSquad(displaySquad.map((p) => {
+       if (p.element === swapTarget.element) return replacement
+       if (p.element === replacement.element) return swapTarget
+       return p
+     }))
+     ```
+
+2. **Fix −3 pts badge dead code** (`web/server/server.ts:186`):
+   - Change server loop from `Math.min(freeTransfers, 6)` to always `6`:
+     ```ts
+     for (let i = 0; i < 6; i++) { ... }
+     ```
+   - The badge condition (`index >= freeTransfers`) stays unchanged — now reachable.
+
+3. **Fix "already optimal" message unreachable** (`web/src/pages/Transfers.tsx`):
+   - Reorder render so `suggestions.length === 0` check fires before `isDone` DoneState.
+
+4. **Fix country limit warning threshold** (`web/src/pages/Squad.tsx:187`):
+   - Change `n >= 3` to `n > 3` — exactly 3 is the allowed limit, not a violation.
+
+5. **Fix `getXI` xpMap empty** (`web/server/db.ts` + `web/src/utils/squad.ts`):
+   - Add `round` to SELECT in `getProjections()`: `SELECT element, round, xp, ...`
+   - Or remove the `p.round === round` filter from `getXI` (projections already pre-filtered).
+
+**Then deploy:**
+
+6. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; triggers `py -m engine.wc_run`; post-group bonus run June 27. Use GitHub secrets `DATABASE_URL` and `API_FOOTBALL_KEY`.
+7. **Render deploy** — `git push origin main`, confirm `https://wc-edge.onrender.com` loads correctly.
+8. **Production smoke test** — all 5 pages, `/api/fdr`, `/api/live` (should show schedule), chat (needs Anthropic credits), screenshot upload.
+9. **ELIMINATED badge** (medium effort) — add `is_active BOOLEAN DEFAULT TRUE` to `wc.teams`; `ALTER TABLE wc.teams ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;`; update `GET /api/teams` to include it; show "ELIMINATED" badge on Transfers swap card OUT player if their team is inactive.
+10. **Final engine run** (if apif budget available): `py -m engine.wc_ingest --source apif --day 2` then `py -m engine.wc_run` to refresh projections with better club stats.
 
 ### Known deferred items (still outstanding)
 - `wc.teams` may have 80 rows (32 duplicates with FIFA entity IDs > 1000). Check: `SELECT COUNT(*) FROM wc.teams`. Fix if needed: `DELETE FROM wc.teams WHERE squad_id > 1000;` then re-run `py -m engine.wc_ingest --source fifa`.
