@@ -82,7 +82,7 @@ function SwapDrawer({
     <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onCancel}>
       <div className="absolute inset-0 bg-black/50" />
       <div
-        className="relative w-full max-w-sm rounded-t-2xl border-t border-slate-700 bg-slate-900 px-4 pb-6 pt-4 shadow-2xl"
+        className="relative flex max-h-[70vh] w-full max-w-sm flex-col rounded-t-2xl border-t border-slate-700 bg-slate-900 px-4 pb-6 pt-4 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle */}
@@ -112,7 +112,7 @@ function SwapDrawer({
             No eligible {target.position} {subIn ? 'starters' : 'on the bench'}
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="flex-1 space-y-2 overflow-y-auto">
             {eligible.map((p) => (
               <button
                 key={p.element}
