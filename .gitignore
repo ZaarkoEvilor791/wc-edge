@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vite/
+*.env
+engine/data/statsbomb/
+engine/__pycache__/
+engine/engine/__pycache__/
+*.pyc
+.DS_Store
