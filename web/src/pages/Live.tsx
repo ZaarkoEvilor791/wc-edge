@@ -16,36 +16,47 @@ interface LiveMatch {
   kickoff?: string | null
 }
 
+function formatKickoff(dateStr: string | null | undefined) {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) +
+    ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+}
+
 function MatchCard({ m }: { m: LiveMatch }) {
   const isLive = m.status === 'live'
   const isFinished = m.status === 'finished'
+  const isScheduled = m.status === 'scheduled'
   const hasScore = m.home_score != null && m.away_score != null
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3">
+    <div className={`rounded-xl border px-4 py-3 ${isScheduled ? 'border-slate-800/60 bg-slate-900/60' : 'border-slate-800 bg-slate-900'}`}>
       <div className="flex items-center justify-between gap-2">
         <span className="w-24 truncate text-right text-sm font-semibold text-slate-100">{m.home_team}</span>
 
-        <div className="flex min-w-[64px] flex-col items-center">
-          <span className={`text-xl font-bold tabular-nums leading-tight ${
-            isLive ? 'text-accent' : isFinished ? 'text-slate-100' : 'text-slate-600'
-          }`}>
-            {hasScore ? `${m.home_score} – ${m.away_score}` : '– –'}
-          </span>
-          <div className="mt-0.5 flex items-center gap-1">
-            {isLive && (
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-            )}
-            <span className={`text-[10px] font-bold ${
-              isLive ? 'text-green-400' : isFinished ? 'text-slate-500' : 'text-slate-600'
-            }`}>
-              {isLive
-                ? m.minute != null ? `${m.minute}'` : 'LIVE'
-                : isFinished
-                  ? 'FT'
-                  : m.kickoff ?? '—'}
+        <div className="flex min-w-[72px] flex-col items-center">
+          {isScheduled ? (
+            <span className="text-center text-xs font-medium text-slate-500">
+              {formatKickoff(m.kickoff)}
             </span>
-          </div>
+          ) : (
+            <>
+              <span className={`text-xl font-bold tabular-nums leading-tight ${
+                isLive ? 'text-accent' : isFinished ? 'text-slate-100' : 'text-slate-600'
+              }`}>
+                {hasScore ? `${m.home_score} – ${m.away_score}` : '– –'}
+              </span>
+              <div className="mt-0.5 flex items-center gap-1">
+                {isLive && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />}
+                <span className={`text-[10px] font-bold ${
+                  isLive ? 'text-green-400' : isFinished ? 'text-slate-500' : 'text-slate-600'
+                }`}>
+                  {isLive ? (m.minute != null ? `${m.minute}'` : 'LIVE') : 'FT'}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <span className="w-24 truncate text-sm font-semibold text-slate-100">{m.away_team}</span>
@@ -70,11 +81,14 @@ export default function Live() {
     if (data) setLastUpdated(new Date())
   }, [data])
 
-  const matches: LiveMatch[] = Array.isArray(data)
-    ? (data as LiveMatch[])
-    : Array.isArray((data as Record<string, unknown>)?.matches)
-      ? ((data as Record<string, unknown>).matches as LiveMatch[])
+  const raw = data as Record<string, unknown> | LiveMatch[] | null
+  const matches: LiveMatch[] = Array.isArray(raw)
+    ? (raw as LiveMatch[])
+    : Array.isArray((raw as Record<string, unknown>)?.matches)
+      ? ((raw as Record<string, unknown>).matches as LiveMatch[])
       : []
+  const isStale = !Array.isArray(raw) && !!(raw as Record<string, unknown>)?.stale
+  const source = !Array.isArray(raw) ? ((raw as Record<string, unknown>)?.source as string) : null
 
   const hasActiveMatches = matches.some((m) => m.status === 'live' || m.status === 'finished')
   const captainName = captain != null ? squad.find((p) => p.element === captain)?.name : null
@@ -94,7 +108,11 @@ export default function Live() {
         )}
       </div>
       <p className="mb-4 text-xs text-slate-600">
-        Updates every 60s{updatedStr ? ` · last updated ${updatedStr}` : ''}
+        {isStale
+          ? source === 'unavailable'
+            ? 'Live API unavailable — showing last known data'
+            : 'Live scores unavailable — showing fixture schedule'
+          : `Updates every 60s${updatedStr ? ` · last updated ${updatedStr}` : ''}`}
       </p>
 
       {/* Captain banner */}
@@ -118,8 +136,6 @@ export default function Live() {
         <p className="text-sm text-slate-400">No active round — tournament hasn't started yet.</p>
       ) : isLoading ? (
         <Spinner label="Loading live data…" />
-      ) : !data ? (
-        <p className="text-sm text-slate-400">Live data unavailable — community API may be down.</p>
       ) : matches.length === 0 ? (
         <>
           <p className="text-sm text-slate-400">No matches found for this round yet.</p>

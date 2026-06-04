@@ -251,8 +251,25 @@ app.get('/api/live', async (req, res) => {
     const r = await fetch(`https://worldcup2026-api.vercel.app/api/round/${round}`)
     if (!r.ok) throw new Error(`${r.status}`)
     res.json(await r.json())
-  } catch (err) {
-    res.status(503).json({ error: 'Live API unavailable', detail: String(err) })
+  } catch {
+    // Community API unavailable — fall back to FIFA Fantasy schedule for this round
+    try {
+      const rounds = await fifaFetch(`${FIFA_BASE}/rounds.json`, 5 * 60_000) as Record<string, unknown>[]
+      const rnd = rounds.find((r) => r.id === round) ?? rounds[round - 1]
+      const fixtures = ((rnd?.tournaments as Record<string, unknown>[]) ?? []).map((fix, i) => ({
+        id: i,
+        home_team: (fix.homeSquadName as string) ?? '?',
+        away_team: (fix.awaySquadName as string) ?? '?',
+        home_score: null,
+        away_score: null,
+        status: 'scheduled',
+        minute: null,
+        kickoff: (fix.date as string) ?? (rnd?.startDate as string) ?? null,
+      }))
+      res.json({ matches: fixtures, stale: true, source: 'schedule' })
+    } catch {
+      res.json({ matches: [], stale: true, source: 'unavailable' })
+    }
   }
 })
 
