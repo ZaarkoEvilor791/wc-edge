@@ -238,6 +238,46 @@
 
 ---
 
+## PRD Gap Analysis (reviewed Session 10, 2026-06-08)
+
+Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
+
+### High value / low effort (do first)
+
+**Captain page (`web/src/pages/Captain.tsx`):**
+1. **Variance column** — `variance` is in `projections` table, fetched via `useProjections(round)`. Add a column to the existing 15-row list. Show as ±X.X
+2. **FDR badge** — `team_fdr` table has `lambda_posterior` per `squad_id` per round. Need new server route `GET /api/fdr?round=N` → return `{squad_id, fdr}[]` where fdr = 1-5 bucket from quintiles of lambda. Add badge to each row in Captain.tsx
+3. **"Set on FIFA Fantasy" footer** — persistent reminder text below the list: "Remember to also set your captain at play.fifa.com/fantasy/" with a link
+4. **Round deadline + countdown** — use `currentRound.start_date` (already in rounds data) to show "Deadline: DD Mon · Xh Ym" with a live countdown (`setInterval` every minute)
+
+**Transfers page (`web/src/pages/Transfers.tsx`):**
+5. **−3 pts badge** — when `currentSwapIndex >= freeTransfers`, show a red "−3 pts" badge on the swap card header
+6. **Undo last swap** — keep an `acceptedSwaps[]` stack; add "Undo" button in done state (and optionally after each Accept) that pops last swap from stack and reverses it in squad store
+
+**Assistant system prompt (`web/server/server.ts`):**
+7. **WC chip names** — add to system prompt: "Chips available: Wildcard, 12th Man (bench scores full pts), Max Captain (3× not 2×), Qualification Booster, Mystery Booster"
+8. **Scoring rules** — add condensed scoring table to system prompt so Edge can answer rules questions accurately
+
+### Medium effort
+
+**Transfers page:**
+9. **ELIMINATED badge** — need `teams.isActive` flag. Currently not in schema (teams table has squad_id, name, abbr, seed, group_name). Add `is_active BOOLEAN DEFAULT TRUE` to teams. Expose via `GET /api/teams`. On the swap card, if the OUT player's team is inactive, show "ELIMINATED" badge. Server-side: eliminated players naturally surface as top sells (future xP=0) — badge is UI only.
+
+**Captain page:**
+10. **FDR data** — requires new `/api/fdr?round=N` endpoint + `useTeamFdr(round)` hook. `team_fdr` table already populated by engine.
+
+**Squad page:**
+11. **Budget bar** — show used/total budget as a progress bar (£X.Xm of £100m). Data: sum `displaySquad.map(p => p.price)`. No new API needed.
+12. **Country-count bar** — count players per `squad_id`, highlight in red any country with ≥3. Data available in `displaySquad`. No new API needed.
+13. **Swap drawer full player list** — PRD says swap drawer should show ALL players of same position sorted by xP delta, not just bench. Requires fetching `/api/projections?round=N` + `/api/players`, filtering by position, sorting by xP gain. Currently shows bench only.
+
+### Complex / data-dependent (stretch)
+14. **Live: squad player filtering** — community API (`worldcup2026-api.vercel.app`) likely doesn't return per-player live points. Skip unless API supports it.
+15. **Live: auto-sub pairings** — static display of bench order from squadStore. e.g. "Bench GK auto-subs if starter doesn't play". Simple static text, just needs bench state.
+16. **Live: stale mode** — server should return `{ matches, stale: true, lastUpdated: ISO }` when community API fails, using last cached values. Currently returns 503 error.
+
+---
+
 ## Day-by-Day Build Schedule
 
 | Day | Date | Deliverable | Status |
@@ -247,13 +287,13 @@
 | 3 | Jun 6 | Name-override review + Assistant page + UI quality pass (fpl-edge parity) | ✅ Done |
 | 4 | Jun 7 | UI redesign (pitch layout, player profiles, WC banner) + onboarding flow (screenshot squad sync) | ✅ Done |
 | 5 | Jun 8 | Fix teams DB bug + apif Day 2 + model rerun + Transfers greedy cards + Player profile modal redesign | ✅ Done (engine deferred to Day 9) |
-| 6 | Jun 9 | Live page polish + captain banner + squad swap drawer | ✅ Done |
-| 7 | Jun 10 | GitHub Actions engine.yml + Render deploy + smoke test | ← Start here |
-| 8 | Jun 11 | Polish + final engine run + production smoke test | |
+| 6 | Jun 9 | Live page polish + captain banner + squad swap drawer + onboarding fix | ✅ Done |
+| 7 | Jun 10 | PRD gap fill (Captain: variance/FDR/deadline/footer · Transfers: -3pts/undo · Assistant: chips/rules) + GitHub Actions engine.yml + Render deploy | ← Start here |
+| 8 | Jun 11 | Polish + ELIMINATED badge + squad budget/country bars + final engine run + production smoke test | |
 
 ---
 
-## How to Start (Day 4 — current session)
+## How to Start (Day 7 — next session)
 
 ### What's already done (do not re-run)
 ```bash
