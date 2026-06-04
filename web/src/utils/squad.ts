@@ -2,31 +2,26 @@ import type { SquadPlayer, Projection } from '../types/wc'
 
 const POS_COUNT: Record<string, number> = { GK: 1, DEF: 4, MID: 4, FWD: 2 }
 
+// Uses array order to determine XI vs bench — first POS_COUNT[pos] of each position = starters.
+// Callers must ensure the array is ordered correctly (pre-sort by xP on initial DB load;
+// handleSwap exchanges positions so manual swaps persist across renders).
 export function getXI(
   players: SquadPlayer[],
-  projections: Projection[],
-  round: number,
+  _projections: Projection[],
+  _round: number,
 ): { xi: SquadPlayer[]; bench: SquadPlayer[] } {
-  const xpMap = new Map<number, number>()
-  for (const p of projections) {
-    if (p.round === round) xpMap.set(p.element, p.xp)
-  }
-
-  const byPos: Record<string, SquadPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] }
-  for (const p of players) {
-    byPos[p.position]?.push(p)
-  }
-
   const xi: SquadPlayer[] = []
   const bench: SquadPlayer[] = []
+  const posCount: Record<string, number> = {}
 
-  for (const pos of ['GK', 'DEF', 'MID', 'FWD'] as const) {
-    const sorted = [...(byPos[pos] ?? [])].sort(
-      (a, b) => (xpMap.get(b.element) ?? b.xp) - (xpMap.get(a.element) ?? a.xp),
-    )
-    const n = POS_COUNT[pos] ?? 1
-    xi.push(...sorted.slice(0, n))
-    bench.push(...sorted.slice(n))
+  for (const p of players) {
+    const seen = posCount[p.position] ?? 0
+    if (seen < (POS_COUNT[p.position] ?? 1)) {
+      xi.push(p)
+    } else {
+      bench.push(p)
+    }
+    posCount[p.position] = seen + 1
   }
 
   return { xi, bench }

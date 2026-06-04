@@ -95,7 +95,7 @@ function ModalContent({ player, onClose, onSubOut, isBench }: { player: SquadPla
     >
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="relative w-full max-w-sm overflow-hidden rounded-t-2xl shadow-2xl sm:rounded-2xl"
+        className="relative flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden rounded-t-2xl shadow-2xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Blue gradient header */}
@@ -142,7 +142,7 @@ function ModalContent({ player, onClose, onSubOut, isBench }: { player: SquadPla
         </div>
 
         {/* Tab content */}
-        <div className="max-h-[55vh] overflow-y-auto bg-slate-900 px-4 pb-2 pt-3">
+        <div className="flex-1 overflow-y-auto bg-slate-900 px-4 pb-2 pt-3">
           {activeTab === 'overview' && (
             <div className="space-y-3">
               {/* Captain / Vice-captain */}

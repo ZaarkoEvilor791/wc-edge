@@ -152,19 +152,22 @@ export default function Squad() {
   useEffect(() => {
     if (!data?.squad_json) return
     const isCorrupt = squad.length > 0 && (
-      // Duplicate elements
       new Set(squad.map(p => p.element)).size !== squad.length ||
-      // Wrong squad size
       squad.length !== 15 ||
-      // Wrong position composition
       squad.filter(p => p.position === 'GK').length !== 2 ||
       squad.filter(p => p.position === 'DEF').length !== 5 ||
       squad.filter(p => p.position === 'MID').length !== 5 ||
       squad.filter(p => p.position === 'FWD').length !== 3
     )
     if (squad.length === 0 || isCorrupt) {
-      setSquad(data.squad_json)
-      const topPlayer = [...data.squad_json].sort((a, b) => b.xp - a.xp)[0]
+      // Pre-sort by xP within each position so array order = starter order for getXI
+      const byPos: Record<string, SquadPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] }
+      for (const p of data.squad_json) byPos[p.position]?.push(p)
+      const sorted = ['GK', 'DEF', 'MID', 'FWD'].flatMap(
+        (pos) => [...(byPos[pos] ?? [])].sort((a, b) => b.xp - a.xp)
+      )
+      setSquad(sorted)
+      const topPlayer = sorted[0] ? [...sorted].sort((a, b) => b.xp - a.xp)[0] : null
       if (topPlayer) setCaptain(topPlayer.element)
     }
   }, [data, squad.length, squad, setSquad, setCaptain])
