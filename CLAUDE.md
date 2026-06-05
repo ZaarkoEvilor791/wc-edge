@@ -14,10 +14,10 @@
 
 ---
 
-## Current State (Session 19 complete — Transfers UX overhaul shipped)
+## Current State (Session 20 complete — Manual transfer flow shipped)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: Session 19 (Transfers UX overhaul)
+Latest commit: `5f583e7`
 
 **Tests:** 51 vitest (4 files) + 31 pytest — all green.
 
@@ -34,6 +34,27 @@ Latest commit: Session 19 (Transfers UX overhaul)
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+
+---
+
+## Session 20 — What was shipped (commit `5f583e7`)
+
+**Web — `Transfers.tsx`:**
+- Squad list as primary UI — always visible, grouped by GK/DEF/MID/FWD. Each player row is tappable (name + eliminated badge + xP + price + chevron).
+- Tap any squad player → opens `BrowseAllModal` in OUT→IN mode (`manualOut` state → `initialOut` prop set).
+- "Analyze" renamed "Smart suggest" — small secondary button in squad list header. Still triggers same sequential greedy algorithm.
+- "Browse All" demoted to tertiary text link below squad list.
+- Running transfer log at bottom whenever `accepted.length > 0` — shows all applied transfers (manual + smart suggest), total xP gain, Undo last + View Squad buttons. Replaces the old DoneState design.
+- Smart suggest done state now just shows a dismissible completion notice; log handles the summary.
+
+**Web — `BrowseAllModal.tsx`:**
+- `initialOut?: SquadPlayer` prop added to Props interface.
+- `isOutFirstMode = !!initialOut` drives two rendering paths:
+  - **OUT→IN mode**: OUT player card (red border) shown at top, candidate list filtered to same position (locked), no position tabs. Tap candidate → budget check inline → `onSwap(candidate, initialOut)` → close immediately.
+  - **IN→OUT mode**: existing flow unchanged (browse all, position tabs, pick IN, then pick OUT from squad).
+- In OUT→IN mode, each candidate row shows xP delta vs. the outgoing player. Disabled + "Over budget" label when exceeds budget.
+
+**Tests:** 51/51 vitest still green (UI-only changes).
 
 ---
 
@@ -106,7 +127,7 @@ Latest commit: Session 19 (Transfers UX overhaul)
 
 ## Outstanding (pre-tournament, by June 11)
 
-- **Production smoke test** — verify all 5 pages on `https://wc-edge.onrender.com`. Check `/api/fdr?round=1` (expect 48 rows), `/api/live`, mobile sub-in/sub-out swap.
+- **Production smoke test** — verify all 5 pages on `https://wc-edge.onrender.com`. Check `/api/fdr?round=1` (expect 48 rows), `/api/live`, mobile Transfers (tap player → BrowseAllModal OUT→IN), SwapDrawer.
 - **Anthropic credits** — top up at console.anthropic.com → test Assistant chat + screenshot upload end-to-end.
 - **Render env var** — add `AI_ENABLED=true` in Render dashboard (Environment tab). Required for kill switch to work correctly.
 
@@ -114,7 +135,7 @@ Latest commit: Session 19 (Transfers UX overhaul)
 
 ## Next Session Priorities
 
-1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile SwapDrawer.
+1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
 2. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
 3. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
 4. **Tournament operations** — mark eliminated teams as the tournament progresses:
@@ -295,7 +316,8 @@ gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true  # 
 - **`highs` npm package stays** — Squad Builder uses HiGHS-WASM for Re-optimize.
 - **API Football key is gitignored** — `engine/.env` and GitHub secret only. Never commit.
 - **Squad never empty on load** — always pre-filled from `suggested_squad` DB table.
-- **Transfers is one-at-a-time** — single swap card, Accept/Skip/Undo flow. Browse All is secondary path.
+- **Transfers — squad list is primary UI** — tap any squad player to start OUT→IN transfer via `BrowseAllModal(initialOut)`. Smart suggest (sequential greedy) is secondary button. Browse All (IN→OUT) is tertiary text link.
+- **BrowseAllModal has two modes** — OUT→IN (`initialOut` prop set): position locked, tap candidate = immediate confirm. IN→OUT (no `initialOut`): existing two-step flow (pick IN, then pick OUT from squad).
 - **Captain is squad-only** — 15 rows, no global player list.
 - **Live is always accessible** — no RequireSquad guard. Stale mode is primary design constraint.
 - **Captain swap is advisory** — banner links to play.fifa.com/fantasy/, no in-app execution.
