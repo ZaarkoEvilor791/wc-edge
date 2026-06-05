@@ -17,12 +17,15 @@ interface Props {
   budget: number
   onSwap: (inPlayer: SquadPlayer, outPlayer: SquadPlayer) => void
   onClose: () => void
+  initialOut?: SquadPlayer  // when set: OUT→IN mode (position locked, skip squad picker)
 }
 
-export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }: Props) {
+export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, initialOut }: Props) {
   const { data: players } = usePlayers()
   const { data: projections } = useProjections(round)
   const { data: teams } = useTeams()
+
+  const isOutFirstMode = !!initialOut
 
   const [posFilter, setPosFilter] = useState<Pos | 'ALL'>('ALL')
   const [search, setSearch] = useState('')
@@ -41,7 +44,6 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
     [teams],
   )
 
-  // Build candidate pool: players not in squad, sorted xP DESC
   const candidates = useMemo(() => {
     if (!players) return []
     return players
@@ -66,39 +68,51 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
   const filtered = useMemo(() => {
     return candidates.filter((p) => {
       if (!showEliminated && !p.is_active) return false
-      if (posFilter !== 'ALL' && p.position !== posFilter) return false
+      // In OUT→IN mode, lock position to the outgoing player's position
+      if (isOutFirstMode && p.position !== initialOut!.position) return false
+      if (!isOutFirstMode && posFilter !== 'ALL' && p.position !== posFilter) return false
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [candidates, posFilter, search, showEliminated])
+  }, [candidates, posFilter, search, showEliminated, isOutFirstMode, initialOut])
 
   const eliminatedHiddenCount = useMemo(() => {
     if (showEliminated) return 0
     return candidates.filter((p) => {
       if (p.is_active) return false
-      if (posFilter !== 'ALL' && p.position !== posFilter) return false
+      if (isOutFirstMode && p.position !== initialOut!.position) return false
+      if (!isOutFirstMode && posFilter !== 'ALL' && p.position !== posFilter) return false
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     }).length
-  }, [candidates, posFilter, search, showEliminated])
+  }, [candidates, posFilter, search, showEliminated, isOutFirstMode, initialOut])
 
-  // Squad players of same position as selected IN player (available to sell)
+  // IN→OUT mode: squad players eligible to sell (same position as selected incoming player)
   const outOptions = useMemo(() => {
     if (!selectedIn) return []
     return squad.filter((p) => p.position === selectedIn.position)
   }, [squad, selectedIn])
 
-  function handleSelectIn(candidate: (typeof candidates)[number]) {
-    setSelectedIn({
-      element: candidate.element,
-      name: candidate.name,
-      position: candidate.position,
-      price: candidate.price,
-      xp: candidate.xp,
-      team_abbr: candidate.team_abbr,
-      squad_id: candidate.squad_id,
-      low_sample: candidate.low_sample,
-    })
+  function handleCandidateTap(candidate: (typeof candidates)[number]) {
+    if (isOutFirstMode) {
+      // OUT→IN: confirm immediately
+      const newCost = squadCost - initialOut!.price + candidate.price
+      if (newCost > budget + 0.001) return
+      onSwap(
+        { element: candidate.element, name: candidate.name, position: candidate.position,
+          price: candidate.price, xp: candidate.xp, team_abbr: candidate.team_abbr,
+          squad_id: candidate.squad_id, low_sample: candidate.low_sample },
+        initialOut!,
+      )
+      onClose()
+    } else {
+      // IN→OUT: proceed to squad picker step
+      setSelectedIn({
+        element: candidate.element, name: candidate.name, position: candidate.position,
+        price: candidate.price, xp: candidate.xp, team_abbr: candidate.team_abbr,
+        squad_id: candidate.squad_id, low_sample: candidate.low_sample,
+      })
+    }
   }
 
   function handleConfirmSwap(outPlayer: SquadPlayer) {
@@ -108,137 +122,102 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
     onClose()
   }
 
-  // Don't close on backdrop tap if player selection is in progress
   function handleBackdropClick() {
-    if (selectedIn) return
+    if (selectedIn) return  // don't close mid-selection
     onClose()
   }
 
+  const outRef = initialOut ?? null
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70" onClick={handleBackdropClick} />
 
       <div className="relative z-10 w-full sm:max-w-lg bg-slate-900 rounded-t-2xl sm:rounded-2xl border border-slate-700 flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-800">
-          <h2 className="text-base font-semibold text-slate-100">
-            {selectedIn ? 'Who do you want to sell?' : 'Browse All Players'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-100 text-xl leading-none"
-          >
+          <div>
+            <h2 className="text-base font-semibold text-slate-100">
+              {isOutFirstMode ? 'Pick replacement' : selectedIn ? 'Who do you want to sell?' : 'Browse All Players'}
+            </h2>
+            {isOutFirstMode && (
+              <p className="text-xs text-slate-500 mt-0.5">
+                {initialOut!.position} replacements only
+              </p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl leading-none">
             ×
           </button>
         </div>
 
-        {/* If IN player selected — show OUT picker */}
-        {selectedIn ? (
-          <div className="flex flex-col p-4 gap-3 overflow-y-auto">
-            <div className="rounded-xl border border-emerald-600/60 bg-emerald-950/30 p-3">
-              <p className="text-xs font-bold text-emerald-400 mb-1">BRINGING IN</p>
-              <p className="font-semibold text-slate-100">{selectedIn.name}</p>
-              <p className="text-xs text-slate-400">
-                {selectedIn.team_abbr}{' '}
-                <span className={`ml-1 font-semibold ${POS_COLOR[selectedIn.position]}`}>
-                  {selectedIn.position}
-                </span>
-                {' · '}£{selectedIn.price.toFixed(1)}m
-                {' · '}{selectedIn.xp.toFixed(1)} xP
-              </p>
+        {/* OUT→IN mode: show outgoing player card + candidate browse */}
+        {isOutFirstMode && (
+          <>
+            {/* OUT player card */}
+            <div className="px-4 pt-3 pb-2">
+              <div className="rounded-xl border border-rose-700/60 bg-rose-950/30 p-3">
+                <p className="text-xs font-bold text-rose-400 mb-1">TRANSFERRING OUT</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-100">{outRef!.name}</p>
+                    <p className="text-xs text-slate-400">
+                      {outRef!.team_abbr}{' '}
+                      <span className={`ml-1 font-semibold ${POS_COLOR[outRef!.position]}`}>
+                        {outRef!.position}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-accent">{outRef!.xp.toFixed(1)} xP</p>
+                    <p className="text-xs text-slate-400">£{outRef!.price.toFixed(1)}m</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {outOptions.map((out) => {
-              const newCost = squadCost - out.price + selectedIn.price
-              const overBudget = newCost > budget + 0.001
-              return (
-                <button
-                  key={out.element}
-                  onClick={() => handleConfirmSwap(out)}
-                  disabled={overBudget}
-                  className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-left hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <div>
-                    <p className="font-medium text-slate-100">{out.name}</p>
-                    <p className="text-xs text-slate-400">{out.team_abbr} · £{out.price.toFixed(1)}m · {out.xp.toFixed(1)} xP</p>
-                  </div>
-                  <div className="text-right text-xs">
-                    {overBudget ? (
-                      <span className="text-rose-400">Over budget</span>
-                    ) : (
-                      <span className={selectedIn.xp - out.xp >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                        {selectedIn.xp - out.xp >= 0 ? '+' : ''}{(selectedIn.xp - out.xp).toFixed(1)} xP
-                      </span>
-                    )}
-                  </div>
-                </button>
-              )
-            })}
-
-            <button
-              onClick={() => setSelectedIn(null)}
-              className="mt-1 text-sm text-slate-400 hover:text-slate-200 underline"
-            >
-              ← Back to player list
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Search + position filter */}
-            <div className="p-3 border-b border-slate-800 space-y-2">
+            {/* Search */}
+            <div className="px-3 pb-2 border-b border-slate-800">
               <input
                 type="text"
-                placeholder="Search player name…"
+                placeholder={`Search ${outRef!.position} replacements…`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-accent"
               />
-              <div className="flex gap-1.5">
-                {(['ALL', ...POSITIONS] as const).map((pos) => (
-                  <button
-                    key={pos}
-                    onClick={() => setPosFilter(pos)}
-                    className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                      posFilter === pos
-                        ? 'bg-accent text-accent-fg'
-                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {pos}
-                  </button>
-                ))}
-              </div>
             </div>
 
-            {/* Player list */}
+            {/* Candidate list — position locked */}
             <div className="overflow-y-auto flex-1">
               {filtered.length === 0 && eliminatedHiddenCount === 0 ? (
-                <p className="p-4 text-center text-sm text-slate-500">No players found</p>
+                <p className="p-4 text-center text-sm text-slate-500">No replacements found</p>
               ) : (
                 <>
-                  {filtered.slice(0, 100).map((p) => (
-                    <button
-                      key={p.element}
-                      onClick={() => handleSelectIn(p)}
-                      className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-slate-100">
-                          {p.name}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {p.team_abbr}{' '}
-                          <span className={`font-semibold ${POS_COLOR[p.position]}`}>{p.position}</span>
-                        </p>
-                      </div>
-                      <div className="ml-3 text-right shrink-0">
-                        <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
-                        <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
-                      </div>
-                    </button>
-                  ))}
-
+                  {filtered.slice(0, 100).map((p) => {
+                    const newCost = squadCost - outRef!.price + p.price
+                    const overBudget = newCost > budget + 0.001
+                    const xpDelta = p.xp - outRef!.xp
+                    return (
+                      <button
+                        key={p.element}
+                        onClick={() => handleCandidateTap(p)}
+                        disabled={overBudget}
+                        className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-100">{p.name}</p>
+                          <p className="text-xs text-slate-400">{p.team_abbr}</p>
+                        </div>
+                        <div className="ml-3 text-right shrink-0 space-y-0.5">
+                          <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
+                          <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
+                          <p className={`text-xs font-semibold ${overBudget ? 'text-rose-400' : xpDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {overBudget ? 'Over budget' : `${xpDelta >= 0 ? '+' : ''}${xpDelta.toFixed(1)} xP`}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
                   {eliminatedHiddenCount > 0 && (
                     <button
                       onClick={() => setShowEliminated(true)}
@@ -250,6 +229,127 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
                 </>
               )}
             </div>
+          </>
+        )}
+
+        {/* IN→OUT mode: existing flow (pick IN from browse list, then pick OUT from squad) */}
+        {!isOutFirstMode && (
+          <>
+            {selectedIn ? (
+              <div className="flex flex-col p-4 gap-3 overflow-y-auto">
+                <div className="rounded-xl border border-emerald-600/60 bg-emerald-950/30 p-3">
+                  <p className="text-xs font-bold text-emerald-400 mb-1">BRINGING IN</p>
+                  <p className="font-semibold text-slate-100">{selectedIn.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {selectedIn.team_abbr}{' '}
+                    <span className={`ml-1 font-semibold ${POS_COLOR[selectedIn.position]}`}>
+                      {selectedIn.position}
+                    </span>
+                    {' · '}£{selectedIn.price.toFixed(1)}m
+                    {' · '}{selectedIn.xp.toFixed(1)} xP
+                  </p>
+                </div>
+
+                <p className="text-sm text-slate-400">Who do you want to sell?</p>
+
+                {outOptions.map((out) => {
+                  const newCost = squadCost - out.price + selectedIn.price
+                  const overBudget = newCost > budget + 0.001
+                  return (
+                    <button
+                      key={out.element}
+                      onClick={() => handleConfirmSwap(out)}
+                      disabled={overBudget}
+                      className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-left hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <div>
+                        <p className="font-medium text-slate-100">{out.name}</p>
+                        <p className="text-xs text-slate-400">{out.team_abbr} · £{out.price.toFixed(1)}m · {out.xp.toFixed(1)} xP</p>
+                      </div>
+                      <div className="text-right text-xs">
+                        {overBudget ? (
+                          <span className="text-rose-400">Over budget</span>
+                        ) : (
+                          <span className={selectedIn.xp - out.xp >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                            {selectedIn.xp - out.xp >= 0 ? '+' : ''}{(selectedIn.xp - out.xp).toFixed(1)} xP
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+
+                <button
+                  onClick={() => setSelectedIn(null)}
+                  className="mt-1 text-sm text-slate-400 hover:text-slate-200 underline"
+                >
+                  ← Back to player list
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="p-3 border-b border-slate-800 space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Search player name…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-accent"
+                  />
+                  <div className="flex gap-1.5">
+                    {(['ALL', ...POSITIONS] as const).map((pos) => (
+                      <button
+                        key={pos}
+                        onClick={() => setPosFilter(pos)}
+                        className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
+                          posFilter === pos
+                            ? 'bg-accent text-accent-fg'
+                            : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        {pos}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="overflow-y-auto flex-1">
+                  {filtered.length === 0 && eliminatedHiddenCount === 0 ? (
+                    <p className="p-4 text-center text-sm text-slate-500">No players found</p>
+                  ) : (
+                    <>
+                      {filtered.slice(0, 100).map((p) => (
+                        <button
+                          key={p.element}
+                          onClick={() => handleCandidateTap(p)}
+                          className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-100">{p.name}</p>
+                            <p className="text-xs text-slate-400">
+                              {p.team_abbr}{' '}
+                              <span className={`font-semibold ${POS_COLOR[p.position]}`}>{p.position}</span>
+                            </p>
+                          </div>
+                          <div className="ml-3 text-right shrink-0">
+                            <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
+                            <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
+                          </div>
+                        </button>
+                      ))}
+                      {eliminatedHiddenCount > 0 && (
+                        <button
+                          onClick={() => setShowEliminated(true)}
+                          className="w-full py-3 text-xs text-slate-500 hover:text-slate-300 border-t border-slate-800/60"
+                        >
+                          Show {eliminatedHiddenCount} eliminated player{eliminatedHiddenCount > 1 ? 's' : ''}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
