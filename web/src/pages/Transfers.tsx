@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSquadStore } from '../store/squadStore'
 import { useTransferSuggest, useCurrentRound, useRounds, useTeams } from '../hooks/useWC'
 import type { TransferSuggestion, SquadPlayer, TransferCard } from '../types/wc'
+import BrowseAllModal from '../components/shared/BrowseAllModal'
 
 const POS_COLOR: Record<string, string> = {
   GK: 'text-yellow-400',
@@ -210,6 +211,7 @@ export default function Transfers() {
   const [accepted, setAccepted] = useState<TransferSuggestion[]>([])
   const [skipped, setSkipped] = useState<TransferSuggestion[]>([])
   const [prevSquads, setPrevSquads] = useState<SquadPlayer[][]>([])
+  const [showBrowseAll, setShowBrowseAll] = useState(false)
 
   const { mutate: suggest, isPending } = useTransferSuggest()
   const { data: teams } = useTeams()
@@ -282,6 +284,37 @@ export default function Transfers() {
     setPrevSquads([])
   }
 
+  function handleManualSwap(inPlayer: SquadPlayer, outPlayer: SquadPlayer) {
+    setPrevSquads((prev) => [...prev, squad])
+    const newSquad = squad.map((p) => (p.element === outPlayer.element ? inPlayer : p))
+    setSquad(newSquad)
+    const manualSuggestion: TransferSuggestion = {
+      out: {
+        element: outPlayer.element,
+        name: outPlayer.name,
+        position: outPlayer.position,
+        price: outPlayer.price,
+        xp: outPlayer.xp,
+        team_abbr: outPlayer.team_abbr,
+        squad_id: outPlayer.squad_id,
+        low_sample: outPlayer.low_sample,
+      },
+      in: {
+        element: inPlayer.element,
+        name: inPlayer.name,
+        position: inPlayer.position,
+        price: inPlayer.price,
+        xp: inPlayer.xp,
+        team_abbr: inPlayer.team_abbr,
+        squad_id: inPlayer.squad_id,
+        low_sample: inPlayer.low_sample,
+      },
+      xp_gain: inPlayer.xp - outPlayer.xp,
+      price_delta: outPlayer.price - inPlayer.price,
+    }
+    setAccepted((prev) => [...prev, manualSuggestion])
+  }
+
   const isDone = suggestions !== null && index >= suggestions.length
   const canUndo = prevSquads.length > 0
 
@@ -334,15 +367,23 @@ export default function Transfers() {
         </div>
       )}
 
-      {/* Initial analyze button */}
+      {/* Initial analyze + browse all buttons */}
       {hasSquad && suggestions === null && (
-        <button
-          onClick={analyze}
-          disabled={isPending}
-          className="w-full rounded-xl bg-accent py-3 text-sm font-bold text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          {isPending ? 'Analyzing…' : `Analyze ${freeTransfers} transfer${freeTransfers > 1 ? 's' : ''}`}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={analyze}
+            disabled={isPending}
+            className="flex-1 rounded-xl bg-accent py-3 text-sm font-bold text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {isPending ? 'Analyzing…' : `Analyze ${freeTransfers} transfer${freeTransfers > 1 ? 's' : ''}`}
+          </button>
+          <button
+            onClick={() => setShowBrowseAll(true)}
+            className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-300 hover:bg-slate-700"
+          >
+            Browse All
+          </button>
+        </div>
       )}
 
       {/* Swap cards */}
@@ -377,6 +418,26 @@ export default function Transfers() {
           canUndo={canUndo}
           onUndo={handleUndo}
           onReset={reset}
+        />
+      )}
+
+      {/* Browse All always available once squad is loaded */}
+      {hasSquad && suggestions !== null && (
+        <button
+          onClick={() => setShowBrowseAll(true)}
+          className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700"
+        >
+          Browse All Players
+        </button>
+      )}
+
+      {showBrowseAll && (
+        <BrowseAllModal
+          squad={squad}
+          round={round}
+          budget={budget}
+          onSwap={handleManualSwap}
+          onClose={() => setShowBrowseAll(false)}
         />
       )}
     </div>

@@ -342,6 +342,10 @@ if (existsSync(distDir)) {
   app.get('*', (_, res) => res.sendFile(path.join(distDir, 'index.html')))
 }
 
-app.listen(PORT, () => {
-  console.log(`wc-edge server on :${PORT}  DB=${dbEnabled ? 'enabled' : 'disabled'}`)
-})
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`wc-edge server on :${PORT}  DB=${dbEnabled ? 'enabled' : 'disabled'}`)
+  })
+}
+
+export { app }

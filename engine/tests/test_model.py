@@ -5,7 +5,13 @@ Run with: cd engine && py -m pytest tests/ -v
 import math
 import pytest
 
-from engine.wc_model import compute_player_rates, compute_round_projection, SEED_LAMBDA, KO_AVG_LAMBDA
+from engine.wc_model import (
+    compute_player_rates,
+    compute_round_projection,
+    SEED_LAMBDA,
+    KO_AVG_LAMBDA,
+    _fetch_group_results,
+)
 
 MEDIAN_PRICE = {"GK": 5.0, "DEF": 5.5, "MID": 7.0, "FWD": 8.0}
 
@@ -123,3 +129,153 @@ class TestComputeRoundProjection:
         high = compute_round_projection("DEF", 2, rates["xg90"], rates["xa90"], None, rates["mf"], high_concede)
         low  = compute_round_projection("DEF", 2, rates["xg90"], rates["xa90"], None, rates["mf"], low_concede)
         assert low["xp"] > high["xp"]
+
+
+# ---------------------------------------------------------------------------
+# blend_live_observations — Bayesian blend math (isolated, no DB/HTTP)
+# ---------------------------------------------------------------------------
+
+class TestLiveBlendMath:
+    """Tests the Option A2 blend formula independently of DB calls."""
+
+    def _blend(self, prior_xp: float, avg_pts: float, rounds_played: int) -> float:
+        obs_weight = rounds_played * 90
+        prior_weight = 300
+        return (prior_xp * prior_weight + avg_pts * obs_weight) / (prior_weight + obs_weight)
+
+    def test_zero_rounds_returns_prior(self):
+        blended = self._blend(5.0, 2.0, 0)
+        # obs_weight=0 → blended = prior_xp * 300 / 300 = prior_xp
+        assert blended == pytest.approx(5.0)
+
+    def test_after_round1_mostly_prior(self):
+        # obs_weight=90, prior_weight=300 → prior still dominates (77%)
+        blended = self._blend(5.0, 2.0, 1)
+        # 5*300 + 2*90 / (300+90) = (1500+180)/390 ≈ 4.31
+        assert blended == pytest.approx((5.0 * 300 + 2.0 * 90) / 390)
+        assert blended > 2.0  # prior still dominates
+
+    def test_after_round5_observed_dominates(self):
+        # obs_weight=450, prior_weight=300 → observed has 60% weight
+        blended = self._blend(5.0, 2.0, 5)
+        assert blended == pytest.approx((5.0 * 300 + 2.0 * 450) / 750)
+        # Result should be closer to observed (2.0) than to prior (5.0)
+        assert blended < 4.0
+
+    def test_blend_converges_toward_observed_over_rounds(self):
+        prior_xp = 6.0
+        observed = 3.0
+        prev = prior_xp
+        for r in range(1, 9):
+            blended = self._blend(prior_xp, observed, r)
+            assert blended < prev  # always moving toward observed
+            prev = blended
+
+    def test_perfect_agreement_stays_stable(self):
+        blended = self._blend(4.0, 4.0, 3)
+        assert blended == pytest.approx(4.0)
+
+
+# ---------------------------------------------------------------------------
+# Post-group FDR Bayesian update math
+# ---------------------------------------------------------------------------
+
+class TestPostGroupFdrMath:
+    """Tests the Bayesian lambda update formula for post-group knockout rounds."""
+
+    def _update_concede(self, ko_avg: float, actual_ga: float, m: int, prior_virt: int = 3) -> float:
+        return (prior_virt * ko_avg + m * actual_ga) / (prior_virt + m)
+
+    def test_poor_defense_increases_concede_lambda(self):
+        # Team conceded 2.5 goals/game in group → knockout lambda increases vs KO_AVG
+        updated = self._update_concede(KO_AVG_LAMBDA, 2.5, 3)
+        assert updated > KO_AVG_LAMBDA
+
+    def test_solid_defense_decreases_concede_lambda(self):
+        # Team conceded 0.3 goals/game in group → knockout lambda decreases
+        updated = self._update_concede(KO_AVG_LAMBDA, 0.3, 3)
+        assert updated < KO_AVG_LAMBDA
+
+    def test_average_team_stays_near_ko_avg(self):
+        updated = self._update_concede(KO_AVG_LAMBDA, KO_AVG_LAMBDA, 3)
+        assert updated == pytest.approx(KO_AVG_LAMBDA)
+
+    def test_def_multiplier_above_1_for_high_scoring_team(self):
+        tourn_avg = 1.3
+        actual_gf = 2.5
+        def_mult = actual_gf / tourn_avg
+        assert def_mult > 1.0
+
+    def test_def_multiplier_below_1_for_low_scoring_team(self):
+        tourn_avg = 1.3
+        actual_gf = 0.5
+        def_mult = actual_gf / tourn_avg
+        assert def_mult < 1.0
+
+
+# ---------------------------------------------------------------------------
+# _fetch_group_results — URL parsing logic (mocked HTTP)
+# ---------------------------------------------------------------------------
+
+class TestFetchGroupResults:
+    def test_returns_empty_on_http_error(self, monkeypatch):
+        """If rounds.json fetch fails, returns empty dict without raising."""
+        import httpx
+        def _fail(*args, **kwargs):
+            raise httpx.ConnectError("timeout")
+        monkeypatch.setattr(httpx, "get", _fail)
+        result = _fetch_group_results()
+        assert result == {}
+
+    def test_parses_completed_group_matches(self, monkeypatch):
+        import httpx
+        from unittest.mock import MagicMock
+
+        fake_data = [
+            {
+                "stage": "GROUP",
+                "tournaments": [
+                    {"homeSquadId": 1, "awaySquadId": 2, "homeScore": 2, "awayScore": 1},
+                    {"homeSquadId": 1, "awaySquadId": 3, "homeScore": 1, "awayScore": 0},
+                ],
+            },
+            {
+                "stage": "R32",
+                "tournaments": [
+                    {"homeSquadId": 1, "awaySquadId": 4, "homeScore": 3, "awayScore": 0},
+                ],
+            },
+        ]
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json.return_value = fake_data
+        monkeypatch.setattr(httpx, "get", lambda *a, **kw: mock_resp)
+
+        result = _fetch_group_results()
+
+        # R32 match must be ignored
+        assert 4 not in result or result[4]["matches"] == 0
+        # Team 1: 2 matches, goals_for=3, goals_against=1
+        assert result[1]["matches"] == 2
+        assert result[1]["goals_for"] == pytest.approx(3.0)
+        assert result[1]["goals_against"] == pytest.approx(1.0)
+
+    def test_skips_matches_without_scores(self, monkeypatch):
+        import httpx
+        from unittest.mock import MagicMock
+
+        fake_data = [
+            {
+                "stage": "GROUP",
+                "tournaments": [
+                    {"homeSquadId": 1, "awaySquadId": 2, "homeScore": None, "awayScore": None},
+                ],
+            }
+        ]
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json.return_value = fake_data
+        monkeypatch.setattr(httpx, "get", lambda *a, **kw: mock_resp)
+
+        result = _fetch_group_results()
+        assert result == {}

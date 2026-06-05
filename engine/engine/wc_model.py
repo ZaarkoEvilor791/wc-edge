@@ -4,11 +4,13 @@ import math
 import statistics
 from collections import defaultdict
 
+import httpx
 import psycopg
 
 from .config import (
     APPEARANCE_FULL,
     CS_PTS,
+    FIFA_BASE,
     GOAL_PTS,
     PRIOR_WEIGHT,
     SAVES_PER_PT,
@@ -72,6 +74,46 @@ def _group_opponents(team_row: dict, all_teams: list[dict]) -> list[dict]:
         if t["group_name"] == team_row["group_name"]
         and t["squad_id"] != team_row["squad_id"]
     ]
+
+
+def _fetch_group_results() -> dict[int, dict]:
+    """Fetch completed group stage match results from FIFA Fantasy rounds.json.
+
+    Returns {squad_id: {goals_for: float, goals_against: float, matches: int}}
+    Returns empty dict on any error (model falls back to seed-based lambdas).
+    """
+    try:
+        resp = httpx.get(f"{FIFA_BASE}/rounds.json", timeout=15)
+        resp.raise_for_status()
+        rounds_data = resp.json()
+    except Exception as e:
+        print(f"[model] post-group FDR: failed to fetch rounds.json: {e}")
+        return {}
+
+    team_stats: dict[int, dict] = {}
+    for rnd in rounds_data:
+        if rnd.get("stage", "").upper() != "GROUP":
+            continue
+        for tournament in rnd.get("tournaments", []):
+            home_id = tournament.get("homeSquadId") or tournament.get("homeId")
+            away_id = tournament.get("awaySquadId") or tournament.get("awayId")
+            home_score = tournament.get("homeScore")
+            away_score = tournament.get("awayScore")
+            if home_id is None or away_id is None:
+                continue
+            if home_score is None or away_score is None:
+                continue  # match not yet played
+            for tid, scored, conceded in [
+                (int(home_id), int(home_score), int(away_score)),
+                (int(away_id), int(away_score), int(home_score)),
+            ]:
+                if tid not in team_stats:
+                    team_stats[tid] = {"goals_for": 0.0, "goals_against": 0.0, "matches": 0}
+                team_stats[tid]["goals_for"] += scored
+                team_stats[tid]["goals_against"] += conceded
+                team_stats[tid]["matches"] += 1
+
+    return team_stats
 
 
 # ---------------------------------------------------------------------------
@@ -191,7 +233,7 @@ def compute_round_projection(
 # Main model
 # ---------------------------------------------------------------------------
 
-def run_model(conn: psycopg.Connection) -> None:
+def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
     print("[model] Loading data...")
 
     # ---- players ----
@@ -244,6 +286,13 @@ def run_model(conn: psycopg.Connection) -> None:
     print(f"[model] {len(players)} players | {len(stats_map)} with stats | "
           f"{len(rounds)} rounds | {len(all_teams)} teams")
 
+    # Fetch actual group results for post-group Bayesian FDR update
+    group_results: dict[int, dict] = {}
+    if post_group:
+        print("[model] Fetching group stage results for post-group FDR update...")
+        group_results = _fetch_group_results()
+        print(f"[model] Group results found for {len(group_results)} teams")
+
     # ---- per-team FDR per round ----
     team_fdr: dict[int, dict[int, dict]] = {}
     for team in all_teams:
@@ -272,6 +321,39 @@ def run_model(conn: psycopg.Connection) -> None:
                     "concede_lambda": KO_AVG_LAMBDA,
                     "def_multiplier": 1.0,
                 }
+
+    # ---- post-group Bayesian FDR update (knockout rounds only) ----
+    if post_group and group_results:
+        total_goals = sum(s["goals_for"] for s in group_results.values())
+        total_matches = sum(s["matches"] for s in group_results.values())
+        tourn_avg_gpg = (total_goals / total_matches) if total_matches > 0 else 1.3
+        prior_virt = 3  # equivalent to 3 virtual matches of prior evidence
+
+        for squad_id in team_fdr:
+            result = group_results.get(squad_id)
+            if not result or result["matches"] == 0:
+                continue
+            m = result["matches"]
+            actual_gf = result["goals_for"] / m
+            actual_ga = result["goals_against"] / m
+
+            for rnd_id, fdr_entry in team_fdr[squad_id].items():
+                rnd = next((r for r in rounds if r["id"] == rnd_id), None)
+                if not rnd or rnd["stage"] == "GROUP":
+                    continue  # only update knockout rounds
+
+                # Bayesian blend: KO_AVG_LAMBDA prior + actual group concede rate
+                concede_post = (prior_virt * KO_AVG_LAMBDA + m * actual_ga) / (prior_virt + m)
+                # def_multiplier: team's attacking output vs tournament average
+                def_mult_post = actual_gf / tourn_avg_gpg if tourn_avg_gpg > 0 else 1.0
+
+                team_fdr[squad_id][rnd_id] = {
+                    "attack_lambda": KO_AVG_LAMBDA,
+                    "concede_lambda": concede_post,
+                    "def_multiplier": def_mult_post,
+                }
+
+        print(f"[model] Post-group FDR updated. Tournament avg goals/game: {tourn_avg_gpg:.2f}")
 
     # ---- compute projections ----
     proj_rows: list[tuple] = []
@@ -342,6 +424,80 @@ def run_model(conn: psycopg.Connection) -> None:
         )
     conn.commit()
     print(f"[model] Done. {len(proj_rows)} projections, {len(fdr_rows)} team_fdr rows.")
+
+
+def blend_live_observations(conn: psycopg.Connection) -> None:
+    """Blend prior xP with FIFA Fantasy avgPoints after rounds are played.
+
+    PRD Option A2: xp_blended = (prior_xp * 300 + avg_pts_pg * rounds_played * 90)
+                              / (300 + rounds_played * 90)
+
+    Prior fades to ~25% after round 5. Zero-op when no rounds are complete.
+    """
+    with conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM wc.rounds WHERE status = 'COMPLETE'")
+        row = cur.fetchone()
+    rounds_played: int = row[0] if row else 0
+
+    if rounds_played == 0:
+        print("[model] blend_live_observations: 0 rounds complete, skipping")
+        return
+
+    obs_weight = rounds_played * 90
+    prior_weight = 300
+
+    try:
+        resp = httpx.get(f"{FIFA_BASE}/players.json", timeout=15)
+        resp.raise_for_status()
+        fifa_players = resp.json()
+    except Exception as e:
+        print(f"[model] blend_live_observations: failed to fetch players.json: {e}")
+        return
+
+    avg_pts_map: dict[int, float] = {}
+    for fp in fifa_players:
+        el = fp.get("id")
+        stats = fp.get("stats") or {}
+        avg_pts = stats.get("avgPoints")
+        if el is not None and avg_pts is not None:
+            avg_pts_map[int(el)] = float(avg_pts)
+
+    if not avg_pts_map:
+        print("[model] blend_live_observations: no avgPoints in players.json, skipping")
+        return
+
+    with conn.cursor() as cur:
+        cur.execute("SELECT DISTINCT round FROM wc.projections")
+        round_ids = [r[0] for r in cur.fetchall()]
+
+    total_updated = 0
+    for round_id in round_ids:
+        with conn.cursor() as cur:
+            cur.execute("SELECT element, xp FROM wc.projections WHERE round = %s", [round_id])
+            rows = cur.fetchall()
+
+        updates = []
+        for element, prior_xp in rows:
+            avg_pts = avg_pts_map.get(element)
+            if avg_pts is None or prior_xp is None:
+                continue
+            blended = (prior_xp * prior_weight + avg_pts * obs_weight) / (prior_weight + obs_weight)
+            updates.append((blended, element, round_id))
+
+        if updates:
+            with conn.cursor() as cur:
+                cur.executemany(
+                    "UPDATE wc.projections SET xp = %s, updated_at = NOW() "
+                    "WHERE element = %s AND round = %s",
+                    updates,
+                )
+            total_updated += len(updates)
+
+    conn.commit()
+    print(
+        f"[model] blend_live_observations: {total_updated} projections blended "
+        f"(rounds_played={rounds_played}, obs_weight={obs_weight}, prior_weight={prior_weight})"
+    )
 
 
 if __name__ == "__main__":

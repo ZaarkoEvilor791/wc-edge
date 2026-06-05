@@ -14,6 +14,10 @@ on:
         description: 'Skip apif ingest (model+optimizer only)'
         required: false
         default: 'false'
+      post_group:
+        description: 'Apply post-group Bayesian FDR update'
+        required: false
+        default: 'false'
 
 jobs:
   refresh:
@@ -44,7 +48,14 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
 
-      - name: Model + optimizer
+      - name: Model + optimizer (post-group)
+        if: github.event.schedule == '0 6 27 6 *' || github.event.inputs.post_group == 'true'
+        run: python -m engine.wc_run --post-group
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Model + optimizer (standard)
+        if: github.event.schedule != '0 6 27 6 *' && github.event.inputs.post_group != 'true'
         run: python -m engine.wc_run
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

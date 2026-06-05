@@ -82,6 +82,28 @@ describe('suggestTransfers', () => {
     }
   })
 
+  it('eliminated player (xp=0) surfaces as best sell candidate', () => {
+    // A player with xp=0 represents an eliminated nation — any non-zero xP replacement wins
+    const eliminated = card({ element: 99, position: 'FWD', xp: 0, price: 9 })
+    const replacement = card({ element: 100, position: 'FWD', xp: 7, price: 9 })
+    const squadWithEliminated = [gk1, def1, def2, mid1, mid2, eliminated]
+    const pool = [...squadWithEliminated, replacement]
+
+    const result = suggestTransfers(squadWithEliminated, pool, 100)
+
+    expect(result.length).toBeGreaterThan(0)
+    expect(result[0].out.element).toBe(99)
+    expect(result[0].in.element).toBe(100)
+    expect(result[0].xp_gain).toBeCloseTo(7)
+  })
+
+  it('returns 400-equivalent empty result when no valid in-budget replacements', () => {
+    const tooExpensive = card({ element: 99, position: 'FWD', xp: 15, price: 50 })
+    // squad cost = 40, budget = 40. 40 - 9 + 50 = 81 > 40
+    const result = suggestTransfers(baseSquad, [tooExpensive, ...baseSquad], 40)
+    expect(result).toHaveLength(0)
+  })
+
   it('tracks cost correctly across sequential swaps', () => {
     const upgrade1 = card({ element: 201, position: 'MID', xp: 10, price: 10 })
     const upgrade2 = card({ element: 202, position: 'MID', xp: 9, price: 8 })
