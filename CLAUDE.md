@@ -254,6 +254,36 @@
 
 - **TypeScript:** clean (zero errors) across all changes
 
+**Session 13 (2026-06-05) — Day 9: All Session 12 bugs fixed + swap flow overhaul:**
+
+### Session 12 bugs fixed (all 5)
+
+1. **Sub Out atomic exchange** (`web/src/pages/Squad.tsx` `handleSwap`): changed from single-slot replace to atomic exchange — both players' positions now swap in the array. Previously caused dedup → 14 players → corruption guard reset.
+
+2. **−3 pts badge live** (`web/server/server.ts`): server loop changed from `Math.min(freeTransfers, 6)` to always `6`. Badge condition `index >= freeTransfers` now reachable. Server greedy loop already exits early when no profitable swap found.
+
+3. **"Already optimal" state reachable** (`web/src/pages/Transfers.tsx`): render reordered — `suggestions.length === 0` check now fires before `isDone` DoneState. Added `suggestions.length > 0` guard to DoneState so it no longer fires for empty results.
+
+4. **Country limit threshold** (`web/src/pages/Squad.tsx`): `n >= 3` → `n > 3`. Exactly 3 same-country players is the allowed group-stage maximum. Default suggested squad (3 FRA players) no longer shows a false warning. TODO comment added for round-aware thresholds (R32=4, R16=5, QF=6, SF/F=8).
+
+5. **`getProjections()` SELECT includes round** (`web/server/db.ts`): `round` column added to SELECT. `getXI`'s xpMap now populates correctly for rounds 2–8.
+
+### Additional bugs found and fixed this session
+
+6. **Bench player modal label** (`PlayerProfileModal.tsx`): bench players always showed "Sub Out" — now shows "Sub In" via new `isBench?: boolean` prop. `Squad.tsx` passes `selectedIsBench = bench.some(p => p.element === selectedPlayer?.element)`.
+
+7. **SwapDrawer showed wrong candidates for bench sub-ins** (`Squad.tsx`): when a bench player triggered the drawer, eligible = `bench.filter(position)` which only contained the target itself → clicking did nothing. Fixed: `SwapDrawer` now receives `options` prop (XI starters when subing in a bench player, bench players when subbing out a starter) + `subIn: boolean` for header text. Header: "Sub in [Name] · Select a starter to move to bench" or "Swap out [Name] · Select a bench player to bring in". Eligible filter also excludes the target player itself.
+
+8. **Squad pitch not updating after swap** (`web/src/utils/squad.ts`): `getXI` was re-sorting players by xP on every render, silently reversing any manual swap. Changed to array-order based: first `POS_COUNT[pos]` players of each position in the array = XI. Manual `handleSwap` exchanges array positions so swaps now persist visually. **Initial DB load** in `Squad.tsx` `useEffect` now pre-sorts players by xP within each position group before `setSquad`, so the default XI is still optimal.
+
+9. **PlayerProfileModal cuts off on small screens** (`PlayerProfileModal.tsx`): container changed to `max-h-[90vh] flex-col`; scrollable tab content uses `flex-1 overflow-y-auto` instead of fixed `max-h-[55vh]`. Bottom action buttons always visible.
+
+10. **SwapDrawer cuts off on small screens** (`Squad.tsx`): container changed to `max-h-[70vh] flex-col`; player list uses `flex-1 overflow-y-auto`.
+
+### TypeScript: clean (zero errors) after all changes
+
+---
+
 **Session 12 (2026-06-11) — Day 8: Sub out + transfer flow audit (bugs found):**
 
 ### Bugs found via Playwright e2e testing
@@ -353,7 +383,7 @@ Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
 4. ✅ **Round deadline + countdown** — `useCountdown(start_date)` with `setInterval(60s)`
 
 **Transfers page (`web/src/pages/Transfers.tsx`):**
-5. ❌ **−3 pts badge** — logic exists (`index >= freeTransfers`) but badge is unreachable: server returns exactly `freeTransfers` suggestions so `index` is always `< freeTransfers`. Fix in Day 9: server returns up to 6 always.
+5. ✅ **−3 pts badge** — server now returns up to 6 suggestions always; badge fires at `index >= freeTransfers`. Fixed Day 9.
 6. ✅ **Undo last swap** — `prevSquads[]` stack; "↩ Undo" in-progress + in DoneState
 
 **Assistant system prompt (`web/server/server.ts`):**
@@ -391,58 +421,42 @@ Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
 | 6 | Jun 9 | Live page polish + captain banner + squad swap drawer + onboarding fix | ✅ Done |
 | 7 | Jun 10 | PRD gap fill (Captain: variance/FDR/deadline/footer · Transfers: -3pts/undo · Assistant: chips/rules · Squad: budget bar/country count) | ✅ Done |
 | 8 | Jun 11 | GitHub Actions engine.yml + Render deploy + ELIMINATED badge + final engine run + production smoke test | Bugs found (see Session 12) |
-| 9 | Jun 11 | Fix 4 bugs found in Session 12 + GitHub Actions + Render deploy + production smoke test | ← Start here |
+| 9 | Jun 5 | Fix Session 12 bugs + swap flow overhaul (bench sub-in, array-order XI, modal cutoffs) | ✅ Done |
+| 10 | Jun 5 | GitHub Actions engine.yml + Render deploy + ELIMINATED badge + engine run + smoke test | ← Start here |
 
 ---
 
-## How to Start (Day 9 — next session)
+## How to Start (Day 10 — next session)
 
 ### What is done — do not redo
 ```
-Day 1–8 complete. All 5 pages built and polished. All PRD gaps filled.
+Days 1–9 complete. All 5 pages built, polished, and bug-free.
+Squad sub-in/sub-out fully working: bench shows "Sub In", pitch updates immediately.
+Modal and SwapDrawer no longer cut off on small screens.
 DB: 1481 players, 8 rounds, 11848 projections, 384 team_fdr rows, 1 suggested_squad.
 Vite dev server: npm run dev in web/ → Express :3001 + Vite :5173.
 Squad composition correct: 2GK/5DEF/5MID/3FWD (Ramírez + Osako as GKs).
 ```
 
-### Day 9 priorities (in order)
+### Day 10 priorities (in order)
 
-**Bug fixes first — these are regressions in shipped features:**
+1. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; triggers `py -m engine.wc_run`; post-group bonus run June 27. Use GitHub secrets `DATABASE_URL` and `API_FOOTBALL_KEY`. File: `.github/workflows/engine.yml`.
 
-1. **Fix Sub Out silent failure** (`web/src/pages/Squad.tsx:189`):
-   - Change `handleSwap` to exchange both players' positions (not just replace):
-     ```ts
-     setSquad(displaySquad.map((p) => {
-       if (p.element === swapTarget.element) return replacement
-       if (p.element === replacement.element) return swapTarget
-       return p
-     }))
-     ```
+2. **Render deploy** — `git push origin main` (already done for bug fixes), then confirm `https://wc-edge.onrender.com` loads all 5 pages correctly.
 
-2. **Fix −3 pts badge dead code** (`web/server/server.ts:186`):
-   - Change server loop from `Math.min(freeTransfers, 6)` to always `6`:
-     ```ts
-     for (let i = 0; i < 6; i++) { ... }
-     ```
-   - The badge condition (`index >= freeTransfers`) stays unchanged — now reachable.
+3. **Production smoke test** — Squad, Captain, Transfers, Live, Assistant pages. Check `/api/fdr?round=1`, `/api/live` (shows fixture schedule), squad sub-in/sub-out on prod.
 
-3. **Fix "already optimal" message unreachable** (`web/src/pages/Transfers.tsx`):
-   - Reorder render so `suggestions.length === 0` check fires before `isDone` DoneState.
+4. **ELIMINATED badge** (medium effort):
+   - `ALTER TABLE wc.teams ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;`
+   - Update `GET /api/teams` in `server.ts` to include `is_active`
+   - Add `isActive` to `Team` type in `wc.ts`
+   - Show "ELIMINATED" badge on Transfers SwapCard OUT player when `team.is_active = false`
 
-4. **Fix country limit warning threshold** (`web/src/pages/Squad.tsx:187`):
-   - Change `n >= 3` to `n > 3` — exactly 3 is the allowed limit, not a violation.
+5. **Final engine run** (if apif budget available):
+   - `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req)
+   - `py -m engine.wc_run` to refresh projections with better club stats
 
-5. **Fix `getXI` xpMap empty** (`web/server/db.ts` + `web/src/utils/squad.ts`):
-   - Add `round` to SELECT in `getProjections()`: `SELECT element, round, xp, ...`
-   - Or remove the `p.round === round` filter from `getXI` (projections already pre-filtered).
-
-**Then deploy:**
-
-6. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; triggers `py -m engine.wc_run`; post-group bonus run June 27. Use GitHub secrets `DATABASE_URL` and `API_FOOTBALL_KEY`.
-7. **Render deploy** — `git push origin main`, confirm `https://wc-edge.onrender.com` loads correctly.
-8. **Production smoke test** — all 5 pages, `/api/fdr`, `/api/live` (should show schedule), chat (needs Anthropic credits), screenshot upload.
-9. **ELIMINATED badge** (medium effort) — add `is_active BOOLEAN DEFAULT TRUE` to `wc.teams`; `ALTER TABLE wc.teams ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;`; update `GET /api/teams` to include it; show "ELIMINATED" badge on Transfers swap card OUT player if their team is inactive.
-10. **Final engine run** (if apif budget available): `py -m engine.wc_ingest --source apif --day 2` then `py -m engine.wc_run` to refresh projections with better club stats.
+6. **AI chat credits** — top up Anthropic account; test `/api/chat` and `/api/squad/from-screenshot` end-to-end.
 
 ### Known deferred items (still outstanding)
 - `wc.teams` may have 80 rows (32 duplicates with FIFA entity IDs > 1000). Check: `SELECT COUNT(*) FROM wc.teams`. Fix if needed: `DELETE FROM wc.teams WHERE squad_id > 1000;` then re-run `py -m engine.wc_ingest --source fifa`.
