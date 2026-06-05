@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useSquadStore } from '../store/squadStore'
 import { useTransferSuggest, useCurrentRound, useRounds, useTeams } from '../hooks/useWC'
+import { roundPhase } from '../domain/squadValidator'
+import type { RoundPhase } from '../domain/squadValidator'
 import type { TransferSuggestion, SquadPlayer, TransferCard } from '../types/wc'
 import BrowseAllModal from '../components/shared/BrowseAllModal'
 
@@ -9,6 +12,10 @@ const POS_COLOR: Record<string, string> = {
   DEF: 'text-blue-400',
   MID: 'text-green-400',
   FWD: 'text-red-400',
+}
+
+const FREE_TRANSFERS_BY_PHASE: Record<RoundPhase, number> = {
+  group: 2, r32: 6, r16: 4, qf: 4, sf: 5, final: 6,
 }
 
 function SwapPlayerCard({
@@ -50,6 +57,45 @@ function SwapPlayerCard({
   )
 }
 
+function SuggestionsPreview({
+  suggestions,
+  currentIndex,
+}: {
+  suggestions: TransferSuggestion[]
+  currentIndex: number
+}) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        {suggestions.length} suggestion{suggestions.length > 1 ? 's' : ''}
+      </p>
+      <div className="space-y-1">
+        {suggestions.map((s, i) => {
+          const isPast = i < currentIndex
+          const isCurrent = i === currentIndex
+          return (
+            <div
+              key={i}
+              className={`flex items-center justify-between rounded-lg px-2 py-1.5 text-xs transition-colors ${
+                isCurrent ? 'bg-slate-800 text-slate-100' : 'text-slate-500'
+              }`}
+            >
+              <span className={isPast ? 'line-through opacity-40' : ''}>
+                {s.out.name}
+                <span className="mx-1.5 text-slate-600">→</span>
+                {s.in.name}
+              </span>
+              <span className={`ml-2 shrink-0 font-semibold ${isCurrent ? 'text-accent' : ''}`}>
+                +{s.xp_gain.toFixed(1)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function SwapCard({
   suggestion,
   index,
@@ -58,7 +104,7 @@ function SwapCard({
   canUndo,
   eliminatedSquadIds,
   onAccept,
-  onSkip,
+  onPass,
   onUndo,
 }: {
   suggestion: TransferSuggestion
@@ -68,7 +114,7 @@ function SwapCard({
   canUndo: boolean
   eliminatedSquadIds: Set<number>
   onAccept: () => void
-  onSkip: () => void
+  onPass: () => void
   onUndo: () => void
 }) {
   const priceDeltaSign = suggestion.price_delta >= 0 ? '+' : ''
@@ -124,10 +170,11 @@ function SwapCard({
           </button>
         )}
         <button
-          onClick={onSkip}
+          onClick={onPass}
+          title="Pass on this suggestion — not undoable"
           className="rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
         >
-          Skip
+          Pass
         </button>
         <button
           onClick={onAccept}
@@ -153,6 +200,8 @@ function DoneState({
   onUndo: () => void
   onReset: () => void
 }) {
+  const navigate = useNavigate()
+
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center">
       <div className="mb-1 text-3xl">
@@ -163,8 +212,8 @@ function DoneState({
       </h2>
       <p className="mb-5 text-sm text-slate-400">
         {accepted.length > 0
-          ? `+${accepted.reduce((s, t) => s + t.xp_gain, 0).toFixed(1)} xP gained · ${skipped.length} skipped`
-          : 'All suggestions skipped'}
+          ? `+${accepted.reduce((s, t) => s + t.xp_gain, 0).toFixed(1)} xP gained · ${skipped.length} passed`
+          : 'All suggestions passed'}
       </p>
 
       {accepted.length > 0 && (
@@ -195,6 +244,12 @@ function DoneState({
         >
           Analyze again
         </button>
+        <button
+          onClick={() => navigate('/squad')}
+          className="flex-1 rounded-xl bg-accent py-2 text-sm font-bold text-accent-fg hover:opacity-90"
+        >
+          View Squad
+        </button>
       </div>
     </div>
   )
@@ -206,6 +261,7 @@ export default function Transfers() {
   const { data: rounds } = useRounds()
   const [selectedRound, setSelectedRound] = useState<number | null>(null)
   const [freeTransfers, setFreeTransfers] = useState(2)
+  const [ftAutoSet, setFtAutoSet] = useState(false)
   const [suggestions, setSuggestions] = useState<TransferSuggestion[] | null>(null)
   const [index, setIndex] = useState(0)
   const [accepted, setAccepted] = useState<TransferSuggestion[]>([])
@@ -222,6 +278,21 @@ export default function Transfers() {
   const eliminatedSquadIds = new Set(
     (teams ?? []).filter(t => !t.is_active).map(t => t.squad_id)
   )
+
+  // Auto-populate free transfers from current round stage on first load
+  useEffect(() => {
+    if (currentRound && !ftAutoSet) {
+      setFreeTransfers(FREE_TRANSFERS_BY_PHASE[roundPhase(currentRound.stage)])
+      setFtAutoSet(true)
+    }
+  }, [currentRound, ftAutoSet])
+
+  function handleRoundChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const newRound = Number(e.target.value)
+    setSelectedRound(newRound)
+    const r = rounds?.find(r => r.id === newRound)
+    if (r) setFreeTransfers(FREE_TRANSFERS_BY_PHASE[roundPhase(r.stage)])
+  }
 
   function analyze() {
     if (!hasSquad) return
@@ -262,7 +333,7 @@ export default function Transfers() {
     setIndex((i) => i + 1)
   }
 
-  function handleSkip() {
+  function handlePass() {
     setSkipped((prev) => [...prev, suggestions![index]])
     setIndex((i) => i + 1)
   }
@@ -331,7 +402,7 @@ export default function Transfers() {
         {rounds && rounds.length > 0 && (
           <select
             value={round}
-            onChange={(e) => setSelectedRound(Number(e.target.value))}
+            onChange={handleRoundChange}
             className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-accent"
           >
             {rounds.map((r) => (
@@ -358,6 +429,10 @@ export default function Transfers() {
             +
           </button>
         </div>
+
+        <span className="text-sm text-slate-400">
+          Budget: <span className="font-semibold text-slate-200">£{budget.toFixed(1)}m</span>
+        </span>
       </div>
 
       {/* No squad state */}
@@ -386,7 +461,12 @@ export default function Transfers() {
         </div>
       )}
 
-      {/* Swap cards */}
+      {/* Suggestions preview — shown while stepping through cards */}
+      {suggestions !== null && suggestions.length > 0 && !isDone && (
+        <SuggestionsPreview suggestions={suggestions} currentIndex={index} />
+      )}
+
+      {/* No swaps found */}
       {suggestions !== null && suggestions.length === 0 && (
         <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
           <p className="text-slate-100 font-medium">Your squad is already optimal</p>
@@ -397,6 +477,7 @@ export default function Transfers() {
         </div>
       )}
 
+      {/* Active swap card */}
       {suggestions !== null && suggestions.length > 0 && !isDone && (
         <SwapCard
           suggestion={suggestions[index]}
@@ -406,11 +487,12 @@ export default function Transfers() {
           canUndo={canUndo}
           eliminatedSquadIds={eliminatedSquadIds}
           onAccept={handleAccept}
-          onSkip={handleSkip}
+          onPass={handlePass}
           onUndo={handleUndo}
         />
       )}
 
+      {/* Done state */}
       {suggestions !== null && suggestions.length > 0 && isDone && (
         <DoneState
           accepted={accepted}

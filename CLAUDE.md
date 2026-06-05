@@ -14,10 +14,10 @@
 
 ---
 
-## Current State (Session 18 complete — Anthropic API optimizations shipped)
+## Current State (Session 19 complete — Transfers UX overhaul shipped)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: Session 18 (ATROS + elite team Anthropic optimizations)
+Latest commit: Session 19 (Transfers UX overhaul)
 
 **Tests:** 51 vitest (4 files) + 31 pytest — all green.
 
@@ -34,6 +34,22 @@ Latest commit: Session 18 (ATROS + elite team Anthropic optimizations)
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+
+---
+
+## Session 19 — What was shipped
+
+**Web — `Transfers.tsx`:**
+- Free transfers auto-populated from round stage on load using `roundPhase()` + `FREE_TRANSFERS_BY_PHASE` map: `{GROUP:2, R32:6, R16:4, QF:4, SF:5, FINAL:6}`. Resets correctly when round selector changes. User can still override manually.
+- Budget displayed inline in controls bar: `Budget: £Xm`.
+- `SuggestionsPreview` component — read-only panel above the active swap card showing all suggestions as a list: past ones struck through, current highlighted in white/gold, upcoming dimmed.
+- "Skip" renamed to "Pass" with `title` tooltip: "Pass on this suggestion — not undoable".
+- Done state: added **"View Squad"** button (`useNavigate('/squad')`); "skipped" → "passed" in copy.
+
+**Web — `BrowseAllModal.tsx`:**
+- Eliminated players (`is_active=false`) filtered out by default. "Show N eliminated players" toggle appears at bottom of list when any are hidden.
+- Backdrop tap no longer closes modal when `selectedIn !== null` — prevents silent loss of in-progress player selection. User must tap × or "← Back".
+- Header text changes to "Who do you want to sell?" in step 2.
 
 ---
 
@@ -357,5 +373,6 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **blend_live_observations reads `status = 'COMPLETE'`** — rounds table must have status column updated by ingest/admin for the blend to activate. Pre-tournament all rounds are non-COMPLETE so it's a no-op.
 - **`_fetch_group_results` field names** — reads `homeSquadId`/`awaySquadId` and `homeScore`/`awayScore` from rounds.json tournaments. Falls back to `homeId`/`awayId` if primary keys absent. Returns `{}` on any error.
 - **server.ts `export { app }`** — app is exported for supertest. `app.listen()` only runs when `NODE_ENV !== 'test'`.
+- **`FREE_TRANSFERS_BY_PHASE` in `Transfers.tsx`** — `{group:2, r32:6, r16:4, qf:4, sf:5, final:6}`. R32 uses 6 (unlimited in WC rules, capped at stepper max). Auto-set on mount from `currentRound.stage` via `roundPhase()`; resets on round selector change.
 - **`/from-screenshot` prefill boundary** — prefill string is `'{"players":['`; model must close `]` and `}`. Verify with a full 15-player screenshot before deploying — if JSON.parse throws, the model may need the full `{"players":["` prefix instead.
 - **LLM rate limit is in-memory only** — resets on Render dyno restart. Acceptable for free-tier single-instance; not suitable for multi-instance deployments.

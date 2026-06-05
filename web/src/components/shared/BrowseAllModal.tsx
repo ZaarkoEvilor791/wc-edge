@@ -14,7 +14,7 @@ type Pos = (typeof POSITIONS)[number]
 interface Props {
   squad: SquadPlayer[]
   round: number
-  budget: number          // total budget (e.g. 100)
+  budget: number
   onSwap: (inPlayer: SquadPlayer, outPlayer: SquadPlayer) => void
   onClose: () => void
 }
@@ -27,6 +27,7 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
   const [posFilter, setPosFilter] = useState<Pos | 'ALL'>('ALL')
   const [search, setSearch] = useState('')
   const [selectedIn, setSelectedIn] = useState<SquadPlayer | null>(null)
+  const [showEliminated, setShowEliminated] = useState(false)
 
   const squadCost = squad.reduce((s, p) => s + p.price, 0)
   const squadElements = new Set(squad.map((p) => p.element))
@@ -64,11 +65,22 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
 
   const filtered = useMemo(() => {
     return candidates.filter((p) => {
+      if (!showEliminated && !p.is_active) return false
       if (posFilter !== 'ALL' && p.position !== posFilter) return false
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [candidates, posFilter, search])
+  }, [candidates, posFilter, search, showEliminated])
+
+  const eliminatedHiddenCount = useMemo(() => {
+    if (showEliminated) return 0
+    return candidates.filter((p) => {
+      if (p.is_active) return false
+      if (posFilter !== 'ALL' && p.position !== posFilter) return false
+      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    }).length
+  }, [candidates, posFilter, search, showEliminated])
 
   // Squad players of same position as selected IN player (available to sell)
   const outOptions = useMemo(() => {
@@ -91,21 +103,28 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
 
   function handleConfirmSwap(outPlayer: SquadPlayer) {
     if (!selectedIn) return
-    // Budget check: squad_cost - outPlayer.price + selectedIn.price ≤ budget
     if (squadCost - outPlayer.price + selectedIn.price > budget + 0.001) return
     onSwap(selectedIn, outPlayer)
+    onClose()
+  }
+
+  // Don't close on backdrop tap if player selection is in progress
+  function handleBackdropClick() {
+    if (selectedIn) return
     onClose()
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70" onClick={handleBackdropClick} />
 
       <div className="relative z-10 w-full sm:max-w-lg bg-slate-900 rounded-t-2xl sm:rounded-2xl border border-slate-700 flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-800">
-          <h2 className="text-base font-semibold text-slate-100">Browse All Players</h2>
+          <h2 className="text-base font-semibold text-slate-100">
+            {selectedIn ? 'Who do you want to sell?' : 'Browse All Players'}
+          </h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-100 text-xl leading-none"
@@ -129,8 +148,6 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
                 {' · '}{selectedIn.xp.toFixed(1)} xP
               </p>
             </div>
-
-            <p className="text-sm text-slate-400">Who do you want to sell?</p>
 
             {outOptions.map((out) => {
               const newCost = squadCost - out.price + selectedIn.price
@@ -196,35 +213,41 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose }
 
             {/* Player list */}
             <div className="overflow-y-auto flex-1">
-              {filtered.length === 0 ? (
+              {filtered.length === 0 && eliminatedHiddenCount === 0 ? (
                 <p className="p-4 text-center text-sm text-slate-500">No players found</p>
               ) : (
-                filtered.slice(0, 100).map((p) => (
-                  <button
-                    key={p.element}
-                    onClick={() => handleSelectIn(p)}
-                    className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-100">
-                        {p.name}
-                        {!p.is_active && (
-                          <span className="ml-2 rounded px-1.5 py-0.5 text-xs bg-slate-700 text-slate-400">
-                            OUT
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {p.team_abbr}{' '}
-                        <span className={`font-semibold ${POS_COLOR[p.position]}`}>{p.position}</span>
-                      </p>
-                    </div>
-                    <div className="ml-3 text-right shrink-0">
-                      <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
-                      <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
-                    </div>
-                  </button>
-                ))
+                <>
+                  {filtered.slice(0, 100).map((p) => (
+                    <button
+                      key={p.element}
+                      onClick={() => handleSelectIn(p)}
+                      className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-100">
+                          {p.name}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {p.team_abbr}{' '}
+                          <span className={`font-semibold ${POS_COLOR[p.position]}`}>{p.position}</span>
+                        </p>
+                      </div>
+                      <div className="ml-3 text-right shrink-0">
+                        <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
+                        <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
+                      </div>
+                    </button>
+                  ))}
+
+                  {eliminatedHiddenCount > 0 && (
+                    <button
+                      onClick={() => setShowEliminated(true)}
+                      className="w-full py-3 text-xs text-slate-500 hover:text-slate-300 border-t border-slate-800/60"
+                    >
+                      Show {eliminatedHiddenCount} eliminated player{eliminatedHiddenCount > 1 ? 's' : ''}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </>
