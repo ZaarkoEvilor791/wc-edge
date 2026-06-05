@@ -1,495 +1,70 @@
 # wc-edge Project Guide
 
-**Project:** FIFA WC 2026 Fantasy Companion Tool — squad builder, transfer advisor, captain picker, live tracker, and Edge AI advisor.
+**Project:** FIFA WC 2026 Fantasy Companion Tool — squad builder, transfer advisor, captain picker, live tracker, Edge AI advisor.
 
-**Deadline:** June 11, 2026 (Day 8). Tournament starts June 12, 2026.
+**Deadline:** June 11, 2026. Tournament starts June 12, 2026.
 
 **Production URL:** `https://wc-edge.onrender.com`
 
-**Local dev:** frontend at `http://localhost:5173`, Express API at `http://localhost:3001`
+**Local dev:** frontend `http://localhost:5173`, Express API `http://localhost:3001`
 
-**Database:** Render Postgres (free tier, 256MB)
+**Database:** Shared fpl-edge Postgres (`fpledge` DB), `wc` schema. External URL in `engine/.env`, internal URL in Render env.
 
-**PRD:** https://github.com/ZaarkoEvilor791/fpl-edge/issues/12
-
-**Full design doc:** `wc-edge.md` in this repo
-
-**Parent project:** `fpl-edge` at `../fpl-edge` — copy patterns from there, not code
+**PRD:** https://github.com/ZaarkoEvilor791/fpl-edge/issues/12 · Full design doc: `wc-edge.md`
 
 ---
 
-## Session Context (read this first)
+## Current State (Days 1–9 complete)
 
-**Session 1 (2026-06-04) — repo scaffolded, planning complete:**
+All 5 pages built, polished, and bug-free. DB populated. TypeScript clean.
 
-- Design grilling complete — all pages, API routes, and deployment fully specified
-- PRD published at https://github.com/ZaarkoEvilor791/fpl-edge/issues/12
-- Repo scaffolded, wc-edge.md copied (API key scrubbed), CLAUDE.md written
+**DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.9m, 77.6 xP)
 
-**Session 2 (2026-06-04) — infra complete, engine scaffolded, ready for Phase 1 scrape:**
+**Squad composition:** 2GK/5DEF/5MID/3FWD · Ramírez + Osako as GKs · Mbappé/Salah/Ronaldo/Raphinha in XI
 
-- `wc-edge-prd.md` written and committed (full PRD with user stories + test strategy)
-- `render.yaml` created — DB stanza removed (Render free tier allows only 1 DB; reusing fpl-edge Postgres)
-- Render web service live at `https://wc-edge.onrender.com`
-- **Database:** reusing fpl-edge Postgres (`fpledge` DB). Internal URL set in Render env. External URL in `engine/.env`.
+**apif budget:** `day1_used: 80, day2_used: 0` — Day 2 run still available
 
-**Session 3 (2026-06-04) — Day 1 engine complete, Phase 1 scrape done:**
-
-- All engine foundation files written: `config.py`, `db.py`, `__init__.py`, `requirements.txt`
-- **Schema updated:** all tables now under `wc` Postgres schema (`CREATE SCHEMA IF NOT EXISTS wc`) to avoid collision with fpl-edge's `players`/`teams` tables on the shared DB. All queries use `wc.tablename`.
-- `db.py` sets `search_path=wc,public` on connect — no schema prefix needed in SQL
-- **`wc_ingest.py` written** — all 4 sources: statsbomb, sofascore, fifa, apif
-- **Phase 1 scrape complete (Day 1):**
-  - StatsBomb: 199 match files, 1,441 unique players cached → `engine/data/sb_cache.json`
-  - Sofascore: **403 blocked** (Cloudflare). AFCON 2025 players fall back to AFCON 2023 StatsBomb data.
-  - FIFA Fantasy: 1,481 players (48-team WC 2026), 8 rounds, 32 squads upserted to DB
-  - API-Football: 107 players with club stats upserted. **Budget used: 80/100 today.**
-- **DB state after Day 1:**
-  - `wc.players`: 1,481 rows
-  - `wc.teams`: 32 rows
-  - `wc.rounds`: 8 rows
-  - `wc.player_stats`: 571 rows (520 with tournament stats, 106 with club stats, 56 with both)
-  - `engine/data/unmatched_players.json`: 961 players for Day 3 review
-- **Known bugs fixed during this session:**
-  1. API-Football `/players/topscorers` has no `page` parameter — `&page=1` returns error. Fixed to single request per league, no pagination.
-  2. Abbreviated API-Football names ("A. Isak") added last-name-only fallback in `_resolve_element()`
-  3. All `wc_schema.sql` tables prefixed with `wc.` namespace
-**Session 4 (2026-06-05) — Day 2 complete: engine pipeline + full web scaffold:**
-
-- `engine/engine/wc_model.py` — Bayesian xG/xA posteriors, seed-based FDR, full xP formula → writes wc.projections (11,848 rows)
-- `engine/engine/wc_optimizer.py` — HiGHS MILP 15-player squad solver → writes wc.suggested_squad
-- `engine/engine/wc_run.py` — orchestrator: `py -m engine.wc_run` runs model + optimizer
-- **3 critical bugs fixed in wc_ingest.py:**
-  1. FIFA Fantasy `position` is a STRING ("DEF") not int — was silently defaulting all 1481 players to MID
-  2. `teams` table must be built from `rounds.json` fixtures (sequential IDs 1-48 matching player.squadId), NOT from `squads_fifa.json` (which uses FIFA entity IDs 43817+ with no overlap)
-  3. Enrich seed/group by team name match between rounds.json and squads_fifa.json
-- **Full web scaffold written:** Vite+React+TS, Express, 5 pages, sidebar, WC gold accent, all hooks, TypeScript clean
-- **DB state after Day 2:** projections (11,848), suggested_squad (round 1: £98.9m, 77.6 xP)
-- **Next session starts here (Day 3):**
-  1. Review `engine/data/unmatched_players.json` top-30 — add overrides to `engine/data/name_overrides.json`
-  2. Wire Express DB routes to real SQL queries (server/db.ts already has all query functions)
-  3. Build out Assistant page (AI chat with FIFA player context)
-  4. Day 4: `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req) + re-run model
-
-**Session 5 (2026-06-06) — Day 3 complete: name overrides + Assistant page shipped:**
-
-- **Name overrides complete** — `engine/data/name_overrides.json` has 13 entries (Vinicius, Mbappé, Bellingham, Rodri, Raphinha, Pedri, Gavi, Dani Olmo, Lucas Paquetá, Rúben Dias, Son)
-- **Fixed broken override:** `"rodri"` → `"rodrigo hernandez cascante"` (was `"rodrigo hernández"` which doesn't match sb_cache key)
-- **SB coverage insight:** absent for (a) nations not at WC22/Euro24/Copa24/AFCON23 — Norway, Sweden; (b) players <45 min — Toney, Gordon, Cherki, Doué
-- **Express routes:** all already wired. Placeholders: `/api/squad/optimize` (Day 5), `/api/transfers/suggest` (Day 6) — intentional.
-- **Assistant page shipped** (`web/src/pages/Assistant.tsx`):
-  - Full-page chat, immediate-send chips, pulsing "Edge is thinking…" gold dots
-  - **Critical fix in `server.ts`:** accepts `squadNames: string[]` (not element IDs) — Haiku has no knowledge of FIFA element numbers
-  - Top-5 projections injected as context prefix on first user message only (no extra server latency)
-  - No streaming — pulsing loading state sufficient for Day 3
-  - 3 squad chips (if squad loaded): "Who should I captain?", "Which player to transfer out?", "Rate my squad out of 10"
-  - 3 generic chips (no squad): "Best value picks for WC 2026?", "Best GK fixtures round 1?", "Build me a £100m squad"
-  - `Layout.tsx`: changed `overflow-auto` → `overflow-hidden` on main so chat's pinned input works
-  - `index.css`: pulse keyframe for thinking dots
-- **`web/.env` created** (gitignored) — `DATABASE_URL` + `ANTHROPIC_API_KEY` required locally
-- **Test results (Day 3):**
-  - `/api/rounds` ✅ 8 rows
-  - `/api/players` ✅ 1,481 rows, name field derived
-  - `/api/projections?round=1` ✅ 11,848 rows, sorted xP DESC
-  - `/api/squad/suggest` ✅ 15 players, £98.9m, 77.6 xP
-  - `/api/chat` ✅ routing correct — blocked by **Anthropic account needs credits** (not a code bug)
-- **Known DB bug (pre-existing from Day 2):** `wc.teams` has 80 rows instead of 48 — duplicate entries with FIFA entity IDs (43817+) alongside correct sequential IDs (1-48). Fix: re-run `py -m engine.wc_ingest --source fifa` on Day 4 after adding a DELETE before upsert.
-**Session 6 (2026-06-06) — UI quality pass: fpl-edge parity + WC theme:**
-
-- **Accent changed:** gold (#E8B84B) → teal (#00D8CB) — `tailwind.config.ts`, cascades everywhere automatically
-- **FIFA WC 2026 banner:** slim strip at top of Layout spanning full width (`bg-slate-900 border-accent/20 text-accent/80`)
-- **Logo component:** `web/src/components/shared/Logo.tsx` — inline SVG trophy mark (collapsed) + "wc-edge" wordmark (expanded), mirrors fpl-edge pattern. Used in `Sidebar.tsx`.
-- **Shared component library created** (`web/src/components/shared/`):
-  - `Spinner.tsx` — spinning `border-t-accent` with label
-  - `StatCard.tsx` — `rounded-xl border-slate-800 bg-slate-900 p-4 text-center` with label/value/sub
-  - `Logo.tsx` — `LogoMark` (collapsed) + `Logo` (expanded) with trophy SVG
-- **Layout.tsx:** overflow-hidden → overflow-auto (chat still works via negative margin + internal scroll); WC banner added above sidebar+main row
-- **Assistant.tsx:** "Powered by Claude" badge in header; user bubbles → `bg-slate-700 text-slate-100` (not accent); ThinkingDots → `animate-bounce` staggered; border colors → slate-800
-- **Squad.tsx:** 3 StatCards header (Total xP / Squad Cost / Players); PlayerCard → `rounded-xl border-slate-800 bg-slate-900`; position headers show count
-- **Captain.tsx:** column headers row; TOP PICK label on #1; C badge; `border-accent/40` on top row; `rounded-xl border-slate-800 bg-slate-900` rows
-- **Live.tsx:** match card grid replacing raw JSON; dual API shape guard (`Array.isArray(data) || data?.matches`); dev-mode raw dump under `<details>`
-- **index.css:** `:root { color-scheme: dark }` added; orphan pulse keyframe removed
-- **TypeScript:** clean (zero errors after all changes)
-- **Next session starts here (Day 4):**
-  1. Fix `wc.teams` duplicate rows — add `DELETE FROM wc.teams WHERE squad_id > 1000` before fifa upsert, or clean up manually
-  2. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota)
-  3. `py -m engine.wc_run` — re-run model + optimizer with name override improvements
-  4. Top up Anthropic credits to enable AI chat end-to-end testing
-
-**Session 7 (2026-06-06) — UI redesign: FIFA WC 2026 branding + pitch layout + player profiles:**
-
-- **Accent reverted to gold:** teal (`#00D8CB`) → FIFA trophy gold (`#C8A84C`) in `tailwind.config.ts`
-- **New Tailwind tokens added:** `wc-navy: '#0C1D3E'`, `wc-red: '#DC2430'`, `pitch-green: '#2D7A4F'`
-- **FIFA WC 2026 banner reworked** (`Layout.tsx`): 48px navy gradient strip (`bg-gradient-to-r from-wc-navy`), gold "FIFA World Cup 2026™" left, "USA · Canada · Mexico" right — no trademarked images, text treatment only
-- **Pitch component shipped** (`web/src/components/shared/Pitch.tsx`):
-  - SVG pitch surface with white line markings (centre circle, penalty areas, spots), `bg-pitch-green`
-  - 4 formation rows: FWD (top) → MID → DEF → GK (bottom), 4-4-2 default
-  - Bench strip below pitch: 4 muted cards (1GK + 1DEF + 1MID + 1FWD)
-- **`PitchPlayerCard.tsx`** — compact card: surname / price / xP; `isBench` prop for muted styling; captain © badge
-- **`web/src/utils/squad.ts`** — `getXI(players, projections, round)` utility: sorts each position group by xP, returns `{xi: SquadPlayer[], bench: SquadPlayer[]}`
-- **Player profile modal shipped** (`web/src/components/shared/PlayerProfileModal.tsx`):
-  - React portal, click outside or ✕ to close
-  - 5 sections: header (team/name/position/price) → hero xP → 8-round xP chart → stats grid (P(Goal)/P(CS)/Variance/xMins)
-  - Zero new API endpoints — data from existing projections cache
-- **`RoundXpChart.tsx`** — 8-bar inline SVG: GROUP rounds in gold, R32→Final in red with increasing opacity
-- **`usePlayerProjectionsAllRounds(element)`** hook added to `useWC.ts` — uses React Query `useQueries` for 8 parallel round fetches, deduped by cache
-- **`Squad.tsx` fully reworked:**
-  - Pitch view is PRIMARY (default), list view preserved as toggle
-  - Toggle button: inline SVG pitch/list icons, `viewMode` state (local, not Zustand)
-  - Both views open `PlayerProfileModal` on player click
-- **TypeScript:** clean (zero errors)
-- **Next session starts here (Day 4 — continue):**
-  1. Login page design (plan convened this session — see plan file)
-  2. Fix `wc.teams` duplicate rows — `DELETE FROM wc.teams WHERE squad_id > 1000` before fifa upsert
-  3. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota)
-  4. `py -m engine.wc_run` — re-run model + optimizer
-  5. Top up Anthropic credits for AI chat end-to-end testing
-
-**Session 8 (2026-06-06) — Onboarding flow + screenshot squad sync:**
-
-- **OnboardingModal shipped** (`web/src/components/shared/OnboardingModal.tsx`):
-  - React portal, shows on first visit via `localStorage['wc-onboarded']` flag
-  - Two paths: "Build a new team" and "I already have a team"
-  - **New team path:** closes modal → `/squad` loads pre-computed optimal squad (no change to existing flow)
-  - **Existing team path:** drag-drop / click to upload a screenshot of their FIFA Fantasy squad
-  - States: `idle → upload → processing → success | error`
-  - Success: shows first 5 matched player names + count, "View my squad →" CTA
-  - Error: "Try again" or "Use optimal squad" fallback
-  - Mobile: renders as bottom sheet (`items-end` on small screens)
-- **Screenshot processing** (`POST /api/squad/from-screenshot`):
-  - Accepts `{ imageBase64: string, mimeType: string }` (base64 read client-side via `FileReader`)
-  - JSON body limit raised to `10mb` (`express.json({ limit: '10mb' })`)
-  - Calls `claude-haiku-4-5-20251001` Vision with tight JSON-only system prompt
-  - Parses `{ players: string[] }` from model response (regex-extracts JSON block)
-  - Each name matched against `wc.players` via `matchPlayersByName()` (ILIKE on `known_name` / `last_name` / `first_name`, LEFT JOIN teams + projections round 1 for xP)
-  - Returns `{ matched: SquadPlayer[], unmatched: string[], total: number }`
-  - Unmatched players silently dropped — caller fills remaining spots from optimal squad
-- **`matchPlayersByName(name)`** added to `web/server/db.ts` — single ILIKE query, returns full `SquadPlayer`-shaped row with `team_abbr` and `xp`
-- **`useSquadFromScreenshot()` mutation** added to `web/src/hooks/useWC.ts`
-- **`squadFromScreenshot(imageBase64, mimeType)`** added to `web/src/services/wcApi.ts`
-- **`appStore.ts`**: `wcOnboardingOpen: boolean` + `setWcOnboardingOpen(v)` — Squad page uses this to re-trigger the modal
-- **`App.tsx`**: mounts `<OnboardingModal>` at root; `showOnboarding = firstVisit || wcOnboardingOpen`
-- **`Squad.tsx`**: "Re-sync squad" button (bottom of page) sets `wcOnboardingOpen(true)` to reopen upload flow
-- **TypeScript:** clean (zero errors)
-
-**Session 9 (2026-06-08) — Day 5: Transfers page + Player profile modal redesign:**
-
-- **Transfers page shipped** (`web/src/pages/Transfers.tsx`):
-  - Sequential greedy algorithm — for each of N free transfers, finds the highest-gain swap (same position, fits budget), applies it to virtual squad, then finds the next best
-  - Backend: `POST /api/transfers/suggest` wired with full greedy implementation in `server.ts` (was a stub)
-  - UI: round selector, free transfers +/− stepper (1–6), "Analyze" button, single swap card at a time
-  - Swap card: OUT (rose tint) → IN (emerald tint), xP gain badge, price delta badge
-  - Accept updates squad store immediately; Skip moves to next card
-  - Done state: summary of accepted swaps + total xP gained
-  - `TransferCard` + `TransferSuggestion` + `TransferSuggestResponse` types added to `wc.ts`
-  - `useTransferSuggest()` mutation added to `useWC.ts`
-
-- **Player profile modal redesigned** (`web/src/components/shared/PlayerProfileModal.tsx`) — FIFA-parity:
-  - **Blue gradient header** (`from-blue-700 to-blue-900`): player name, team abbr, position | price, MD selection %, jersey SVG placeholder with team abbr
-  - **Overview / Fixtures tabs** with gold underline (`border-b-2 border-accent`) on active tab
-  - **Overview tab**: Captain + Vice-Captain buttons (wired to store, highlighted when active) → 2×2 stats grid (next fixture opponent, % selected, xP Rd1, total xP) → existing xP bar chart
-  - **Fixtures tab**: per-team fixture list from `GET /api/fixtures/:squadId`, grouped by round with date; graceful "Fixtures unavailable" fallback
-  - **Bottom strip**: Sub Out (closes modal) + Transfer Out (navigates to `/transfers`)
-  - Mobile: slides up as bottom sheet (`items-end` on small screens, rounded-t-2xl)
-
-- **`GET /api/fixtures/:squadId`** added to `server.ts`:
-  - Fetches FIFA `rounds.json` (via refactored `fifaFetch()` helper, 5 min TTL)
-  - Parses `tournaments[]` per round — finds fixtures where `homeSquadId` or `awaySquadId` matches
-  - Returns `Fixture[]` sorted by round; returns `[]` on proxy error (graceful)
-  - `fifaProxy()` refactored to use `fifaFetch()` internally (no behavior change)
-
-- **Vice-captain** added to `squadStore.ts`: `viceCaptain: number | null` + `setViceCaptain` action, persisted
-
-- **`Fixture` type** added to `wc.ts`; `fixtures()` added to `wcApi.ts`; `useFixtures()` hook added to `useWC.ts`
-
-- **TypeScript:** clean (zero errors)
-
-**Pending Day 9 (deferred engine work):**
-  1. Fix `wc.teams` duplicate rows — `DELETE FROM wc.teams WHERE squad_id > 1000` before fifa upsert
-  2. `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req quota — **do not skip, budget resets daily**)
-  3. `py -m engine.wc_run` — re-run model + optimizer with name override + better apif data
-  4. Top up Anthropic credits — required for `/api/chat` AND `/api/squad/from-screenshot` (both call Claude)
-  5. Test screenshot flow end-to-end once credits are live
-
-**Session 11 (2026-06-10) — Day 7: PRD gap fill + Live fallback + bug fixes:**
-
-### PRD gaps filled
-
-- **Captain page fully upgraded:**
-  - **Variance column** (`±X.X`) — cross-references `useProjections(round)` by element ID, hidden on mobile (`hidden sm:block`)
-  - **FDR badge** (1–5 colored pill) — new `GET /api/fdr?round=N` endpoint; quintiles of `lambda_posterior` from `wc.team_fdr` table; 1=green (easiest/most likely to score), 5=red; hidden on mobile; degrades to nothing if table empty
-  - **Round deadline + countdown** — `useCountdown(start_date)` hook with `setInterval(60s)`; shows "Deadline: DD Mon · Xh Ym remaining" card top-right; gracefully omitted when `start_date` null
-  - **"Set on FIFA Fantasy" footer** — pinned below list with external link to `play.fifa.com/fantasy/`
-
-- **Transfers page upgraded:**
-  - **−3 pts badge** — red pill badge on SwapCard header when `index >= freeTransfers`
-  - **Undo last swap** — `prevSquads: SquadPlayer[][]` stack pushed before each Accept; `handleUndo()` pops snapshot, reverses squad store + `accepted` array + decrements index; "↩ Undo" in-progress when `canUndo`; "↩ Undo last" in DoneState
-  - **Button layout** — SwapCard action row uses `grid` with `auto 1fr 1fr` (canUndo) or `1fr 1fr` (no undo) so Skip/Accept stay equal-width when Undo button is present
-
-- **Assistant system prompt enriched** (`server.ts`):
-  - Full scoring rules: Goal pts by position (GK=9, DEF=7, MID=6, FWD=5), CS, assists, appearance, saves, cards, scouting bonus
-  - WC chip names: Wildcard, 12th Man, Max Captain, Qualification Booster, Mystery Booster
-  - Country limit rules by round, budget rules (£100m group / £105m R32+)
-
-- **Squad page upgraded:**
-  - **Budget bar** — live progress bar `£X.Xm / £100m`, turns rose-500 when >95% used; live-computed total cost (not static)
-  - **Country-count warnings** — compact amber strip showing `ABBR ×N` for any team with ≥3 players; hidden when no violations
-
-- **New backend** (`server.ts`): `GET /api/fdr?round=N` — returns `{squad_id, fdr}[]`
-- **New DB query** (`db.ts`): `getTeamFdr(round)`
-- **New type** (`wc.ts`): `TeamFdr { squad_id: number; fdr: number }`
-- **New hook** (`useWC.ts`): `useTeamFdr(round)` — 30min stale time
-- **New API method** (`wcApi.ts`): `teamFdr(round)`
-
-### Bug fixes (same session)
-
-- **Live page fallback** (`server.ts` + `Live.tsx`): Community API `worldcup2026-api.vercel.app` returns 404 pre-tournament. Server now catches the error and falls back to parsing FIFA Fantasy `rounds.json` fixture schedule, returning `{ matches, stale: true, source: 'schedule' }`. `MatchCard` renders scheduled fixtures with kickoff date/time. Subtitle updates to "showing fixture schedule" in stale mode.
-
-- **Logo trophy colour** (`Logo.tsx`): SVG stroke was hardcoded to old teal `#00D8CB` — missed in Session 7 accent revert. Fixed to WC gold `#C8A84C`.
-
-- **Squad store corruption guard** (`squadStore.ts` + `Squad.tsx`):
-  - `setSquad` now deduplicates by element before storing (prevents corrupt data entering store)
-  - `Squad.tsx` useEffect detects corrupt localStorage squad (duplicate elements, wrong size, wrong position counts: not 2GK/5DEF/5MID/3FWD) and resets from DB suggested_squad
-  - **Root cause:** stale Zustand localStorage from earlier sessions could persist invalid data since `squad.length > 0` skipped DB reload
-
-- **TypeScript:** clean (zero errors) across all changes
-
-**Session 13 (2026-06-05) — Day 9: All Session 12 bugs fixed + swap flow overhaul:**
-
-### Session 12 bugs fixed (all 5)
-
-1. **Sub Out atomic exchange** (`web/src/pages/Squad.tsx` `handleSwap`): changed from single-slot replace to atomic exchange — both players' positions now swap in the array. Previously caused dedup → 14 players → corruption guard reset.
-
-2. **−3 pts badge live** (`web/server/server.ts`): server loop changed from `Math.min(freeTransfers, 6)` to always `6`. Badge condition `index >= freeTransfers` now reachable. Server greedy loop already exits early when no profitable swap found.
-
-3. **"Already optimal" state reachable** (`web/src/pages/Transfers.tsx`): render reordered — `suggestions.length === 0` check now fires before `isDone` DoneState. Added `suggestions.length > 0` guard to DoneState so it no longer fires for empty results.
-
-4. **Country limit threshold** (`web/src/pages/Squad.tsx`): `n >= 3` → `n > 3`. Exactly 3 same-country players is the allowed group-stage maximum. Default suggested squad (3 FRA players) no longer shows a false warning. TODO comment added for round-aware thresholds (R32=4, R16=5, QF=6, SF/F=8).
-
-5. **`getProjections()` SELECT includes round** (`web/server/db.ts`): `round` column added to SELECT. `getXI`'s xpMap now populates correctly for rounds 2–8.
-
-### Additional bugs found and fixed this session
-
-6. **Bench player modal label** (`PlayerProfileModal.tsx`): bench players always showed "Sub Out" — now shows "Sub In" via new `isBench?: boolean` prop. `Squad.tsx` passes `selectedIsBench = bench.some(p => p.element === selectedPlayer?.element)`.
-
-7. **SwapDrawer showed wrong candidates for bench sub-ins** (`Squad.tsx`): when a bench player triggered the drawer, eligible = `bench.filter(position)` which only contained the target itself → clicking did nothing. Fixed: `SwapDrawer` now receives `options` prop (XI starters when subing in a bench player, bench players when subbing out a starter) + `subIn: boolean` for header text. Header: "Sub in [Name] · Select a starter to move to bench" or "Swap out [Name] · Select a bench player to bring in". Eligible filter also excludes the target player itself.
-
-8. **Squad pitch not updating after swap** (`web/src/utils/squad.ts`): `getXI` was re-sorting players by xP on every render, silently reversing any manual swap. Changed to array-order based: first `POS_COUNT[pos]` players of each position in the array = XI. Manual `handleSwap` exchanges array positions so swaps now persist visually. **Initial DB load** in `Squad.tsx` `useEffect` now pre-sorts players by xP within each position group before `setSquad`, so the default XI is still optimal.
-
-9. **PlayerProfileModal cuts off on small screens** (`PlayerProfileModal.tsx`): container changed to `max-h-[90vh] flex-col`; scrollable tab content uses `flex-1 overflow-y-auto` instead of fixed `max-h-[55vh]`. Bottom action buttons always visible.
-
-10. **SwapDrawer cuts off on small screens** (`Squad.tsx`): container changed to `max-h-[70vh] flex-col`; player list uses `flex-1 overflow-y-auto`.
-
-### TypeScript: clean (zero errors) after all changes
+**Known deferred:**
+- `wc.teams` may have 80 rows (32 duplicates with squad_id > 1000). Fix: `DELETE FROM wc.teams WHERE squad_id > 1000;` then re-run `py -m engine.wc_ingest --source fifa`
+- Anthropic credits needed for `/api/chat` and `/api/squad/from-screenshot`
 
 ---
 
-**Session 12 (2026-06-11) — Day 8: Sub out + transfer flow audit (bugs found):**
+## Day 10 Priorities
 
-### Bugs found via Playwright e2e testing
-
-- **CRITICAL — Sub Out silently fails** (`web/src/pages/Squad.tsx:189` `handleSwap`):
-  - `handleSwap` replaces the target's slot with the bench player object, but the bench player already exists in `displaySquad`. Result: two entries with the same `element` ID.
-  - `setSquad` deduplicates → squad drops to 14 players → corruption guard detects wrong GK count → immediately resets back to DB suggested_squad.
-  - User sees drawer close (success UX) but squad is **silently unchanged**. No error shown.
-  - **Fix:** exchange both slots, not just replace:
-    ```ts
-    setSquad(displaySquad.map((p) => {
-      if (p.element === swapTarget.element) return replacement
-      if (p.element === replacement.element) return swapTarget  // ← add this
-      return p
-    }))
-    ```
-
-- **BUG — −3 pts badge is dead code** (`web/server/server.ts:186`, `web/src/pages/Transfers.tsx:64`):
-  - Server loop: `for (let i = 0; i < Math.min(freeTransfers, 6); i++)` — returns exactly `freeTransfers` suggestions.
-  - Badge condition: `const isCostly = index >= freeTransfers`. Since `index ∈ [0, freeTransfers-1]`, `index >= freeTransfers` is **never true**.
-  - Confirmed by test: ft=1 gives 1 suggestion at index 0; ft=2 gives 2 suggestions at indices 0,1 — badge never fires.
-  - **Fix:** server should always return up to 6 profitable swaps; keep `freeTransfers` only as the badge threshold:
-    ```ts
-    for (let i = 0; i < 6; i++) { ... }  // server: always up to 6
-    ```
-
-- **BUG — "Your squad is already optimal" message unreachable** (`web/src/pages/Transfers.tsx:269`):
-  - When server returns `[]`, `isDone = 0 >= 0 = true` immediately. The branch `!isDone && suggestions.length === 0` never fires.
-  - Users with the optimal squad see "No transfers applied / All suggestions skipped" — confusing (implies they skipped something).
-  - **Fix:** reorder render: check `suggestions.length === 0` first, before `isDone`:
-    ```tsx
-    {suggestions !== null && suggestions.length === 0 && <OptimalState />}
-    {suggestions !== null && suggestions.length > 0 && isDone && <DoneState />}
-    {suggestions !== null && suggestions.length > 0 && !isDone && <SwapCard />}
-    ```
-
-- **BUG — Country limit warning triggers on legal squads** (`web/src/pages/Squad.tsx:187`):
-  - `overLimit = Object.entries(countByTeam).filter(([, n]) => n >= 3)` — fires at 3, but 3 is the allowed maximum in group stage.
-  - Suggested squad has exactly 3 French players (Mbappé, Olise, Barcola) → shows "FRA ×3 max 3 in group stage" for a valid squad.
-  - **Fix:** `n > 3` for group stage (round ≤ 3); higher limits by round are already in the PRD.
-
-- **LATENT BUG — `getXI` xpMap always empty** (`web/src/utils/squad.ts:12`):
-  - `getProjections()` SQL does not SELECT `round`; `Projection.round` is always `undefined`.
-  - `if (p.round === round)` never matches → xpMap is never populated → bench sort falls back to `SquadPlayer.xp`.
-  - No visible impact in round 1 (same data), but bench ordering will be wrong for later rounds.
-  - **Fix:** add `round` to the SELECT in `db.ts:getProjections()`, or remove the round filter from `getXI` (data is already pre-filtered by round).
-
-### What was verified working correctly
-- Transfer page renders, round selector, FT stepper (clamps 1–6) ✓
-- Sequential greedy returns correct swaps, budget constraint enforced ✓
-- Accept updates squad store + Undo stack ✓
-- Skip advances to next card ✓
-- Undo reverts squad + decrements index ✓
-- Undo in DoneState works ✓
-- Transfer Out button navigates to `/transfers` ✓
-- Player profile modal: Captain/VC/Sub Out/Transfer Out/tabs all visible ✓
-- Fixtures tab loads and renders fixture rows ✓
-- FT stepper UI: `−` button uses U+2212 (minus sign), not U+002D (hyphen) — use `.nth(0)` selector not `:has-text("-")` to target it in tests
-
-**Session 10 (2026-06-08) — Day 6: Live polish + captain banner + squad swap drawer:**
-
-- **Live page polished** (`web/src/pages/Live.tsx`):
-  - Match cards redesigned: larger bold score (gold when live, white when FT, muted pre-match); status badge (pulsing green dot + minute for LIVE, FT, kickoff time for upcoming)
-  - Auto-refresh indicator: "Updates every 60s · last updated HH:MM" (tracked via `useEffect` on `data`)
-  - Captain banner: gold strip above match grid when squad has a captain and ≥1 match has started — "⚡ [Name] is your captain — consider a mid-match swap…" + "FIFA Fantasy →" external link (`play.fifa.com/fantasy/`)
-  - Banner condition: `hasActiveMatches && captainName != null` (advisory, no squad guard)
-
-- **PlayerProfileModal updated** (`web/src/components/shared/PlayerProfileModal.tsx`):
-  - Added optional `onSubOut?: (player: SquadPlayer) => void` prop
-  - Sub Out button calls `onSubOut(player)` when provided; falls back to `onClose()` otherwise
-
-- **Squad swap drawer shipped** (`web/src/pages/Squad.tsx`):
-  - `swapTarget: SquadPlayer | null` local state
-  - `PlayerProfileModal` passes `onSubOut={(p) => { setSelectedPlayer(null); setSwapTarget(p) }}`
-  - `SwapDrawer` — React portal bottom sheet: handle, header ("Swap out [Name]"), list of bench players of same position, tap to swap, tap backdrop to cancel
-  - Swap updates squad store via `setSquad` immediately; uses existing `getXI()` utility to derive bench list
-  - "No eligible [POS] on the bench" empty state when position not available
-
-- **TypeScript:** clean (zero errors)
-
-**Bug fix — onboarding modal never closed (Session 10):**
-- **Root cause:** `App.tsx` used `const [firstVisit] = useState(() => !localStorage.getItem('wc-onboarded'))` — no setter, so `firstVisit` was permanently `true`. `onClose()` only called `setWcOnboardingOpen(false)` (already `false`, a no-op), leaving `showOnboarding = true || false` stuck. Modal never unmounted.
-- **Fix:** replaced with `const [dismissed, setDismissed] = useState(() => !!localStorage.getItem('wc-onboarded'))`. `onClose` now calls `setDismissed(true)`. Logic: `showOnboarding = !dismissed || wcOnboardingOpen`.
-
----
-
-## PRD Gap Analysis (reviewed Session 10, 2026-06-08)
-
-Full PRD at `wc-edge-prd.md`. Gaps vs what is built, priority-ordered:
-
-### High value / low effort (DONE Day 7)
-
-**Captain page (`web/src/pages/Captain.tsx`):**
-1. ✅ **Variance column** — `±X.X`, cross-references `useProjections(round)`, hidden on mobile
-2. ✅ **FDR badge** — new `GET /api/fdr?round=N` + `useTeamFdr(round)` hook; 1=green, 5=red; hidden on mobile; degrades gracefully
-3. ✅ **"Set on FIFA Fantasy" footer** — pinned below list with external link
-4. ✅ **Round deadline + countdown** — `useCountdown(start_date)` with `setInterval(60s)`
-
-**Transfers page (`web/src/pages/Transfers.tsx`):**
-5. ✅ **−3 pts badge** — server now returns up to 6 suggestions always; badge fires at `index >= freeTransfers`. Fixed Day 9.
-6. ✅ **Undo last swap** — `prevSquads[]` stack; "↩ Undo" in-progress + in DoneState
-
-**Assistant system prompt (`web/server/server.ts`):**
-7. ✅ **WC chip names** — Wildcard, 12th Man, Max Captain, Qualification Booster, Mystery Booster
-8. ✅ **Scoring rules** — full scoring table (goals by position, CS, assists, appearance, saves, cards, scouting bonus)
-
-**Squad page:**
-11. ✅ **Budget bar** — live `£X.Xm / £100m` progress bar, turns red >95%
-12. ✅ **Country-count bar** — amber strip warning any team with ≥3 players
-
-### Medium effort (Day 8)
-
-**Transfers page:**
-9. **ELIMINATED badge** — need `teams.is_active BOOLEAN DEFAULT TRUE`. Add column, expose via `GET /api/teams`. Badge is UI-only on swap card OUT player. Day 8.
-
-**Swap drawer:**
-13. **Full player list** — show ALL players of same position sorted by xP delta, not just bench. Requires fetching `/api/projections` + filtering by position. Day 8 stretch.
-
-### Complex / data-dependent (stretch)
-14. **Live: squad player filtering** — community API (`worldcup2026-api.vercel.app`) likely doesn't return per-player live points. Skip unless API supports it.
-15. **Live: auto-sub pairings** — static display of bench order from squadStore. e.g. "Bench GK auto-subs if starter doesn't play". Simple static text, just needs bench state.
-16. ✅ **Live: stale mode** — server returns `{ matches, stale: true, source: 'schedule'|'unavailable' }` when community API fails; falls back to FIFA Fantasy `rounds.json` fixture schedule. Done Day 7.
-
----
-
-## Day-by-Day Build Schedule
-
-| Day | Date | Deliverable | Status |
-|---|---|---|---|
-| 1 | Jun 4 | Repo scaffold + Phase 1 scrape (StatsBomb + API-Football Day 1) | ✅ Done |
-| 2 | Jun 5 | Engine pipeline (model+optimizer) + full web scaffold (5 pages, Express, hooks) | ✅ Done |
-| 3 | Jun 6 | Name-override review + Assistant page + UI quality pass (fpl-edge parity) | ✅ Done |
-| 4 | Jun 7 | UI redesign (pitch layout, player profiles, WC banner) + onboarding flow (screenshot squad sync) | ✅ Done |
-| 5 | Jun 8 | Fix teams DB bug + apif Day 2 + model rerun + Transfers greedy cards + Player profile modal redesign | ✅ Done (engine deferred to Day 9) |
-| 6 | Jun 9 | Live page polish + captain banner + squad swap drawer + onboarding fix | ✅ Done |
-| 7 | Jun 10 | PRD gap fill (Captain: variance/FDR/deadline/footer · Transfers: -3pts/undo · Assistant: chips/rules · Squad: budget bar/country count) | ✅ Done |
-| 8 | Jun 11 | GitHub Actions engine.yml + Render deploy + ELIMINATED badge + final engine run + production smoke test | Bugs found (see Session 12) |
-| 9 | Jun 5 | Fix Session 12 bugs + swap flow overhaul (bench sub-in, array-order XI, modal cutoffs) | ✅ Done |
-| 10 | Jun 5 | GitHub Actions engine.yml + Render deploy + ELIMINATED badge + engine run + smoke test | ← Start here |
-
----
-
-## How to Start (Day 10 — next session)
-
-### What is done — do not redo
-```
-Days 1–9 complete. All 5 pages built, polished, and bug-free.
-Squad sub-in/sub-out fully working: bench shows "Sub In", pitch updates immediately.
-Modal and SwapDrawer no longer cut off on small screens.
-DB: 1481 players, 8 rounds, 11848 projections, 384 team_fdr rows, 1 suggested_squad.
-Vite dev server: npm run dev in web/ → Express :3001 + Vite :5173.
-Squad composition correct: 2GK/5DEF/5MID/3FWD (Ramírez + Osako as GKs).
-```
-
-### Day 10 priorities (in order)
-
-1. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; triggers `py -m engine.wc_run`; post-group bonus run June 27. Use GitHub secrets `DATABASE_URL` and `API_FOOTBALL_KEY`. File: `.github/workflows/engine.yml`.
-
-2. **Render deploy** — `git push origin main` (already done for bug fixes), then confirm `https://wc-edge.onrender.com` loads all 5 pages correctly.
-
-3. **Production smoke test** — Squad, Captain, Transfers, Live, Assistant pages. Check `/api/fdr?round=1`, `/api/live` (shows fixture schedule), squad sub-in/sub-out on prod.
-
-4. **ELIMINATED badge** (medium effort):
+1. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; `py -m engine.wc_run`; post-group bonus run June 27. Secrets: `DATABASE_URL`, `API_FOOTBALL_KEY`. File: `.github/workflows/engine.yml`.
+2. **Render deploy** — confirm `https://wc-edge.onrender.com` loads all 5 pages.
+3. **Production smoke test** — Squad, Captain, Transfers, Live, Assistant. Check `/api/fdr?round=1`, `/api/live`, sub-in/sub-out on prod.
+4. **ELIMINATED badge**:
    - `ALTER TABLE wc.teams ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;`
-   - Update `GET /api/teams` in `server.ts` to include `is_active`
-   - Add `isActive` to `Team` type in `wc.ts`
+   - Update `GET /api/teams` to include `is_active`; add `isActive` to `Team` type in `wc.ts`
    - Show "ELIMINATED" badge on Transfers SwapCard OUT player when `team.is_active = false`
-
-5. **Final engine run** (if apif budget available):
-   - `py -m engine.wc_ingest --source apif --day 2` (fresh 100 req)
-   - `py -m engine.wc_run` to refresh projections with better club stats
-
-6. **AI chat credits** — top up Anthropic account; test `/api/chat` and `/api/squad/from-screenshot` end-to-end.
-
-### Known deferred items (still outstanding)
-- `wc.teams` may have 80 rows (32 duplicates with FIFA entity IDs > 1000). Check: `SELECT COUNT(*) FROM wc.teams`. Fix if needed: `DELETE FROM wc.teams WHERE squad_id > 1000;` then re-run `py -m engine.wc_ingest --source fifa`.
-- Anthropic credits needed for `/api/chat` and `/api/squad/from-screenshot` (both call Claude Haiku).
-- `apif_budget.json`: `day1_used: 80, day2_used: 0` — Day 2 run still available.
-
-### Full pipeline from scratch (if needed)
-```bash
-cd engine
-$env:PYTHONUTF8=1
-py -m pip install -r requirements.txt
-py -m engine.wc_ingest --source statsbomb   # 199 match files, ~2 min, free
-py -m engine.wc_ingest --source fifa        # players + rounds + teams
-py -m engine.wc_ingest --source apif --day N # N=1 or N=2
-py -m engine.wc_run                          # model + optimizer
-```
+5. **Final engine run** (if apif budget): `py -m engine.wc_ingest --source apif --day 2` → `py -m engine.wc_run`
+6. **AI chat credits** — top up Anthropic; test `/api/chat` and `/api/squad/from-screenshot` end-to-end.
 
 ---
 
-## How to Run (local dev)
+## How to Run
 
 ```bash
 # Frontend + API server
 cd web
-npm install       # first time only — already done
-npm run dev       # starts Express :3001 + Vite :5173 concurrently
-# requires web/.env with DATABASE_URL + ANTHROPIC_API_KEY (gitignored)
+npm run dev       # Express :3001 + Vite :5173 concurrently
+# requires web/.env: DATABASE_URL + ANTHROPIC_API_KEY
 
 # Engine (Windows PowerShell)
 cd engine
-$env:PYTHONUTF8=1          # required on Windows for unicode chars in output
-py -m engine.wc_run        # Phase 2+3: model + optimizer (uses engine/.env)
-py -m engine.wc_ingest ... # Phase 1: scrape data sources
+$env:PYTHONUTF8=1
+py -m engine.wc_run                          # model + optimizer
+py -m engine.wc_ingest --source apif --day 2 # refresh club stats
+```
+
+**Full pipeline from scratch:**
+```bash
+py -m engine.wc_ingest --source statsbomb
+py -m engine.wc_ingest --source fifa
+py -m engine.wc_ingest --source apif --day N
+py -m engine.wc_run
 ```
 
 **env files (gitignored, never commit):**
@@ -501,59 +76,35 @@ py -m engine.wc_ingest ... # Phase 1: scrape data sources
 ## Architecture
 
 ```
-engine/              Python backend
+engine/
 ├── engine/
-│   ├── wc_schema.sql    7 tables: players, teams, rounds, player_stats,
-│   │                              projections, team_fdr, suggested_squad
-│   ├── wc_ingest.py     Phase 1: FIFA Fantasy + StatsBomb + Sofascore + API-Football
-│   ├── wc_model.py      Phase 2: Bayesian xG/xA + seed FDR + xP → projections + team_fdr
-│   ├── wc_optimizer.py  Phase 3: HiGHS MILP → suggested_squad (2GK/5DEF/5MID/3FWD)
-│   ├── wc_run.py        Orchestrator: py -m engine.wc_run [--phase model|optimizer|all]
+│   ├── wc_schema.sql    7 tables under wc schema
+│   ├── wc_ingest.py     Phase 1: FIFA Fantasy + StatsBomb + API-Football
+│   ├── wc_model.py      Phase 2: Bayesian xG/xA + seed FDR → projections + team_fdr
+│   ├── wc_optimizer.py  Phase 3: HiGHS MILP → suggested_squad
+│   ├── wc_run.py        Orchestrator: py -m engine.wc_run
 │   ├── db.py            psycopg3 pool, search_path=wc,public
-│   └── config.py        Constants: scoring, priors, API keys, league IDs
-├── data/
-│   ├── sb_cache.json         1441 StatsBomb players (keyed by normalized name)
-│   ├── name_overrides.json   hard-coded name mappings for fuzzy-match failures
-│   ├── unmatched_players.json  961 unmatched players — review on Day 3
-│   └── apif_budget.json      {day1_used: 80, day2_used: 0}
-└── requirements.txt   httpx, psycopg[binary], python-dotenv, rapidfuzz, highspy
+│   └── config.py        scoring constants, API keys, league IDs
+└── data/
+    ├── sb_cache.json         1441 StatsBomb players
+    ├── name_overrides.json   13 hard-coded name mappings
+    └── apif_budget.json      {day1_used: 80, day2_used: 0}
 
-web/                 React + Express (ALL FILES WRITTEN — TypeScript clean)
+web/
 ├── server/
-│   ├── server.ts        12 routes: 3 FIFA proxies + 9 DB/AI routes — all wired to DB
-│   └── db.ts            pg.Pool, search_path=wc,public, all query functions
-├── src/
-│   ├── types/wc.ts           Player, Team, Round, Projection, SquadPlayer, SuggestedSquad
-│   ├── store/appStore.ts     sidebar collapse + mobile menu (Zustand + persist)
-│   ├── store/squadStore.ts   squad[], captain, bench, budget (Zustand + persist)
-│   ├── hooks/useWC.ts        React Query hooks for all 8 API routes
-│   ├── services/wcApi.ts     fetch wrappers for all routes
-│   ├── components/layout/
-│   │   ├── Layout.tsx        flex wrapper (sidebar + topbar + main)
-│   │   ├── Sidebar.tsx       5 nav items, WC gold accent, collapse/expand, mobile drawer
-│   │   └── TopBar.tsx        mobile hamburger only
-│   └── pages/
-│       ├── Assistant.tsx     shell (AI chat — Day 3 feature)
-│       ├── Squad.tsx         working: loads suggested_squad, renders by position, populates store
-│       ├── Transfers.tsx     shell (Day 4 feature)
-│       ├── Captain.tsx       working: 15-row ranked list, setCaptain
-│       └── Live.tsx          working: community API proxy, 60s refetch, graceful degradation
-├── package.json       React 18, Vite, TailwindCSS 3, @tanstack/react-query, zustand, highs, pg
-├── tailwind.config.ts accent=#E8B84B (WC gold), brand slate palette
-└── tsconfig.json
-
-.github/workflows/
-└── engine.yml     TODO Day 7: crons 04:00 + 18:00 UTC, post-group update June 27
+│   ├── server.ts   13 routes: 3 FIFA proxies + DB/AI routes
+│   └── db.ts       pg.Pool, search_path=wc,public, all query functions
+└── src/
+    ├── types/wc.ts
+    ├── store/appStore.ts      sidebar + onboarding state (Zustand + persist)
+    ├── store/squadStore.ts    squad[], captain, viceCaptain (Zustand + persist)
+    ├── hooks/useWC.ts         React Query hooks
+    ├── services/wcApi.ts      fetch wrappers
+    ├── components/shared/     Pitch, PitchPlayerCard, PlayerProfileModal,
+    │                          OnboardingModal, SwapDrawer, RoundXpChart,
+    │                          StatCard, Spinner, Logo
+    └── pages/                 Assistant, Squad, Transfers, Captain, Live
 ```
-
-**DB state (after Day 2):**
-- `wc.players`: 1,481 rows (48 teams, positions correctly parsed)
-- `wc.teams`: 48 rows (built from rounds.json fixtures, seed/group from squads_fifa)
-- `wc.rounds`: 8 rows (GROUP×3, R32, R16, QF, SF, F)
-- `wc.player_stats`: 571 rows
-- `wc.projections`: 11,848 rows (1481 players × 8 rounds)
-- `wc.team_fdr`: 384 rows
-- `wc.suggested_squad`: 1 row (round 1, £98.9m, 77.6 xP — Mbappé/Salah/Ronaldo/Raphinha)
 
 ---
 
@@ -561,11 +112,11 @@ web/                 React + Express (ALL FILES WRITTEN — TypeScript clean)
 
 | Page | Route | Guard | Key feature |
 |---|---|---|---|
-| Assistant | / | none | Edge AI, two starter prompt sets (no-squad / squad-context) |
-| Squad | /squad | none | Pre-filled MILP optimal squad, swap drawer, Re-optimize |
-| Transfers | /transfers | RequireSquad | One-at-a-time sequential greedy swap cards |
-| Captain | /captain | RequireSquad | 15-row ranked list, setCaptain, FDR badge |
-| Live | /live | none (degrades) | Match cards, captain swap banner → FIFA Fantasy link |
+| Assistant | / | none | Edge AI, starter chips, squad context |
+| Squad | /squad | none | Pitch + list view, swap drawer, modal, budget bar |
+| Transfers | /transfers | RequireSquad | Sequential greedy, Accept/Skip/Undo, −3pts badge |
+| Captain | /captain | RequireSquad | Ranked list, FDR badge, variance, deadline countdown |
+| Live | /live | none (degrades) | Match cards, captain banner, falls back to fixture schedule |
 
 ---
 
@@ -576,34 +127,33 @@ web/                 React + Express (ALL FILES WRITTEN — TypeScript clean)
 | /wc/players.json | GET | FIFA Fantasy proxy, 5min TTL |
 | /wc/rounds.json | GET | FIFA Fantasy proxy, 5min TTL |
 | /wc/squads_fifa.json | GET | FIFA Fantasy proxy, 30min TTL |
-| /api/rounds | GET | DB rounds table |
-| /api/players | GET | All ~800 players |
+| /api/rounds | GET | DB rounds |
+| /api/players | GET | All 1,481 players |
 | /api/teams | GET | Teams + isActive flag |
-| /api/projections?round=N | GET | All players sorted by xP DESC |
-| /api/squad/suggest | GET | Pre-computed from suggested_squad table |
+| /api/projections?round=N | GET | All players sorted xP DESC |
+| /api/squad/suggest | GET | Pre-computed suggested_squad |
 | /api/squad/optimize | POST | Live HiGHS-WASM solve |
-| /api/transfers/suggest | POST | Sequential greedy, body: {squad, round, freeTransfers} |
-| /api/fdr?round=N | GET | FDR 1-5 per team, quintiles of team_fdr.lambda_posterior |
-| /api/live?round=N | GET | Community API proxy (60s TTL); falls back to FIFA schedule on failure |
-| /api/chat | POST | Edge AI, body: {messages, squad?} |
+| /api/squad/from-screenshot | POST | Claude Haiku Vision → matched players |
+| /api/transfers/suggest | POST | Sequential greedy, {squad, round, freeTransfers} |
+| /api/fdr?round=N | GET | FDR 1–5 per team |
+| /api/fixtures/:squadId | GET | Per-team fixture list from rounds.json |
+| /api/live?round=N | GET | Community API proxy; falls back to FIFA schedule |
+| /api/chat | POST | Edge AI, {messages, squad?} |
 
 ---
 
-## Database Schema
-
-5 tables from `wc-edge.md` §4 plus one addition:
+## Database Schema (key addition)
 
 ```sql
--- player_stats, projections, team_fdr, players, teams (see wc-edge.md §4)
+-- wc schema: players, teams, rounds, player_stats, projections, team_fdr (see wc-edge.md §4)
 
--- ADDITION: pre-computed squad suggestion
 CREATE TABLE suggested_squad (
-    id           SERIAL PRIMARY KEY,
-    round        INTEGER NOT NULL,
-    squad_json   JSONB NOT NULL,
-    total_xp     REAL,
-    total_cost   REAL,
-    computed_at  TIMESTAMP DEFAULT NOW()
+    id          SERIAL PRIMARY KEY,
+    round       INTEGER NOT NULL,
+    squad_json  JSONB NOT NULL,
+    total_xp    REAL,
+    total_cost  REAL,
+    computed_at TIMESTAMP DEFAULT NOW()
 );
 CREATE INDEX ON suggested_squad (round);
 ```
@@ -612,13 +162,8 @@ CREATE INDEX ON suggested_squad (round);
 
 ## Deployment
 
-**Render Blueprint (`render.yaml`):**
 ```yaml
-databases:
-  - name: wc-db
-    databaseName: wc_edge
-    plan: free
-
+# render.yaml
 services:
   - type: web
     name: wc-edge
@@ -628,35 +173,30 @@ services:
     startCommand: node web/dist/server/server.js
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: wc-db
-          property: connectionString
+        fromDatabase: { name: wc-db, property: connectionString }
       - key: ANTHROPIC_API_KEY
         sync: false
 ```
 
-**GitHub Actions secrets:**
-- `DATABASE_URL` — Render external Postgres connection string
-- `API_FOOTBALL_KEY` — API-Football key
-
-**Trigger engine manually:**
 ```bash
-gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
+gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge  # manual trigger
 ```
 
 ---
 
-## Key Decisions (from grilling session)
+## Key Decisions
 
-- **`highs` npm package stays** — Squad Builder uses HiGHS-WASM for Re-optimize. The original wc-edge.md note to remove it is wrong.
-- **`chatApi.ts` is NOT verbatim reuse** — must pass `squad: number[]` alongside messages (no teamId equivalent).
-- **API Football key is gitignored** — live in `engine/.env` and GitHub secret only. Never commit.
-- **Squad is never empty on load** — always pre-filled from `suggested_squad` DB table.
-- **Transfers is one-at-a-time** — single swap card, Accept/Skip flow, sequential greedy.
+- **`highs` npm package stays** — Squad Builder uses HiGHS-WASM for Re-optimize.
+- **API Football key is gitignored** — `engine/.env` and GitHub secret only. Never commit.
+- **Squad never empty on load** — always pre-filled from `suggested_squad` DB table.
+- **Transfers is one-at-a-time** — single swap card, Accept/Skip/Undo flow.
 - **Captain is squad-only** — 15 rows, no global player list.
-- **Live is always accessible** — no RequireSquad guard. Degrades gracefully with stale banner.
-- **Captain swap is advisory** — banner links to play.fifa.com/fantasy/ directly, no in-app execution.
-- **WC gold accent** — `#E8B84B` in tailwind.config.ts, replaces fpl-edge teal `#00D8CB`.
+- **Live is always accessible** — no RequireSquad guard. Stale mode is primary design constraint.
+- **Captain swap is advisory** — banner links to play.fifa.com/fantasy/, no in-app execution.
+- **WC gold accent** — `#E8B84B` in `tailwind.config.ts`. Never use purple/violet.
+- **Elite product team** — always convene `/elite-product-team` for design/architecture decisions before coding.
+- **getXI is array-order based** — first N players of each position in the store array = XI. Pre-sort by xP on DB load; manual swaps exchange array positions.
+- **Server returns up to 6 transfer suggestions** — `freeTransfers` is badge threshold only, not loop limit.
 
 ---
 
@@ -665,16 +205,14 @@ gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
 | Token | Hex | Role |
 |---|---|---|
 | `accent` | `#E8B84B` | WC gold — buttons, active states |
-| `accent-fg` | `#060D18` | Text on gold backgrounds |
+| `wc-navy` | `#0C1D3E` | Banner gradient |
+| `wc-red` | `#DC2430` | Late-round xP chart |
+| `pitch-green` | `#2D7A4F` | Pitch background |
 | `slate-950` | `#060D18` | Body background |
 | `slate-900` | `#0A1321` | Main surface / sidebar |
 | `slate-800` | `#0F1E31` | Cards / panels |
-| `slate-700` | `#162B3F` | Hover / raised |
-| `slate-600` | `#1E3550` | Borders |
 | `slate-400` | `#6B8EA8` | Body text |
 | `slate-100` | `#E0EEF8` | Primary text |
-
-**No purple/violet.** Sidebar pattern identical to fpl-edge (collapsible, Zustand, inline SVG icons).
 
 ---
 
@@ -694,14 +232,14 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 
 ---
 
-## WC Fantasy Rules Reference
+## WC Fantasy Rules
 
 | Rule | Detail |
 |---|---|
 | Squad | 15 players: 2 GK / 5 DEF / 5 MID / 3 FWD |
-| Budget | $100m group stage → $105m from R32+ |
-| Country limit | Max 3 same country (R32→4, R16→5, QF→6, SF/F→8) |
-| Transfers | Group: 2 free/MD → R32: unlimited → R16/QF: 4 → SF: 5 → Final: 6 |
+| Budget | £100m group stage → £105m from R32+ |
+| Country limit | Max 3 group (R32→4, R16→5, QF→6, SF/F→8) |
+| Transfers | Group: 2 free/MD · R32: unlimited · R16/QF: 4 · SF: 5 · Final: 6 |
 | Extra transfer | −3 pts each |
 | Chips | Wildcard, 12th Man, Max Captain, Qualification Booster, Mystery Booster |
 | Captain | 2× points; mid-match swap to unplayed player allowed |
@@ -710,24 +248,14 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 
 ## Gotchas
 
-- **StatsBomb 199 files** — download with 0.5s delay, ~2 min total. No rate limit but be polite.
-- **API-Football 100 req/day hard cap** — track carefully. Budget in `engine/data/apif_budget.json`.
-- **Sofascore unofficial** — 403 blocked (Cloudflare). AFCON 2025 falls back to AFCON 2023 StatsBomb.
-- **Community live API (worldcup2026-api.vercel.app)** — no SLA. Degraded mode is a primary design constraint, not an edge case.
-- **suggested_squad table must be populated** before Squad page works — `py -m engine.wc_run` after any schema changes.
-- **Day 3 manual step** — review unmatched_players.json, add overrides to name_overrides.json before Day 4 apif re-run. Cannot be automated.
-- **FIFA Fantasy squadId (1-48) ≠ squads_fifa.json id (43817+)** — player.squadId is a sequential index into alphabetical team list. teams table is built from rounds.json fixtures, not squads_fifa.json. Seed/group enriched by team name match.
-- **highspy MILP integrality** — must use `highspy.HighsVarType.kInteger` (not integer `1`). Model status check uses `h.getModelStatus()` (not LP `primal_solution_status` which returns 0 for MIP).
-- **Python on Windows** — use `py` launcher, not `python`. Set `$env:PYTHONUTF8=1` in PowerShell for unicode output.
-- **wc schema search_path** — Python: `options="-c search_path=wc,public"` in psycopg3. Node: append `?options=-c%20search_path%3Dwc%2Cpublic` to connectionString.
-- **Elite product team** — always convene for design/architecture/sequencing decisions before coding. User has set this as global behavior.
-
-## Day 3 Start Checklist
-
-```
-[ ] 1. Run: py -m engine.wc_ingest --report  (see top-30 unmatched by price)
-[ ] 2. Review engine/data/unmatched_players.json, add entries to name_overrides.json
-[ ] 3. Wire Express API routes: server/db.ts is complete, server/server.ts has all routes
-[ ] 4. Build Assistant page: AI chat with starter prompts, squad context
-[ ] 5. Test end-to-end: npm run dev → http://localhost:5173 → Squad page renders with squad
-```
+- **API-Football 100 req/day hard cap** — track in `engine/data/apif_budget.json`.
+- **Sofascore 403** — Cloudflare blocked. AFCON 2025 falls back to AFCON 2023 StatsBomb.
+- **Community live API** (`worldcup2026-api.vercel.app`) — no SLA. Stale fallback to FIFA schedule is primary, not edge case.
+- **suggested_squad must be populated** before Squad page works — run `py -m engine.wc_run` after schema changes.
+- **FIFA Fantasy squadId (1–48) ≠ squads_fifa.json id (43817+)** — teams table built from rounds.json, not squads_fifa. Seed/group enriched by name match.
+- **highspy MILP** — use `highspy.HighsVarType.kInteger`, check status via `h.getModelStatus()`.
+- **Python on Windows** — use `py` launcher, set `$env:PYTHONUTF8=1` for unicode output.
+- **wc schema search_path** — psycopg3: `options="-c search_path=wc,public"`. Node pg: append `?options=-c%20search_path%3Dwc%2Cpublic` to connection string.
+- **Country limit warning threshold** — `n > 3` for group stage (3 is the allowed max). Round-aware thresholds TODO: R32=4, R16=5, QF=6, SF/F=8.
+- **SwapDrawer sub-in vs sub-out** — bench player triggers sub-in (options = XI starters); starter triggers sub-out (options = bench). Target player excluded from its own option list.
+- **FT stepper `−` button** — uses U+2212 minus sign, not U+002D hyphen. Use `.nth(0)` selector in tests.
