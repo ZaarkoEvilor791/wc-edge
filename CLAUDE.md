@@ -10,50 +10,87 @@
 
 **Database:** Shared fpl-edge Postgres (`fpledge` DB), `wc` schema. External URL in `engine/.env`, internal URL in Render env.
 
-**PRD:** https://github.com/ZaarkoEvilor791/fpl-edge/issues/12 · Full design doc: `wc-edge.md`
+**PRD:** `wc-edge-prd.md` · Full design doc: `wc-edge.md`
 
 ---
 
-## Current State (Days 1–10 + Session 16 complete, shipped)
+## Current State (Session 17 complete — PRD remainder shipped)
 
-All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions verified working.
-Architecture deepening complete (commit `28b705c`). 50 tests across 4 files (32 vitest + 18 pytest).
+All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
+Latest commit: `ca43627`
+
+**Tests:** 43 vitest (4 files) + 31 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 77.96 xP)
 
 **Squad composition:** 2GK/5DEF/5MID/3FWD · Ramírez + Osako as GKs · Mbappé/Salah/Ronaldo/Raphinha in XI
 
-**apif budget:** `day1_used: 80, day2_used: 16` — both runs complete. Cron resets to fresh 100 req daily from API-Football.
+**apif budget:** `day1_used: 80, day2_used: 16` — both runs complete.
 
-**DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). All duplicate FIFA entity ID rows deleted.
+**DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). `is_active BOOLEAN DEFAULT TRUE` column live.
 
-**Render deploy fix:** `startCommand` = `cd web && node node_modules/.bin/tsx server/server.ts`.
+**Render deploy:** `startCommand` = `cd web && node node_modules/.bin/tsx server/server.ts`
 
-**GitHub Actions:** `.github/workflows/engine.yml` live. Crons: 04:00 UTC (apif + model) · 18:00 UTC (model only) · June 27 06:00 UTC (post-group bonus).
+**GitHub Actions:** `.github/workflows/engine.yml` live.
+- Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
+- `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
-**ELIMINATED badge:** `wc.teams.is_active BOOLEAN DEFAULT TRUE` column. Badge on OUT player in Transfers.
+---
 
-**Architecture (Session 16 — all done, committed):**
-- `web/server/services/transferAdvisor.ts` — pure `suggestTransfers()`, route handler ↓ 85→27 lines
-- `web/src/domain/squadValidator.ts` — `validateSquad()`, `roundPhase()`, `COUNTRY_LIMIT` map
-- Country limit in `Squad.tsx` is now round-aware: group=3, R32=4, R16=5, QF=6, SF/F=8 (was hardcoded 3)
-- `swapInSquad()` in `web/src/utils/squad.ts` — explicit documented mutation path for XI/bench invariant
-- `engine/engine/wc_model.py` — `compute_player_rates()` + `compute_round_projection()` as pure functions
-- `playerName()` helper in `server.ts` — used by both the players route and transfers toCard
-- Test infra: vitest (`cd web && npm test`) + pytest (`cd engine && py -m pytest tests/ -v`)
+## Session 17 — What was shipped (commit `ca43627`)
 
-**Outstanding:**
-- **Production smoke test** — verify all 5 pages on `https://wc-edge.onrender.com`. Not yet done.
-- **Anthropic credits** — needed for `/api/chat` and `/api/squad/from-screenshot`. Top up, then test both.
+**Engine — `wc_model.py`:**
+- `blend_live_observations(conn)` — PRD Option A2: after rounds complete, blends prior xP with FIFA Fantasy `avgPoints` per player. Formula: `(prior_xp * 300 + avg_pts_pg * rounds_played * 90) / (300 + rounds_played * 90)`. Prior fades to ~25% by round 5. Reads completed rounds from DB; fetches `players.json` for avgPoints. Zero-op pre-tournament. Called after every `run_model` in `wc_run.py`.
+- `run_model(conn, post_group=False)` — `post_group=True` path: calls `_fetch_group_results()` to read actual group stage scores from FIFA Fantasy `rounds.json`, then applies Bayesian lambda update to knockout-round FDR entries: `concede_lambda = (3 * KO_AVG + m * actual_ga) / (3 + m)`, `def_multiplier = actual_gf_pg / tournament_avg_gpg`.
+- `_fetch_group_results()` — parses completed GROUP stage match scores; returns `{}` on any HTTP error (graceful fallback to seed-based lambdas).
+
+**Engine — `wc_run.py`:**
+- `--post-group` flag: passes `post_group=True` to `run_model`.
+- Auto-detects current round and budget from DB: earliest non-COMPLETE round → `GROUP=£100m`, R32+=`£105m`. No more hardcoded `--round 1`.
+- `blend_live_observations(conn)` called after every model run.
+
+**Engine — `engine.yml`:**
+- June 27 cron now runs the `--post-group` step (separate step with `if` condition).
+- `workflow_dispatch` gains `post_group` boolean input.
+- Standard daily runs use a separate step path (not post-group).
+
+**Web — Transfers page:**
+- `BrowseAllModal.tsx` — new component. Two-step flow: (1) browse all players not in squad, filtered by position tab + name search, sorted xP DESC; (2) pick which squad player to sell, with live budget check and xP delta shown. Renders as bottom sheet on mobile.
+- "Browse All" button appears next to Analyze on initial state, and below swap cards after suggestions are loaded.
+- `handleManualSwap()` records accepted transfers the same way as model suggestions (appears in session summary, supports Undo).
+
+**Web — `server.ts`:**
+- `export { app }` + `NODE_ENV !== 'test'` guard around `app.listen()` — enables supertest integration tests without binding a port.
+
+**Tests:**
+- `transferAdvisor.test.ts` +2: eliminated player (xp=0) surfaces as sell; budget-exceeded → empty result.
+- `test_model.py` +13: live blend math (5 tests), post-group FDR Bayesian math (5 tests), `_fetch_group_results` with monkeypatched HTTP (3 tests).
+- `server.routes.test.ts` (new, 9 tests): `POST /api/transfers/suggest` 400 validation; `GET /api/live` stale fallback when upstream 503; `POST /api/chat` squad context injection — all using `vi.mock()` on DB layer + supertest.
+
+---
+
+## Outstanding (pre-tournament, by June 11)
+
+- **Production smoke test** — verify all 5 pages on `https://wc-edge.onrender.com`. Check `/api/fdr?round=1` (expect 48 rows), `/api/live`, mobile sub-in/sub-out swap.
+- **Anthropic credits** — top up at console.anthropic.com → test Assistant chat + screenshot upload end-to-end.
 
 ---
 
 ## Next Session Priorities
 
-1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1` (expect 48 rows), `/api/live`, sub-in/sub-out on mobile.
-2. **Top up Anthropic credits** → test Assistant page chat + onboarding screenshot upload flow end-to-end.
-3. **Tournament operations** — mark eliminated teams: `UPDATE wc.teams SET is_active = FALSE WHERE abbr = 'XXX';`. Engine cron refreshes projections automatically at 04:00 + 18:00 UTC daily.
-4. **Manual engine trigger** if projections ever go stale: `gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge`
+1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile SwapDrawer.
+2. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
+3. **Tournament operations** — mark eliminated teams as the tournament progresses:
+   ```sql
+   UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
+   ```
+   Engine cron auto-refreshes projections at 04:00 + 18:00 UTC.
+4. **Manual engine trigger** if projections go stale:
+   ```bash
+   gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
+   # With post-group FDR update (run after group stage ends ~June 27):
+   gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
+   ```
 
 ---
 
@@ -65,10 +102,15 @@ cd web
 npm run dev       # Express :3001 + Vite :5173 concurrently
 # requires web/.env: DATABASE_URL + ANTHROPIC_API_KEY
 
+# Tests
+cd web && npm test           # 43 vitest
+cd engine && py -m pytest tests/ -v   # 31 pytest
+
 # Engine (Windows PowerShell)
 cd engine
 $env:PYTHONUTF8=1
-py -m engine.wc_run                          # model + optimizer
+py -m engine.wc_run                          # model + optimizer (auto-detects round + budget)
+py -m engine.wc_run --post-group             # post-group FDR Bayesian update
 py -m engine.wc_ingest --source apif --day 2 # refresh club stats
 ```
 
@@ -95,20 +137,23 @@ engine/
 │   ├── wc_ingest.py     Phase 1: FIFA Fantasy + StatsBomb + API-Football
 │   ├── wc_model.py      Phase 2: Bayesian xG/xA + seed FDR → projections + team_fdr
 │   │                    Pure fns: compute_player_rates(), compute_round_projection()
+│   │                    Live: blend_live_observations(), _fetch_group_results()
+│   │                    run_model(conn, post_group=False)
 │   ├── wc_optimizer.py  Phase 3: HiGHS MILP → suggested_squad
-│   ├── wc_run.py        Orchestrator: py -m engine.wc_run
+│   ├── wc_run.py        Orchestrator: auto-detects round+budget, --post-group flag
 │   ├── db.py            psycopg3 pool, search_path=wc,public
 │   └── config.py        scoring constants, API keys, league IDs
 ├── tests/
-│   └── test_model.py    18 pytest tests for compute_player_rates + compute_round_projection
+│   └── test_model.py    31 pytest tests
 └── data/
     ├── sb_cache.json         1441 StatsBomb players
     ├── name_overrides.json   13 hard-coded name mappings
-    └── apif_budget.json      {day1_used: 80, day2_used: 0}
+    └── apif_budget.json      {day1_used: 80, day2_used: 16}
 
 web/
 ├── server/
 │   ├── server.ts              13 routes: 3 FIFA proxies + DB/AI routes
+│   │                          exports `app` for testing; listen guarded by NODE_ENV
 │   ├── db.ts                  pg.Pool, search_path=wc,public, all query functions
 │   └── services/
 │       └── transferAdvisor.ts pure suggestTransfers() — greedy algorithm, no I/O
@@ -121,10 +166,11 @@ web/
     ├── store/squadStore.ts    squad[], captain, viceCaptain (Zustand + persist)
     ├── hooks/useWC.ts         React Query hooks
     ├── services/wcApi.ts      fetch wrappers
-    ├── __tests__/             transferAdvisor, squadValidator, squad utils (32 vitest)
+    ├── __tests__/             transferAdvisor, squadValidator, squad utils,
+    │                          server.routes (43 vitest total)
     ├── components/shared/     Pitch, PitchPlayerCard, PlayerProfileModal,
     │                          OnboardingModal, SwapDrawer, RoundXpChart,
-    │                          StatCard, Spinner, Logo
+    │                          StatCard, Spinner, Logo, BrowseAllModal
     └── pages/                 Assistant, Squad, Transfers, Captain, Live
 ```
 
@@ -136,7 +182,7 @@ web/
 |---|---|---|---|
 | Assistant | / | none | Edge AI, starter chips, squad context |
 | Squad | /squad | none | Pitch + list view, swap drawer, modal, budget bar |
-| Transfers | /transfers | RequireSquad | Sequential greedy, Accept/Skip/Undo, −3pts badge |
+| Transfers | /transfers | RequireSquad | Sequential greedy, Accept/Skip/Undo, −3pts badge, Browse All |
 | Captain | /captain | RequireSquad | Ranked list, FDR badge, variance, deadline countdown |
 | Live | /live | none (degrades) | Match cards, captain banner, falls back to fixture schedule |
 
@@ -154,13 +200,13 @@ web/
 | /api/teams | GET | Teams + isActive flag |
 | /api/projections?round=N | GET | All players sorted xP DESC |
 | /api/squad/suggest | GET | Pre-computed suggested_squad |
-| /api/squad/optimize | POST | Live HiGHS-WASM solve |
+| /api/squad/optimize | POST | Returns suggested_squad (placeholder — Python optimizer is source of truth) |
 | /api/squad/from-screenshot | POST | Claude Haiku Vision → matched players |
 | /api/transfers/suggest | POST | Sequential greedy, {squad, round, freeTransfers} |
 | /api/fdr?round=N | GET | FDR 1–5 per team |
 | /api/fixtures/:squadId | GET | Per-team fixture list from rounds.json |
 | /api/live?round=N | GET | Community API proxy; falls back to FIFA schedule |
-| /api/chat | POST | Edge AI, {messages, squad?} |
+| /api/chat | POST | Edge AI, {messages, squadNames?} |
 
 ---
 
@@ -201,7 +247,8 @@ services:
 ```
 
 ```bash
-gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge  # manual trigger
+gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge              # standard run
+gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true  # post-group FDR
 ```
 
 ---
@@ -211,7 +258,7 @@ gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge  # manual trigger
 - **`highs` npm package stays** — Squad Builder uses HiGHS-WASM for Re-optimize.
 - **API Football key is gitignored** — `engine/.env` and GitHub secret only. Never commit.
 - **Squad never empty on load** — always pre-filled from `suggested_squad` DB table.
-- **Transfers is one-at-a-time** — single swap card, Accept/Skip/Undo flow.
+- **Transfers is one-at-a-time** — single swap card, Accept/Skip/Undo flow. Browse All is secondary path.
 - **Captain is squad-only** — 15 rows, no global player list.
 - **Live is always accessible** — no RequireSquad guard. Stale mode is primary design constraint.
 - **Captain swap is advisory** — banner links to play.fifa.com/fantasy/, no in-app execution.
@@ -219,6 +266,8 @@ gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge  # manual trigger
 - **Elite product team** — always convene `/elite-product-team` for design/architecture decisions before coding.
 - **getXI is array-order based** — first N players of each position in the store array = XI. Pre-sort by xP on DB load; manual swaps exchange array positions.
 - **Server returns up to 6 transfer suggestions** — `freeTransfers` is badge threshold only, not loop limit.
+- **blend_live_observations is zero-op pre-tournament** — checks rounds WHERE status='COMPLETE'; safe to call on every engine run.
+- **Post-group cron hardcoded June 27** — simpler than status-checking; acceptable for v1.
 
 ---
 
@@ -281,3 +330,6 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **Country limit warning threshold** — round-aware via `COUNTRY_LIMIT[roundPhase(stage)]` in `Squad.tsx`. Source of truth: `src/domain/squadValidator.ts`. Group=3, R32=4, R16=5, QF=6, SF/F=8.
 - **SwapDrawer sub-in vs sub-out** — bench player triggers sub-in (options = XI starters); starter triggers sub-out (options = bench). Target player excluded from its own option list.
 - **FT stepper `−` button** — uses U+2212 minus sign, not U+002D hyphen. Use `.nth(0)` selector in tests.
+- **blend_live_observations reads `status = 'COMPLETE'`** — rounds table must have status column updated by ingest/admin for the blend to activate. Pre-tournament all rounds are non-COMPLETE so it's a no-op.
+- **`_fetch_group_results` field names** — reads `homeSquadId`/`awaySquadId` and `homeScore`/`awayScore` from rounds.json tournaments. Falls back to `homeId`/`awayId` if primary keys absent. Returns `{}` on any error.
+- **server.ts `export { app }`** — app is exported for supertest. `app.listen()` only runs when `NODE_ENV !== 'test'`.
