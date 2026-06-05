@@ -14,33 +14,35 @@
 
 ---
 
-## Current State (Days 1–9 complete)
+## Current State (Days 1–10 complete)
 
-All 5 pages built, polished, and bug-free. DB populated. TypeScript clean.
+All 5 pages built, polished, and shipped to production. TypeScript clean. GitHub Actions live.
 
-**DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.9m, 77.6 xP)
+**DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 77.96 xP)
 
 **Squad composition:** 2GK/5DEF/5MID/3FWD · Ramírez + Osako as GKs · Mbappé/Salah/Ronaldo/Raphinha in XI
 
-**apif budget:** `day1_used: 80, day2_used: 0` — Day 2 run still available
+**apif budget:** `day1_used: 80, day2_used: 16` — both runs complete, budget exhausted for this cycle
 
-**Known deferred:**
-- `wc.teams` may have 80 rows (32 duplicates with squad_id > 1000). Fix: `DELETE FROM wc.teams WHERE squad_id > 1000;` then re-run `py -m engine.wc_ingest --source fifa`
-- Anthropic credits needed for `/api/chat` and `/api/squad/from-screenshot`
+**DB state:** `wc.teams` cleaned — exactly 48 rows (squad_id 1–48), all duplicate FIFA entity ID rows deleted
+
+**GitHub Actions:** `.github/workflows/engine.yml` — crons 04:00 UTC (apif + model) + 18:00 UTC (model only) + June 27 06:00 UTC (post-group bonus). Secrets needed: `DATABASE_URL`, `API_FOOTBALL_KEY` in GitHub repo settings.
+
+**ELIMINATED badge:** `wc.teams.is_active BOOLEAN DEFAULT TRUE` added. `getTeams()` / `Team` type / Transfers SwapCard all wired. To mark a team eliminated: `UPDATE wc.teams SET is_active = FALSE WHERE abbr = 'XXX';`
+
+**Outstanding:**
+- **Production smoke test** — not yet confirmed post-deploy. Check all 5 pages on `https://wc-edge.onrender.com`.
+- **GitHub secrets** — `DATABASE_URL` + `API_FOOTBALL_KEY` must be set in repo Settings → Secrets before cron fires.
+- **Anthropic credits** — needed for `/api/chat` and `/api/squad/from-screenshot`. Top up account, then test both endpoints end-to-end.
 
 ---
 
-## Day 10 Priorities
+## Next Session Priorities
 
-1. **GitHub Actions `engine.yml`** — crons 04:00 + 18:00 UTC; `py -m engine.wc_run`; post-group bonus run June 27. Secrets: `DATABASE_URL`, `API_FOOTBALL_KEY`. File: `.github/workflows/engine.yml`.
-2. **Render deploy** — confirm `https://wc-edge.onrender.com` loads all 5 pages.
-3. **Production smoke test** — Squad, Captain, Transfers, Live, Assistant. Check `/api/fdr?round=1`, `/api/live`, sub-in/sub-out on prod.
-4. **ELIMINATED badge**:
-   - `ALTER TABLE wc.teams ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;`
-   - Update `GET /api/teams` to include `is_active`; add `isActive` to `Team` type in `wc.ts`
-   - Show "ELIMINATED" badge on Transfers SwapCard OUT player when `team.is_active = false`
-5. **Final engine run** (if apif budget): `py -m engine.wc_ingest --source apif --day 2` → `py -m engine.wc_run`
-6. **AI chat credits** — top up Anthropic; test `/api/chat` and `/api/squad/from-screenshot` end-to-end.
+1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1` (expect 48 rows), `/api/live`, sub-in/sub-out on mobile.
+2. **Set GitHub secrets** — `DATABASE_URL` (Render external Postgres URL), `API_FOOTBALL_KEY`. Then run `gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge` to verify the workflow executes cleanly.
+3. **Top up Anthropic credits** → test `/api/chat` (Assistant page) + `/api/squad/from-screenshot` (onboarding upload flow).
+4. **Tournament operations** — as teams get eliminated, update `is_active`: `UPDATE wc.teams SET is_active = FALSE WHERE abbr = 'XXX';`. Projections auto-refresh via Actions cron.
 
 ---
 
