@@ -14,9 +14,10 @@
 
 ---
 
-## Current State (Days 1–10 complete, shipped)
+## Current State (Days 1–10 + Session 16 complete, shipped)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions verified working.
+Architecture deepening complete (commit `28b705c`). 50 tests across 4 files (32 vitest + 18 pytest).
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 77.96 xP)
 
@@ -26,22 +27,31 @@ All 5 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 
 **DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). All duplicate FIFA entity ID rows deleted.
 
-**Render deploy fix:** `startCommand` changed from `node web/dist/server/server.js` → `cd web && node node_modules/.bin/tsx server/server.ts`. Root cause: `vite build` only compiles the React frontend; server TypeScript was never compiled to dist/.
+**Render deploy fix:** `startCommand` = `cd web && node node_modules/.bin/tsx server/server.ts`.
 
-**GitHub Actions:** `.github/workflows/engine.yml` live. Secrets set (`DATABASE_URL`, `API_FOOTBALL_KEY`). Manual run triggered and verified (run id 26996613899). Crons: 04:00 UTC (apif + model) · 18:00 UTC (model only) · June 27 06:00 UTC (post-group bonus).
+**GitHub Actions:** `.github/workflows/engine.yml` live. Crons: 04:00 UTC (apif + model) · 18:00 UTC (model only) · June 27 06:00 UTC (post-group bonus).
 
-**ELIMINATED badge:** `wc.teams.is_active BOOLEAN DEFAULT TRUE` column added. `getTeams()` / `Team` type / Transfers SwapCard all wired. Badge appears on OUT player when team is eliminated.
+**ELIMINATED badge:** `wc.teams.is_active BOOLEAN DEFAULT TRUE` column. Badge on OUT player in Transfers.
+
+**Architecture (Session 16 — all done, committed):**
+- `web/server/services/transferAdvisor.ts` — pure `suggestTransfers()`, route handler ↓ 85→27 lines
+- `web/src/domain/squadValidator.ts` — `validateSquad()`, `roundPhase()`, `COUNTRY_LIMIT` map
+- Country limit in `Squad.tsx` is now round-aware: group=3, R32=4, R16=5, QF=6, SF/F=8 (was hardcoded 3)
+- `swapInSquad()` in `web/src/utils/squad.ts` — explicit documented mutation path for XI/bench invariant
+- `engine/engine/wc_model.py` — `compute_player_rates()` + `compute_round_projection()` as pure functions
+- `playerName()` helper in `server.ts` — used by both the players route and transfers toCard
+- Test infra: vitest (`cd web && npm test`) + pytest (`cd engine && py -m pytest tests/ -v`)
 
 **Outstanding:**
-- **Production smoke test** — verify all 5 pages load on `https://wc-edge.onrender.com` after tsx fix deploy.
-- **Anthropic credits** — needed for `/api/chat` and `/api/squad/from-screenshot`. Top up, then test both end-to-end.
+- **Production smoke test** — verify all 5 pages on `https://wc-edge.onrender.com`. Not yet done.
+- **Anthropic credits** — needed for `/api/chat` and `/api/squad/from-screenshot`. Top up, then test both.
 
 ---
 
 ## Next Session Priorities
 
 1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1` (expect 48 rows), `/api/live`, sub-in/sub-out on mobile.
-2. **Top up Anthropic credits** → test Assistant page chat + onboarding screenshot upload flow.
+2. **Top up Anthropic credits** → test Assistant page chat + onboarding screenshot upload flow end-to-end.
 3. **Tournament operations** — mark eliminated teams: `UPDATE wc.teams SET is_active = FALSE WHERE abbr = 'XXX';`. Engine cron refreshes projections automatically at 04:00 + 18:00 UTC daily.
 4. **Manual engine trigger** if projections ever go stale: `gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge`
 
@@ -84,10 +94,13 @@ engine/
 │   ├── wc_schema.sql    7 tables under wc schema
 │   ├── wc_ingest.py     Phase 1: FIFA Fantasy + StatsBomb + API-Football
 │   ├── wc_model.py      Phase 2: Bayesian xG/xA + seed FDR → projections + team_fdr
+│   │                    Pure fns: compute_player_rates(), compute_round_projection()
 │   ├── wc_optimizer.py  Phase 3: HiGHS MILP → suggested_squad
 │   ├── wc_run.py        Orchestrator: py -m engine.wc_run
 │   ├── db.py            psycopg3 pool, search_path=wc,public
 │   └── config.py        scoring constants, API keys, league IDs
+├── tests/
+│   └── test_model.py    18 pytest tests for compute_player_rates + compute_round_projection
 └── data/
     ├── sb_cache.json         1441 StatsBomb players
     ├── name_overrides.json   13 hard-coded name mappings
@@ -95,14 +108,20 @@ engine/
 
 web/
 ├── server/
-│   ├── server.ts   13 routes: 3 FIFA proxies + DB/AI routes
-│   └── db.ts       pg.Pool, search_path=wc,public, all query functions
+│   ├── server.ts              13 routes: 3 FIFA proxies + DB/AI routes
+│   ├── db.ts                  pg.Pool, search_path=wc,public, all query functions
+│   └── services/
+│       └── transferAdvisor.ts pure suggestTransfers() — greedy algorithm, no I/O
 └── src/
     ├── types/wc.ts
+    ├── domain/
+    │   └── squadValidator.ts  validateSquad(), roundPhase(), COUNTRY_LIMIT
+    ├── utils/squad.ts         getXI(), swapInSquad() — array-order XI/bench invariant
     ├── store/appStore.ts      sidebar + onboarding state (Zustand + persist)
     ├── store/squadStore.ts    squad[], captain, viceCaptain (Zustand + persist)
     ├── hooks/useWC.ts         React Query hooks
     ├── services/wcApi.ts      fetch wrappers
+    ├── __tests__/             transferAdvisor, squadValidator, squad utils (32 vitest)
     ├── components/shared/     Pitch, PitchPlayerCard, PlayerProfileModal,
     │                          OnboardingModal, SwapDrawer, RoundXpChart,
     │                          StatCard, Spinner, Logo
@@ -259,6 +278,6 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **highspy MILP** — use `highspy.HighsVarType.kInteger`, check status via `h.getModelStatus()`.
 - **Python on Windows** — use `py` launcher, set `$env:PYTHONUTF8=1` for unicode output.
 - **wc schema search_path** — psycopg3: `options="-c search_path=wc,public"`. Node pg: append `?options=-c%20search_path%3Dwc%2Cpublic` to connection string.
-- **Country limit warning threshold** — `n > 3` for group stage (3 is the allowed max). Round-aware thresholds TODO: R32=4, R16=5, QF=6, SF/F=8.
+- **Country limit warning threshold** — round-aware via `COUNTRY_LIMIT[roundPhase(stage)]` in `Squad.tsx`. Source of truth: `src/domain/squadValidator.ts`. Group=3, R32=4, R16=5, QF=6, SF/F=8.
 - **SwapDrawer sub-in vs sub-out** — bench player triggers sub-in (options = XI starters); starter triggers sub-out (options = bench). Target player excluded from its own option list.
 - **FT stepper `−` button** — uses U+2212 minus sign, not U+002D hyphen. Use `.nth(0)` selector in tests.
