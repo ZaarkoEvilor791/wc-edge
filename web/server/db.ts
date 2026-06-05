@@ -37,8 +37,8 @@ export async function getPlayers() {
 }
 
 export async function getTeams() {
-  return q<{ squad_id: number; name: string; abbr: string; seed: number | null; group_name: string | null }>(
-    'SELECT squad_id, name, abbr, seed, group_name FROM teams ORDER BY squad_id'
+  return q<{ squad_id: number; name: string; abbr: string; seed: number | null; group_name: string | null; is_active: boolean }>(
+    'SELECT squad_id, name, abbr, seed, group_name, is_active FROM teams ORDER BY squad_id'
   )
 }
 

@@ -20,6 +20,7 @@ export interface Team {
   abbr: string
   seed: number | null
   group_name: string | null
+  is_active: boolean
 }
 
 export interface Round {

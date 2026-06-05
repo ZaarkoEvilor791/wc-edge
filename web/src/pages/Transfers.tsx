@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSquadStore } from '../store/squadStore'
-import { useTransferSuggest, useCurrentRound, useRounds } from '../hooks/useWC'
+import { useTransferSuggest, useCurrentRound, useRounds, useTeams } from '../hooks/useWC'
 import type { TransferSuggestion, SquadPlayer, TransferCard } from '../types/wc'
 
 const POS_COLOR: Record<string, string> = {
@@ -13,9 +13,11 @@ const POS_COLOR: Record<string, string> = {
 function SwapPlayerCard({
   player,
   variant,
+  eliminated = false,
 }: {
   player: TransferCard
   variant: 'out' | 'in'
+  eliminated?: boolean
 }) {
   const border = variant === 'out' ? 'border-rose-700/60' : 'border-emerald-600/60'
   const bg = variant === 'out' ? 'bg-rose-950/30' : 'bg-emerald-950/30'
@@ -24,7 +26,14 @@ function SwapPlayerCard({
 
   return (
     <div className={`flex-1 rounded-xl border ${border} ${bg} p-4 min-w-0`}>
-      <p className={`mb-2 text-xs font-bold tracking-widest ${labelColor}`}>{label}</p>
+      <div className="mb-2 flex items-center gap-2">
+        <p className={`text-xs font-bold tracking-widest ${labelColor}`}>{label}</p>
+        {eliminated && (
+          <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-slate-400">
+            Eliminated
+          </span>
+        )}
+      </div>
       <p className="truncate text-base font-semibold text-slate-100">{player.name}</p>
       <p className="mt-0.5 text-xs text-slate-400">
         {player.team_abbr}
@@ -46,6 +55,7 @@ function SwapCard({
   total,
   freeTransfers,
   canUndo,
+  eliminatedSquadIds,
   onAccept,
   onSkip,
   onUndo,
@@ -55,6 +65,7 @@ function SwapCard({
   total: number
   freeTransfers: number
   canUndo: boolean
+  eliminatedSquadIds: Set<number>
   onAccept: () => void
   onSkip: () => void
   onUndo: () => void
@@ -62,6 +73,7 @@ function SwapCard({
   const priceDeltaSign = suggestion.price_delta >= 0 ? '+' : ''
   const priceDeltaColor = suggestion.price_delta >= 0 ? 'text-emerald-400' : 'text-rose-400'
   const isCostly = index >= freeTransfers
+  const outEliminated = eliminatedSquadIds.has(suggestion.out.squad_id)
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
@@ -87,7 +99,7 @@ function SwapCard({
       </div>
 
       <div className="flex items-center gap-3">
-        <SwapPlayerCard player={suggestion.out} variant="out" />
+        <SwapPlayerCard player={suggestion.out} variant="out" eliminated={outEliminated} />
         <svg
           className="h-6 w-6 flex-shrink-0 text-slate-500"
           fill="none"
@@ -200,10 +212,14 @@ export default function Transfers() {
   const [prevSquads, setPrevSquads] = useState<SquadPlayer[][]>([])
 
   const { mutate: suggest, isPending } = useTransferSuggest()
+  const { data: teams } = useTeams()
 
   const round = selectedRound ?? currentRound?.id ?? 1
-
   const hasSquad = squad.length > 0
+
+  const eliminatedSquadIds = new Set(
+    (teams ?? []).filter(t => !t.is_active).map(t => t.squad_id)
+  )
 
   function analyze() {
     if (!hasSquad) return
@@ -347,6 +363,7 @@ export default function Transfers() {
           total={suggestions.length}
           freeTransfers={freeTransfers}
           canUndo={canUndo}
+          eliminatedSquadIds={eliminatedSquadIds}
           onAccept={handleAccept}
           onSkip={handleSkip}
           onUndo={handleUndo}
