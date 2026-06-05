@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     buildCommand: cd web && npm install && npm run build
-    startCommand: node web/dist/server/server.js
+    startCommand: cd web && node node_modules/.bin/tsx server/server.ts
     envVars:
       - key: DATABASE_URL
         sync: false
