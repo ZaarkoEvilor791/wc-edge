@@ -14,12 +14,12 @@
 
 ---
 
-## Current State (Session 17 complete — PRD remainder shipped)
+## Current State (Session 18 complete — Anthropic API optimizations shipped)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `ca43627`
+Latest commit: Session 18 (ATROS + elite team Anthropic optimizations)
 
-**Tests:** 43 vitest (4 files) + 31 pytest — all green.
+**Tests:** 51 vitest (4 files) + 31 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 77.96 xP)
 
@@ -34,6 +34,25 @@ Latest commit: `ca43627`
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+
+---
+
+## Session 18 — What was shipped
+
+**Web — `server.ts`:**
+- `app.set('trust proxy', 1)` — fixes `req.ip` on Render (was returning load balancer IP; now reads real client IP from `X-Forwarded-For`)
+- `checkRateLimit(ip, maxPerMin, maxPerDay)` — dual-window in-memory rate limiter. Keyed by IP + UTC date string. `/api/chat`: 5/min + 25/day. `/api/squad/from-screenshot`: 2/min + 5/day. Exported as `_rateLimitMap` for test cleanup.
+- `AI_ENABLED` env var kill switch — both LLM routes return 503 immediately when `AI_ENABLED=false`. Toggle in Render dashboard in <30s, no redeploy needed.
+- `/api/squad/from-screenshot` — assistant prefill `{"players":[` forces valid JSON from token 1; max_tokens 512→128; regex extraction removed. Saves ~65% output tokens per call.
+- `/api/chat` — system prompt restructured with XML tags (`<role>`, `<rules>`, `<squad>`); output instruction tightened to `≤120 tokens. No preamble. No sign-off.`
+
+**Tests — `server.routes.test.ts`:**
+- 9 → 17 tests. Added: screenshot route (5 tests — 400 validation, valid prefill completion, unparseable, empty array), rate limiter (3 tests — chat daily cap 429, screenshot daily cap 429, kill switch 503).
+- `mockCreate` declared with `vi.hoisted()` to avoid Vitest hoisting error.
+- `beforeEach(() => _rateLimitMap.clear())` prevents cross-test rate limit bleed.
+
+**Tools — new skills:**
+- `/atros` (`~/.claude/commands/atros.md`) — Anthropic Token & Resource Optimization Specialist. Audits prompts and LLM architecture for token spend, hallucination risk, and model fit. Use with any Anthropic API work.
 
 ---
 
@@ -73,6 +92,7 @@ Latest commit: `ca43627`
 
 - **Production smoke test** — verify all 5 pages on `https://wc-edge.onrender.com`. Check `/api/fdr?round=1` (expect 48 rows), `/api/live`, mobile sub-in/sub-out swap.
 - **Anthropic credits** — top up at console.anthropic.com → test Assistant chat + screenshot upload end-to-end.
+- **Render env var** — add `AI_ENABLED=true` in Render dashboard (Environment tab). Required for kill switch to work correctly.
 
 ---
 
@@ -80,7 +100,8 @@ Latest commit: `ca43627`
 
 1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile SwapDrawer.
 2. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
-3. **Tournament operations** — mark eliminated teams as the tournament progresses:
+3. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
+4. **Tournament operations** — mark eliminated teams as the tournament progresses:
    ```sql
    UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
    ```
@@ -268,6 +289,9 @@ gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true  # 
 - **Server returns up to 6 transfer suggestions** — `freeTransfers` is badge threshold only, not loop limit.
 - **blend_live_observations is zero-op pre-tournament** — checks rounds WHERE status='COMPLETE'; safe to call on every engine run.
 - **Post-group cron hardcoded June 27** — simpler than status-checking; acceptable for v1.
+- **`/api/chat` system prompt uses XML tags** — `<role>`, `<rules>`, `<squad>` segregate static rules from dynamic user context; reduces hallucination on scoring rules. Output instruction: `≤120 tokens. No preamble.`
+- **`/from-screenshot` prefills assistant turn** — passes `{"role":"assistant","content":"{"players":["}` to force valid JSON from token 1; removes regex extraction. max_tokens=128 (15 names × ~8 chars ≈ 60–80 tokens).
+- **LLM routes are rate-limited** — 10 req/min/IP via in-memory token bucket on `/api/chat` + `/api/squad/from-screenshot`.
 
 ---
 
@@ -333,3 +357,5 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **blend_live_observations reads `status = 'COMPLETE'`** — rounds table must have status column updated by ingest/admin for the blend to activate. Pre-tournament all rounds are non-COMPLETE so it's a no-op.
 - **`_fetch_group_results` field names** — reads `homeSquadId`/`awaySquadId` and `homeScore`/`awayScore` from rounds.json tournaments. Falls back to `homeId`/`awayId` if primary keys absent. Returns `{}` on any error.
 - **server.ts `export { app }`** — app is exported for supertest. `app.listen()` only runs when `NODE_ENV !== 'test'`.
+- **`/from-screenshot` prefill boundary** — prefill string is `'{"players":['`; model must close `]` and `}`. Verify with a full 15-player screenshot before deploying — if JSON.parse throws, the model may need the full `{"players":["` prefix instead.
+- **LLM rate limit is in-memory only** — resets on Render dyno restart. Acceptable for free-tier single-instance; not suitable for multi-instance deployments.

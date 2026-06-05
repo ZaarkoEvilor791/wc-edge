@@ -7,7 +7,7 @@
  * Run with: cd web && npm test
  */
 
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, vi, beforeAll, beforeEach, afterAll } from 'vitest'
 import request from 'supertest'
 
 // ---- Mock DB module before importing the server ----
@@ -24,18 +24,18 @@ vi.mock('../../server/db', () => ({
 }))
 
 // ---- Mock Anthropic SDK ----
+const mockCreate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ content: [{ type: 'text', text: 'Mock AI response' }] })
+)
+
 vi.mock('@anthropic-ai/sdk', () => ({
   default: vi.fn().mockImplementation(() => ({
-    messages: {
-      create: vi.fn().mockResolvedValue({
-        content: [{ type: 'text', text: 'Mock AI response' }],
-      }),
-    },
+    messages: { create: mockCreate },
   })),
 }))
 
 import * as db from '../../server/db'
-import { app } from '../../server/server'
+import { app, _rateLimitMap } from '../../server/server'
 
 // ----- shared fixture data -----
 const PLAYERS = [
@@ -59,6 +59,7 @@ const PROJECTIONS = [
 beforeAll(() => {
   process.env.NODE_ENV = 'test'
   process.env.ANTHROPIC_API_KEY = 'test-key'
+  process.env.AI_ENABLED = 'true'
   vi.mocked(db.getPlayers).mockResolvedValue(PLAYERS as any)
   vi.mocked(db.getTeams).mockResolvedValue(TEAMS as any)
   vi.mocked(db.getRounds).mockResolvedValue([{ id: 1, stage: 'GROUP', start_date: '', end_date: '', status: 'active' }] as any)
@@ -66,6 +67,11 @@ beforeAll(() => {
   vi.mocked(db.getCurrentRoundId).mockResolvedValue(1)
   vi.mocked(db.getSuggestedSquad).mockResolvedValue(undefined as any)
   vi.mocked(db.getTeamFdr).mockResolvedValue([])
+})
+
+beforeEach(() => {
+  _rateLimitMap.clear()
+  mockCreate.mockResolvedValue({ content: [{ type: 'text', text: 'Mock AI response' }] })
 })
 
 afterAll(() => {
@@ -117,7 +123,6 @@ describe('POST /api/transfers/suggest', () => {
 
 describe('GET /api/live', () => {
   it('returns stale:true when community API is unavailable', async () => {
-    // Mock global fetch to simulate upstream 503
     const originalFetch = global.fetch
     global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
@@ -179,5 +184,108 @@ describe('POST /api/chat', () => {
       .post('/api/chat')
       .send({ messages: [{ role: 'user', content: 'Best GK picks?' }] })
     expect(res.status).toBe(200)
+  })
+})
+
+
+// ---------------------------------------------------------------------------
+// POST /api/squad/from-screenshot
+// ---------------------------------------------------------------------------
+
+describe('POST /api/squad/from-screenshot', () => {
+  it('returns 400 when imageBase64 is missing', async () => {
+    const res = await request(app)
+      .post('/api/squad/from-screenshot')
+      .send({ mimeType: 'image/png' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/imageBase64/)
+  })
+
+  it('returns 400 for unsupported mime type', async () => {
+    const res = await request(app)
+      .post('/api/squad/from-screenshot')
+      .send({ imageBase64: 'abc', mimeType: 'image/bmp' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/Unsupported/)
+  })
+
+  it('returns matched players when model returns valid JSON completion', async () => {
+    // Model sees prefill '{"players":[' and completes the rest
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: 'text', text: '"Mbappé","Salah"]}' }],
+    })
+    vi.mocked(db.matchPlayersByName).mockResolvedValue(PLAYERS[0] as any)
+
+    const res = await request(app)
+      .post('/api/squad/from-screenshot')
+      .send({ imageBase64: 'abc123', mimeType: 'image/png' })
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('matched')
+    expect(Array.isArray(res.body.matched)).toBe(true)
+  })
+
+  it('returns 422 when model completion is unparseable', async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'not valid json at all' }],
+    })
+    const res = await request(app)
+      .post('/api/squad/from-screenshot')
+      .send({ imageBase64: 'abc123', mimeType: 'image/png' })
+    expect(res.status).toBe(422)
+    expect(res.body.error).toMatch(/parse/)
+  })
+
+  it('returns 422 when model returns empty players array', async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: 'text', text: ']}' }],
+    })
+    const res = await request(app)
+      .post('/api/squad/from-screenshot')
+      .send({ imageBase64: 'abc123', mimeType: 'image/png' })
+    expect(res.status).toBe(422)
+    expect(res.body.error).toMatch(/No player names/)
+  })
+})
+
+
+// ---------------------------------------------------------------------------
+// Rate limiter
+// ---------------------------------------------------------------------------
+
+describe('Rate limiter', () => {
+  it('returns 429 for /api/chat after daily limit (25) is reached', async () => {
+    for (let i = 0; i < 25; i++) {
+      await request(app).post('/api/chat').send({ messages: [{ role: 'user', content: 'x' }] })
+    }
+    const res = await request(app)
+      .post('/api/chat')
+      .send({ messages: [{ role: 'user', content: 'x' }] })
+    expect(res.status).toBe(429)
+    expect(res.body.error).toMatch(/rate limit/i)
+  })
+
+  it('returns 429 for /api/squad/from-screenshot after daily limit (5) is reached', async () => {
+    mockCreate.mockResolvedValue({ content: [{ type: 'text', text: '"Mbappé"]}' }] })
+    vi.mocked(db.matchPlayersByName).mockResolvedValue(PLAYERS[0] as any)
+    for (let i = 0; i < 5; i++) {
+      await request(app)
+        .post('/api/squad/from-screenshot')
+        .send({ imageBase64: 'x', mimeType: 'image/png' })
+    }
+    const res = await request(app)
+      .post('/api/squad/from-screenshot')
+      .send({ imageBase64: 'x', mimeType: 'image/png' })
+    expect(res.status).toBe(429)
+    expect(res.body.error).toMatch(/rate limit/i)
+  })
+
+  it('returns 503 when AI_ENABLED=false', async () => {
+    process.env.AI_ENABLED = 'false'
+    const res = await request(app)
+      .post('/api/chat')
+      .send({ messages: [{ role: 'user', content: 'x' }] })
+    expect(res.status).toBe(503)
+    expect(res.body.error).toMatch(/unavailable/i)
+    process.env.AI_ENABLED = 'true'
   })
 })

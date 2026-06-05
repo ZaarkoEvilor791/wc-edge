@@ -26,6 +26,7 @@ function playerName(p: { known_name: string | null; first_name: string | null; l
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001
 
 app.use(express.json({ limit: '10mb' }))
+app.set('trust proxy', 1)
 
 // ---- FIFA Fantasy proxies (5-min TTL cached) ----
 const FIFA_BASE = 'https://play.fifa.com/json/fantasy'
@@ -246,9 +247,40 @@ const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null
 
+// ---- Rate limiter ----
+const rateLimitMap = new Map<string, { minCount: number; minReset: number; dayCount: number; day: string }>()
+export const _rateLimitMap = rateLimitMap
+
+function checkRateLimit(ip: string, maxPerMin: number, maxPerDay: number): boolean {
+  const now = Date.now()
+  const today = new Date().toISOString().slice(0, 10)
+  const entry = rateLimitMap.get(ip)
+  if (!entry || entry.day !== today) {
+    rateLimitMap.set(ip, { minCount: 1, minReset: now + 60_000, dayCount: 1, day: today })
+    return true
+  }
+  if (entry.dayCount >= maxPerDay) return false
+  if (now > entry.minReset) {
+    entry.minCount = 1
+    entry.minReset = now + 60_000
+  } else if (entry.minCount >= maxPerMin) {
+    return false
+  } else {
+    entry.minCount++
+  }
+  entry.dayCount++
+  return true
+}
+
 app.post('/api/chat', async (req, res) => {
   if (!anthropic) {
     return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' })
+  }
+  if (process.env.AI_ENABLED === 'false') {
+    return res.status(503).json({ error: 'AI features temporarily unavailable.' })
+  }
+  if (!checkRateLimit(req.ip ?? 'unknown', 5, 25)) {
+    return res.status(429).json({ error: 'Rate limit exceeded. Try again in a minute.' })
   }
 
   const { messages, squadNames } = req.body as {
@@ -256,17 +288,15 @@ app.post('/api/chat', async (req, res) => {
     squadNames?: string[]
   }
 
-  const system = [
-    'You are an expert FIFA WC 2026 Fantasy advisor called Edge.',
-    'Give concise, actionable advice based on expected points projections, fixture difficulty, and player form.',
-    'Keep responses focused and under 150 words unless the user asks for detail.',
-    'Scoring: Goal pts — GK 9, DEF 7, MID 6, FWD 5. Assist 3pts. Clean sheet — GK/DEF 5pts, MID 1pt, FWD 0pt. Appearance ≥60min 2pts, <60min 1pt. GK: +1pt per 3 saves. Yellow card −1pt, red card −2pt. Scouting bonus +2pts (≥4pts AND <5% ownership).',
-    'Available chips: Wildcard (reset full squad free), 12th Man (bench scores full points that round), Max Captain (3× captain multiplier instead of 2×), Qualification Booster (activates when your nation qualifies, boosts all their players), Mystery Booster (random effect revealed on activation).',
-    'Budget: £100m in group stage, £105m from Round of 32 onward. Country limit: max 3 players per nation in group stage (increases in knockouts: 4 in R32, 5 in R16, 6 in QF, 8 in SF/Final). Extra transfers beyond free allowance cost −3 pts each.',
-    squadNames?.length
-      ? `The user's current 15-player squad: ${squadNames.join(', ')}.`
-      : 'The user has not yet set their squad.',
-  ].join('\n')
+  const system = `<role>You are Edge, a FIFA WC 2026 Fantasy advisor. Reply in ≤120 tokens. No preamble. No sign-off.</role>
+
+<rules>
+Scoring: Goals — GK 9pts, DEF 7pts, MID 6pts, FWD 5pts. Assist 3pts. Clean sheet — GK/DEF 5pts, MID 1pt, FWD 0pt. Appearance ≥60min 2pts, <60min 1pt. GK +1pt/3 saves. Yellow −1pt, red −2pt. Scouting bonus +2pts (≥4pts AND <5% owned).
+Chips: Wildcard (free full reset), 12th Man (bench scores full), Max Captain (3× not 2×), Qualification Booster (nation qualifies → all their players boosted), Mystery Booster (random on activation).
+Budget: £100m group stage, £105m from R32. Country limit: 3 group / 4 R32 / 5 R16 / 6 QF / 8 SF+Final. Extra transfers: −3pts each.
+</rules>
+
+<squad>${squadNames?.length ? squadNames.join(', ') : 'not set'}</squad>`
 
   try {
     const response = await anthropic.messages.create({
@@ -291,6 +321,12 @@ app.post('/api/squad/from-screenshot', async (req, res) => {
   if (!anthropic) {
     return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' })
   }
+  if (process.env.AI_ENABLED === 'false') {
+    return res.status(503).json({ error: 'AI features temporarily unavailable.' })
+  }
+  if (!checkRateLimit(req.ip ?? 'unknown', 2, 5)) {
+    return res.status(429).json({ error: 'Rate limit exceeded. Try again in a minute.' })
+  }
   const { imageBase64, mimeType } = req.body as { imageBase64?: string; mimeType?: string }
   if (!imageBase64 || !mimeType) {
     return res.status(400).json({ error: 'imageBase64 and mimeType required' })
@@ -299,27 +335,35 @@ app.post('/api/squad/from-screenshot', async (req, res) => {
     return res.status(400).json({ error: 'Unsupported image type' })
   }
   try {
+    const SCREENSHOT_PREFILL = '{"players":['
     const visionRes = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mimeType as AllowedMime, data: imageBase64 },
-          },
-          {
-            type: 'text',
-            text: 'List every player name visible in this FIFA Fantasy squad screenshot. Return ONLY valid JSON: {"players":["name1","name2",...]}. No markdown, no explanation.',
-          },
-        ],
-      }],
+      max_tokens: 128,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mimeType as AllowedMime, data: imageBase64 },
+            },
+            {
+              type: 'text',
+              text: 'List every player name visible in this FIFA Fantasy squad screenshot as JSON.',
+            },
+          ],
+        },
+        { role: 'assistant', content: SCREENSHOT_PREFILL },
+      ],
     })
-    const raw = visionRes.content.find((b) => b.type === 'text')?.text ?? ''
-    const jsonMatch = raw.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return res.status(422).json({ error: 'Could not parse player names from screenshot' })
-    const { players: names } = JSON.parse(jsonMatch[0]) as { players: string[] }
+    const completion = visionRes.content.find((b) => b.type === 'text')?.text ?? ''
+    let names: string[]
+    try {
+      const parsed = JSON.parse(SCREENSHOT_PREFILL + completion) as { players: string[] }
+      names = parsed.players
+    } catch {
+      return res.status(422).json({ error: 'Could not parse player names from screenshot' })
+    }
     if (!Array.isArray(names) || names.length === 0) {
       return res.status(422).json({ error: 'No player names found in screenshot' })
     }
