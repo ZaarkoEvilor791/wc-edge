@@ -14,35 +14,36 @@
 
 ---
 
-## Current State (Days 1–10 complete)
+## Current State (Days 1–10 complete, shipped)
 
-All 5 pages built, polished, and shipped to production. TypeScript clean. GitHub Actions live.
+All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions verified working.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 77.96 xP)
 
 **Squad composition:** 2GK/5DEF/5MID/3FWD · Ramírez + Osako as GKs · Mbappé/Salah/Ronaldo/Raphinha in XI
 
-**apif budget:** `day1_used: 80, day2_used: 16` — both runs complete, budget exhausted for this cycle
+**apif budget:** `day1_used: 80, day2_used: 16` — both runs complete. Cron resets to fresh 100 req daily from API-Football.
 
-**DB state:** `wc.teams` cleaned — exactly 48 rows (squad_id 1–48), all duplicate FIFA entity ID rows deleted
+**DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). All duplicate FIFA entity ID rows deleted.
 
-**GitHub Actions:** `.github/workflows/engine.yml` — crons 04:00 UTC (apif + model) + 18:00 UTC (model only) + June 27 06:00 UTC (post-group bonus). Secrets needed: `DATABASE_URL`, `API_FOOTBALL_KEY` in GitHub repo settings.
+**Render deploy fix:** `startCommand` changed from `node web/dist/server/server.js` → `cd web && node node_modules/.bin/tsx server/server.ts`. Root cause: `vite build` only compiles the React frontend; server TypeScript was never compiled to dist/.
 
-**ELIMINATED badge:** `wc.teams.is_active BOOLEAN DEFAULT TRUE` added. `getTeams()` / `Team` type / Transfers SwapCard all wired. To mark a team eliminated: `UPDATE wc.teams SET is_active = FALSE WHERE abbr = 'XXX';`
+**GitHub Actions:** `.github/workflows/engine.yml` live. Secrets set (`DATABASE_URL`, `API_FOOTBALL_KEY`). Manual run triggered and verified (run id 26996613899). Crons: 04:00 UTC (apif + model) · 18:00 UTC (model only) · June 27 06:00 UTC (post-group bonus).
+
+**ELIMINATED badge:** `wc.teams.is_active BOOLEAN DEFAULT TRUE` column added. `getTeams()` / `Team` type / Transfers SwapCard all wired. Badge appears on OUT player when team is eliminated.
 
 **Outstanding:**
-- **Production smoke test** — not yet confirmed post-deploy. Check all 5 pages on `https://wc-edge.onrender.com`.
-- **GitHub secrets** — `DATABASE_URL` + `API_FOOTBALL_KEY` must be set in repo Settings → Secrets before cron fires.
-- **Anthropic credits** — needed for `/api/chat` and `/api/squad/from-screenshot`. Top up account, then test both endpoints end-to-end.
+- **Production smoke test** — verify all 5 pages load on `https://wc-edge.onrender.com` after tsx fix deploy.
+- **Anthropic credits** — needed for `/api/chat` and `/api/squad/from-screenshot`. Top up, then test both end-to-end.
 
 ---
 
 ## Next Session Priorities
 
 1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1` (expect 48 rows), `/api/live`, sub-in/sub-out on mobile.
-2. **Set GitHub secrets** — `DATABASE_URL` (Render external Postgres URL), `API_FOOTBALL_KEY`. Then run `gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge` to verify the workflow executes cleanly.
-3. **Top up Anthropic credits** → test `/api/chat` (Assistant page) + `/api/squad/from-screenshot` (onboarding upload flow).
-4. **Tournament operations** — as teams get eliminated, update `is_active`: `UPDATE wc.teams SET is_active = FALSE WHERE abbr = 'XXX';`. Projections auto-refresh via Actions cron.
+2. **Top up Anthropic credits** → test Assistant page chat + onboarding screenshot upload flow.
+3. **Tournament operations** — mark eliminated teams: `UPDATE wc.teams SET is_active = FALSE WHERE abbr = 'XXX';`. Engine cron refreshes projections automatically at 04:00 + 18:00 UTC daily.
+4. **Manual engine trigger** if projections ever go stale: `gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge`
 
 ---
 
