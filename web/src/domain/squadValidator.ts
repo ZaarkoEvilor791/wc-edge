@@ -1,0 +1,61 @@
+import type { SquadPlayer } from '../types/wc'
+
+export type RoundPhase = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'
+
+export const COUNTRY_LIMIT: Record<RoundPhase, number> = {
+  group: 3, r32: 4, r16: 5, qf: 6, sf: 8, final: 8,
+}
+
+const POS_REQUIRED: Record<string, number> = { GK: 2, DEF: 5, MID: 5, FWD: 3 }
+
+export interface ValidationResult {
+  valid: boolean
+  errors: string[]
+  countryViolations: string[]  // team abbrs over the phase limit
+}
+
+// Maps a round's stage string (from DB rounds.stage) to a RoundPhase.
+export function roundPhase(stage: string): RoundPhase {
+  const s = stage.toLowerCase()
+  if (s.includes('semi')) return 'sf'
+  if (s.includes('quarter')) return 'qf'
+  if (s.includes('16') || s.includes('r16')) return 'r16'
+  if (s.includes('32') || s.includes('r32')) return 'r32'
+  if (s.includes('final')) return 'final'
+  return 'group'
+}
+
+export function validateSquad(squad: SquadPlayer[], phase: RoundPhase): ValidationResult {
+  const errors: string[] = []
+  const countryViolations: string[] = []
+
+  if (squad.length !== 15) {
+    errors.push(`Squad must have 15 players (has ${squad.length})`)
+  }
+
+  const posCounts: Record<string, number> = {}
+  for (const p of squad) posCounts[p.position] = (posCounts[p.position] ?? 0) + 1
+  for (const [pos, required] of Object.entries(POS_REQUIRED)) {
+    const actual = posCounts[pos] ?? 0
+    if (actual !== required) errors.push(`${pos}: need ${required}, have ${actual}`)
+  }
+
+  const seen = new Set<number>()
+  for (const p of squad) {
+    if (seen.has(p.element)) errors.push(`Duplicate player: ${p.name}`)
+    seen.add(p.element)
+  }
+
+  const limit = COUNTRY_LIMIT[phase]
+  const countryCounts: Record<string, number> = {}
+  for (const p of squad) countryCounts[p.team_abbr] = (countryCounts[p.team_abbr] ?? 0) + 1
+  for (const [abbr, count] of Object.entries(countryCounts)) {
+    if (count > limit) countryViolations.push(abbr)
+  }
+
+  return {
+    valid: errors.length === 0 && countryViolations.length === 0,
+    errors,
+    countryViolations,
+  }
+}

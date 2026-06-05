@@ -5,7 +5,8 @@ import { useSuggestedSquad, useProjections, useCurrentRound } from '../hooks/use
 import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
-import { getXI } from '../utils/squad'
+import { getXI, swapInSquad } from '../utils/squad'
+import { roundPhase, COUNTRY_LIMIT } from '../domain/squadValidator'
 import Spinner from '../components/shared/Spinner'
 import StatCard from '../components/shared/StatCard'
 import Pitch from '../components/shared/Pitch'
@@ -193,16 +194,12 @@ export default function Squad() {
 
   const countByTeam: Record<string, number> = {}
   displaySquad.forEach((p) => { countByTeam[p.team_abbr] = (countByTeam[p.team_abbr] ?? 0) + 1 })
-  // TODO: make round-aware — group max=3, R32=4, R16=5, QF=6, SF/F=8 (see PRD §Country Limits)
-  const overLimit = Object.entries(countByTeam).filter(([, n]) => n > 3)
+  const phase = roundPhase(currentRound?.stage ?? '')
+  const overLimit = Object.entries(countByTeam).filter(([, n]) => n > COUNTRY_LIMIT[phase])
 
   function handleSwap(replacement: SquadPlayer) {
     if (!swapTarget) return
-    setSquad(displaySquad.map((p) => {
-      if (p.element === swapTarget.element) return replacement
-      if (p.element === replacement.element) return swapTarget
-      return p
-    }))
+    setSquad(swapInSquad(displaySquad, swapTarget.element, replacement.element))
     setSwapTarget(null)
   }
 

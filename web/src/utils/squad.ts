@@ -26,3 +26,17 @@ export function getXI(
 
   return { xi, bench }
 }
+
+// Swap two players by element ID, preserving array order for all other players.
+// This is the only safe way to mutate squad order — direct array manipulation
+// would break getXI's array-order invariant for non-swapped positions.
+export function swapInSquad(squad: SquadPlayer[], aEl: number, bEl: number): SquadPlayer[] {
+  const a = squad.find((p) => p.element === aEl)
+  const b = squad.find((p) => p.element === bEl)
+  if (!a || !b) return squad
+  return squad.map((p) => {
+    if (p.element === aEl) return b
+    if (p.element === bEl) return a
+    return p
+  })
+}

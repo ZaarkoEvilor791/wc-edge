@@ -15,9 +15,14 @@ import {
   matchPlayersByName,
   getTeamFdr,
 } from './db'
+import { suggestTransfers } from './services/transferAdvisor'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
+
+function playerName(p: { known_name: string | null; first_name: string | null; last_name: string | null }): string {
+  return p.known_name ?? [p.first_name, p.last_name].filter(Boolean).join(' ')
+}
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001
 
 app.use(express.json({ limit: '10mb' }))
@@ -86,7 +91,7 @@ app.get('/api/players', async (_, res) => {
     const players = await getPlayers()
     res.json(players.map((p) => ({
       ...p,
-      name: p.known_name ?? [p.first_name, p.last_name].filter(Boolean).join(' '),
+      name: playerName(p),
     })))
   } catch (err) {
     res.status(500).json({ error: String(err) })
@@ -160,65 +165,27 @@ app.post('/api/transfers/suggest', async (req, res) => {
     ])
 
     const playerMap = new Map(players.map((p) => [p.element, p]))
-    const projMap = new Map(projections.map((p) => [p.element, p]))
     const teamMap = new Map(teams.map((t) => [t.squad_id, t]))
+    const projMap = new Map(projections.map((p) => [p.element, p]))
 
     const toCard = (el: number) => {
       const p = playerMap.get(el)!
+      const proj = projMap.get(el)
       return {
         element: el,
-        name: p.known_name ?? [p.first_name, p.last_name].filter(Boolean).join(' '),
+        name: playerName(p),
         position: p.position as 'GK' | 'DEF' | 'MID' | 'FWD',
         price: p.price ?? 0,
-        xp: projMap.get(el)?.xp ?? 0,
+        xp: proj?.xp ?? 0,
         team_abbr: teamMap.get(p.squad_id)?.abbr ?? '?',
         squad_id: p.squad_id,
-        low_sample: projMap.get(el)?.low_sample ?? false,
+        low_sample: proj?.low_sample ?? false,
       }
     }
 
-    const currentSquad = [...squad]
-    const squadSet = new Set(squad)
-    let currentCost = squad.reduce((s, el) => s + (playerMap.get(el)?.price ?? 0), 0)
-
-    const transfers: { out: ReturnType<typeof toCard>; in: ReturnType<typeof toCard>; xp_gain: number; price_delta: number }[] = []
-
-    for (let i = 0; i < 6; i++) {
-      let best: { outEl: number; inEl: number; gain: number; newCost: number } | null = null
-
-      for (const outEl of currentSquad) {
-        const outP = playerMap.get(outEl)
-        if (!outP) continue
-        const outXp = projMap.get(outEl)?.xp ?? 0
-
-        for (const inProj of projections) {
-          const inEl = inProj.element
-          if (squadSet.has(inEl)) continue
-          const inP = playerMap.get(inEl)
-          if (!inP || inP.position !== outP.position) continue
-          const newCost = currentCost - (outP.price ?? 0) + (inP.price ?? 0)
-          if (newCost > budget) continue
-          const gain = inProj.xp - outXp
-          if (gain <= 0) continue
-          if (!best || gain > best.gain) best = { outEl, inEl, gain, newCost }
-        }
-      }
-
-      if (!best) break
-
-      transfers.push({
-        out: toCard(best.outEl),
-        in: toCard(best.inEl),
-        xp_gain: best.gain,
-        price_delta: (playerMap.get(best.outEl)?.price ?? 0) - (playerMap.get(best.inEl)?.price ?? 0),
-      })
-
-      const idx = currentSquad.indexOf(best.outEl)
-      currentSquad[idx] = best.inEl
-      squadSet.delete(best.outEl)
-      squadSet.add(best.inEl)
-      currentCost = best.newCost
-    }
+    const squadCards = squad.filter((el) => playerMap.has(el)).map(toCard)
+    const pool = projections.filter((p) => playerMap.has(p.element)).map((p) => toCard(p.element))
+    const transfers = suggestTransfers(squadCards, pool, budget)
 
     res.json({ transfers })
   } catch (err) {
