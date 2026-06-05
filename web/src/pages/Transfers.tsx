@@ -6,6 +6,8 @@ import { roundPhase } from '../domain/squadValidator'
 import type { RoundPhase } from '../domain/squadValidator'
 import type { TransferSuggestion, SquadPlayer, TransferCard } from '../types/wc'
 import BrowseAllModal from '../components/shared/BrowseAllModal'
+import JerseyIcon from '../components/shared/JerseyIcon'
+import { getKit } from '../data/teamColors'
 
 const POS_COLOR: Record<string, string> = {
   GK: 'text-yellow-400',
@@ -45,9 +47,12 @@ function SquadList({
               <button
                 key={p.element}
                 onClick={() => onSelectOut(p)}
-                className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left group last:border-0"
+                className="w-full flex items-center gap-3 px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left group last:border-0"
               >
-                <div className="min-w-0">
+                <div className="shrink-0">
+                  <JerseyIcon {...getKit(p.team_abbr)} size={22} eliminated={eliminatedSquadIds.has(p.squad_id)} />
+                </div>
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-slate-100 flex items-center gap-2">
                     {p.name}
                     {eliminatedSquadIds.has(p.squad_id) && (

@@ -292,8 +292,8 @@ app.post('/api/chat', async (req, res) => {
 
 <rules>
 Scoring: Goals — GK 9pts, DEF 7pts, MID 6pts, FWD 5pts. Assist 3pts. Clean sheet — GK/DEF 5pts, MID 1pt, FWD 0pt. Appearance ≥60min 2pts, <60min 1pt. GK +1pt/3 saves. Yellow −1pt, red −2pt. Scouting bonus +2pts (≥4pts AND <5% owned).
-Chips: Wildcard (free full reset), 12th Man (bench scores full), Max Captain (3× not 2×), Qualification Booster (nation qualifies → all their players boosted), Mystery Booster (random on activation).
-Budget: £100m group stage, £105m from R32. Country limit: 3 group / 4 R32 / 5 R16 / 6 QF / 8 SF+Final. Extra transfers: −3pts each.
+Chips: Wildcard (free full reset, not usable in R32), 12th Man (pick one bench player to score for your team), Max Captain (highest scorer in XI auto-captained), Qualification Booster (+2pts to XI players who progress, R32+ only), Mystery Booster (revealed at R32).
+Budget: £100m group stage, £105m from R32. Country limit: 3 group+R32 / 4 R16 / 5 QF / 6 SF / 8 Final. Extra transfers: −3pts each.
 </rules>
 
 <squad>${squadNames?.length ? squadNames.join(', ') : 'not set'}</squad>`

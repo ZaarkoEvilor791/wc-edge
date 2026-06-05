@@ -1,11 +1,15 @@
 import clsx from 'clsx'
 import type { SquadPlayer } from '../../types/wc'
+import JerseyIcon from './JerseyIcon'
+import { getKit } from '../../data/teamColors'
 
 interface Props {
   player: SquadPlayer
   xp: number
   isBench?: boolean
   isCaptain?: boolean
+  isViceCaptain?: boolean
+  eliminated?: boolean
   onClick: () => void
 }
 
@@ -14,27 +18,42 @@ function surname(name: string): string {
   return parts[parts.length - 1].slice(0, 10)
 }
 
-export default function PitchPlayerCard({ player, xp, isBench, isCaptain, onClick }: Props) {
+export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isViceCaptain, eliminated, onClick }: Props) {
+  const kit = getKit(player.team_abbr)
+
   return (
     <button
       onClick={onClick}
       className={clsx(
-        'flex flex-col items-center rounded-lg border px-1 py-1 text-center transition-colors hover:bg-slate-800',
+        'relative flex flex-col items-center rounded-lg border px-1 pt-1 pb-1 text-center transition-colors hover:bg-slate-800/60',
         'w-[72px] sm:w-[72px]',
         isBench
           ? 'border-slate-700 bg-slate-900/60'
-          : 'border-accent/30 bg-slate-900',
+          : 'border-slate-700/40 bg-slate-950',
       )}
     >
-      <span className="w-full truncate text-[10px] font-semibold text-slate-100 leading-tight">
+      {/* Captain / VC badge */}
+      {(isCaptain || isViceCaptain) && (
+        <span className="absolute top-0.5 right-1 text-[9px] font-bold text-accent leading-none">
+          {isCaptain ? '©' : 'VC'}
+        </span>
+      )}
+
+      {/* Jersey icon */}
+      <JerseyIcon
+        primary={kit.primary}
+        secondary={kit.secondary}
+        pattern={kit.pattern}
+        size={34}
+        eliminated={eliminated}
+      />
+
+      {/* Name */}
+      <span className="mt-0.5 w-full truncate text-[10px] font-semibold text-slate-100 leading-tight">
         {surname(player.name)}
-        {isCaptain && (
-          <span className="ml-0.5 text-[9px] font-bold text-accent">©</span>
-        )}
       </span>
-      <span className="text-[9px] text-slate-400 leading-tight hidden sm:block">
-        £{player.price.toFixed(1)}m
-      </span>
+
+      {/* xP */}
       <span className={clsx(
         'text-[10px] font-medium leading-tight',
         isBench ? 'text-slate-400' : 'text-accent',

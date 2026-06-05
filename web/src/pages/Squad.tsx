@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import clsx from 'clsx'
-import { useSuggestedSquad, useProjections, useCurrentRound } from '../hooks/useWC'
+import { useSuggestedSquad, useProjections, useCurrentRound, useTeams } from '../hooks/useWC'
 import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
@@ -192,6 +192,11 @@ export default function Squad() {
   const totalCost = displaySquad.reduce((s, p) => s + p.price, 0)
   const budgetPct = Math.min(100, (totalCost / 100) * 100)
 
+  const { data: teams } = useTeams()
+  const eliminatedSquadIds = new Set(
+    (teams ?? []).filter(t => !t.is_active).map(t => t.squad_id)
+  )
+
   const countByTeam: Record<string, number> = {}
   displaySquad.forEach((p) => { countByTeam[p.team_abbr] = (countByTeam[p.team_abbr] ?? 0) + 1 })
   const phase = roundPhase(currentRound?.stage ?? '')
@@ -269,6 +274,7 @@ export default function Squad() {
           projections={projections ?? []}
           round={round}
           captain={activeCaptain ?? null}
+          eliminatedSquadIds={eliminatedSquadIds}
           onPlayerClick={setSelectedPlayer}
         />
       )}

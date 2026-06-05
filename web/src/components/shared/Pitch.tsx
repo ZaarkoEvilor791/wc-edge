@@ -7,6 +7,7 @@ interface Props {
   projections: Projection[]
   round: number
   captain: number | null
+  eliminatedSquadIds?: Set<number>
   onPlayerClick: (player: SquadPlayer) => void
 }
 
@@ -19,12 +20,14 @@ function FormationRow({
   projections,
   round,
   captain,
+  eliminatedSquadIds,
   onPlayerClick,
 }: {
   players: SquadPlayer[]
   projections: Projection[]
   round: number
   captain: number | null
+  eliminatedSquadIds?: Set<number>
   onPlayerClick: (p: SquadPlayer) => void
 }) {
   return (
@@ -35,6 +38,7 @@ function FormationRow({
           player={p}
           xp={xpFor(p, projections, round)}
           isCaptain={p.element === captain}
+          eliminated={eliminatedSquadIds?.has(p.squad_id)}
           onClick={() => onPlayerClick(p)}
         />
       ))}
@@ -42,7 +46,7 @@ function FormationRow({
   )
 }
 
-export default function Pitch({ players, projections, round, captain, onPlayerClick }: Props) {
+export default function Pitch({ players, projections, round, captain, eliminatedSquadIds, onPlayerClick }: Props) {
   const { xi, bench } = getXI(players, projections, round)
 
   const gk = xi.filter((p) => p.position === 'GK')
@@ -90,10 +94,10 @@ export default function Pitch({ players, projections, round, captain, onPlayerCl
 
         {/* Player rows */}
         <div className="relative flex flex-col gap-3 px-3 py-4">
-          <FormationRow players={fwd} projections={projections} round={round} captain={captain} onPlayerClick={onPlayerClick} />
-          <FormationRow players={mid} projections={projections} round={round} captain={captain} onPlayerClick={onPlayerClick} />
-          <FormationRow players={def} projections={projections} round={round} captain={captain} onPlayerClick={onPlayerClick} />
-          <FormationRow players={gk} projections={projections} round={round} captain={captain} onPlayerClick={onPlayerClick} />
+          <FormationRow players={fwd} projections={projections} round={round} captain={captain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} />
+          <FormationRow players={mid} projections={projections} round={round} captain={captain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} />
+          <FormationRow players={def} projections={projections} round={round} captain={captain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} />
+          <FormationRow players={gk} projections={projections} round={round} captain={captain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} />
         </div>
       </div>
 
@@ -109,6 +113,7 @@ export default function Pitch({ players, projections, round, captain, onPlayerCl
               player={p}
               xp={xpFor(p, projections, round)}
               isBench
+              eliminated={eliminatedSquadIds?.has(p.squad_id)}
               onClick={() => onPlayerClick(p)}
             />
           ))}

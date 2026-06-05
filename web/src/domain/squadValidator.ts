@@ -3,7 +3,7 @@ import type { SquadPlayer } from '../types/wc'
 export type RoundPhase = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'
 
 export const COUNTRY_LIMIT: Record<RoundPhase, number> = {
-  group: 3, r32: 4, r16: 5, qf: 6, sf: 8, final: 8,
+  group: 3, r32: 3, r16: 4, qf: 5, sf: 6, final: 8,
 }
 
 const POS_REQUIRED: Record<string, number> = { GK: 2, DEF: 5, MID: 5, FWD: 3 }

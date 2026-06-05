@@ -88,23 +88,24 @@ describe('validateSquad', () => {
       expect(validateSquad(squadWithNFromTeam(4), 'group').countryViolations).toContain('ENG')
     })
 
-    it('r32: 4 allowed, 5 is violation', () => {
-      expect(validateSquad(squadWithNFromTeam(4), 'r32').countryViolations).toHaveLength(0)
-      expect(validateSquad(squadWithNFromTeam(5), 'r32').countryViolations).toContain('ENG')
+    it('r32: 3 allowed, 4 is violation (same as group)', () => {
+      expect(validateSquad(squadWithNFromTeam(3), 'r32').countryViolations).toHaveLength(0)
+      expect(validateSquad(squadWithNFromTeam(4), 'r32').countryViolations).toContain('ENG')
     })
 
-    it('r16: 5 allowed, 6 is violation', () => {
-      expect(validateSquad(squadWithNFromTeam(5), 'r16').countryViolations).toHaveLength(0)
-      expect(validateSquad(squadWithNFromTeam(6), 'r16').countryViolations).toContain('ENG')
+    it('r16: 4 allowed, 5 is violation', () => {
+      expect(validateSquad(squadWithNFromTeam(4), 'r16').countryViolations).toHaveLength(0)
+      expect(validateSquad(squadWithNFromTeam(5), 'r16').countryViolations).toContain('ENG')
     })
 
-    it('qf: 6 allowed, 7 is violation', () => {
-      expect(validateSquad(squadWithNFromTeam(6), 'qf').countryViolations).toHaveLength(0)
-      expect(validateSquad(squadWithNFromTeam(7), 'qf').countryViolations).toContain('ENG')
+    it('qf: 5 allowed, 6 is violation', () => {
+      expect(validateSquad(squadWithNFromTeam(5), 'qf').countryViolations).toHaveLength(0)
+      expect(validateSquad(squadWithNFromTeam(6), 'qf').countryViolations).toContain('ENG')
     })
 
-    it('sf and final: 8 allowed (entire squad from one nation is fine)', () => {
-      expect(validateSquad(squadWithNFromTeam(8), 'sf').countryViolations).toHaveLength(0)
+    it('sf: 6 allowed, 7 is violation; final: 8 allowed', () => {
+      expect(validateSquad(squadWithNFromTeam(6), 'sf').countryViolations).toHaveLength(0)
+      expect(validateSquad(squadWithNFromTeam(7), 'sf').countryViolations).toContain('ENG')
       expect(validateSquad(squadWithNFromTeam(8), 'final').countryViolations).toHaveLength(0)
     })
   })
@@ -146,10 +147,10 @@ describe('roundPhase', () => {
 describe('COUNTRY_LIMIT', () => {
   it('has correct limits for all phases', () => {
     expect(COUNTRY_LIMIT.group).toBe(3)
-    expect(COUNTRY_LIMIT.r32).toBe(4)
-    expect(COUNTRY_LIMIT.r16).toBe(5)
-    expect(COUNTRY_LIMIT.qf).toBe(6)
-    expect(COUNTRY_LIMIT.sf).toBe(8)
+    expect(COUNTRY_LIMIT.r32).toBe(3)   // R32 same as group (confirmed via official rules)
+    expect(COUNTRY_LIMIT.r16).toBe(4)
+    expect(COUNTRY_LIMIT.qf).toBe(5)
+    expect(COUNTRY_LIMIT.sf).toBe(6)
     expect(COUNTRY_LIMIT.final).toBe(8)
   })
 })
