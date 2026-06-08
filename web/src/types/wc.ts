@@ -110,6 +110,5 @@ export interface TeamFdr {
 export type SquadState = {
   squad: SquadPlayer[]
   captain: number | null   // element id
-  bench: number[]          // element ids
   budget: number
 }

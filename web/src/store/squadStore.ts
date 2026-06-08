@@ -6,7 +6,6 @@ interface SquadStore {
   squad: SquadPlayer[]
   captain: number | null
   viceCaptain: number | null
-  bench: number[]
   budget: number
   setSquad: (squad: SquadPlayer[]) => void
   setCaptain: (element: number) => void
@@ -20,7 +19,6 @@ export const useSquadStore = create<SquadStore>()(
       squad: [],
       captain: null,
       viceCaptain: null,
-      bench: [],
       budget: 100,
       setSquad: (squad) => {
         // Deduplicate by element before storing

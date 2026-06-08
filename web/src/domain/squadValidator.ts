@@ -1,12 +1,11 @@
 import type { SquadPlayer } from '../types/wc'
+import { POS_REQUIRED } from '../config/gameRules'
 
 export type RoundPhase = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'
 
 export const COUNTRY_LIMIT: Record<RoundPhase, number> = {
   group: 3, r32: 3, r16: 4, qf: 5, sf: 6, final: 8,
 }
-
-const POS_REQUIRED: Record<string, number> = { GK: 2, DEF: 5, MID: 5, FWD: 3 }
 
 export interface ValidationResult {
   valid: boolean

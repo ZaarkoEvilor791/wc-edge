@@ -7,12 +7,11 @@ import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
 import { getXI, swapInSquad } from '../utils/squad'
 import { roundPhase, COUNTRY_LIMIT } from '../domain/squadValidator'
+import { POS_ORDER } from '../config/gameRules'
 import Spinner from '../components/shared/Spinner'
 import StatCard from '../components/shared/StatCard'
 import Pitch from '../components/shared/Pitch'
 import PlayerProfileModal from '../components/shared/PlayerProfileModal'
-
-const POS_ORDER = ['GK', 'DEF', 'MID', 'FWD']
 
 function PlayerCard({ player, isCaptain, onClick }: { player: SquadPlayer; isCaptain: boolean; onClick: () => void }) {
   return (
@@ -186,7 +185,7 @@ export default function Squad() {
 
   const displaySquad = squad.length > 0 ? squad : data.squad_json
   const activeCaptain = captain ?? [...displaySquad].sort((a, b) => b.xp - a.xp)[0]?.element
-  const { xi, bench } = getXI(displaySquad, projections ?? [], round)
+  const { xi, bench } = getXI(displaySquad)
   const selectedIsBench = bench.some((p) => p.element === selectedPlayer?.element)
   const swapTargetIsBench = bench.some((p) => p.element === swapTarget?.element)
 

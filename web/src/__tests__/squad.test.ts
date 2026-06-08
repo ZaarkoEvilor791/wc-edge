@@ -28,25 +28,25 @@ const SQUAD = [
 
 describe('getXI', () => {
   it('puts first GK in XI, second on bench', () => {
-    const { xi, bench } = getXI(SQUAD, [], 1)
+    const { xi, bench } = getXI(SQUAD)
     expect(xi.filter((p) => p.position === 'GK').map((p) => p.element)).toEqual([1])
     expect(bench.filter((p) => p.position === 'GK').map((p) => p.element)).toEqual([2])
   })
 
   it('puts first 4 DEF in XI, 5th on bench', () => {
-    const { xi, bench } = getXI(SQUAD, [], 1)
+    const { xi, bench } = getXI(SQUAD)
     expect(xi.filter((p) => p.position === 'DEF').map((p) => p.element)).toEqual([3, 4, 5, 6])
     expect(bench.filter((p) => p.position === 'DEF').map((p) => p.element)).toEqual([7])
   })
 
   it('puts 2 FWD in XI, 1 on bench', () => {
-    const { xi, bench } = getXI(SQUAD, [], 1)
+    const { xi, bench } = getXI(SQUAD)
     expect(xi.filter((p) => p.position === 'FWD')).toHaveLength(2)
     expect(bench.filter((p) => p.position === 'FWD')).toHaveLength(1)
   })
 
   it('XI has 11 players, bench has 4', () => {
-    const { xi, bench } = getXI(SQUAD, [], 1)
+    const { xi, bench } = getXI(SQUAD)
     expect(xi).toHaveLength(11)
     expect(bench).toHaveLength(4)
   })
@@ -65,7 +65,7 @@ describe('swapInSquad', () => {
 
   it('promotes bench GK to starter position when swapped', () => {
     const swapped = swapInSquad(SQUAD, 1, 2)  // GK starter ↔ bench GK
-    const { xi: xiAfter } = getXI(swapped, [], 1)
+    const { xi: xiAfter } = getXI(swapped)
     expect(xiAfter.find((p) => p.position === 'GK')?.element).toBe(2)
   })
 
@@ -83,7 +83,7 @@ describe('swapInSquad', () => {
   it('swapping starter and bench DEF changes XI correctly', () => {
     // 7 is bench DEF, 3 is starter DEF
     const swapped = swapInSquad(SQUAD, 3, 7)
-    const { xi, bench } = getXI(swapped, [], 1)
+    const { xi, bench } = getXI(swapped)
     expect(bench.find((p) => p.element === 3)).toBeTruthy()
     expect(xi.find((p) => p.element === 7)).toBeTruthy()
   })

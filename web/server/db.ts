@@ -84,9 +84,12 @@ export async function matchPlayersByName(rawName: string, position?: string) {
 
   // When position is known (from screenshot pitch layout / bench badges), filter to that
   // position first. Falls back to position-agnostic search if no rows are found.
-  const posFilter = position ? `AND p.position = '${position}'` : ''
+  // Use $3 parameterized placeholder — never interpolate position into SQL.
+  const posFilter = position ? 'AND p.position = $3' : ''
+  const baseParams: unknown[] = [subLike, prefLike]
+  const posParams: unknown[] = position ? [subLike, prefLike, position] : baseParams
 
-  const tryMatch = async (extraFilter: string) => {
+  const tryMatch = async (extraFilter: string, params: unknown[]) => {
     const rows = await q<{
       element: number; position: string; price: number; squad_id: number
       name: string; team_abbr: string; xp: number; low_sample: boolean
@@ -120,16 +123,16 @@ export async function matchPlayersByName(rawName: string, position?: string) {
         END,
         p.price DESC
       LIMIT 1
-    `, [subLike, prefLike])
+    `, params)
     return rows[0] ?? null
   }
 
   // Try position-filtered match first; fall back to position-agnostic if no result
   if (posFilter) {
-    const hit = await tryMatch(posFilter)
+    const hit = await tryMatch(posFilter, posParams)
     if (hit) return hit
   }
-  return tryMatch('')
+  return tryMatch('', baseParams)
 }
 
 export async function getTeamFdr(round: number) {

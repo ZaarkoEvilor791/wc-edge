@@ -47,7 +47,7 @@ function FormationRow({
 }
 
 export default function Pitch({ players, projections, round, captain, eliminatedSquadIds, onPlayerClick }: Props) {
-  const { xi, bench } = getXI(players, projections, round)
+  const { xi, bench } = getXI(players)
 
   const gk = xi.filter((p) => p.position === 'GK')
   const def = xi.filter((p) => p.position === 'DEF')
