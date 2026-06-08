@@ -145,6 +145,7 @@ export default function Squad() {
   const currentRound = useCurrentRound()
   const round = currentRound?.id ?? 1
   const { data: projections } = useProjections(round)
+  const { data: teams } = useTeams()
 
   const [viewMode, setViewMode] = useState<'pitch' | 'list'>('pitch')
   const [selectedPlayer, setSelectedPlayer] = useState<SquadPlayer | null>(null)
@@ -192,7 +193,6 @@ export default function Squad() {
   const totalCost = displaySquad.reduce((s, p) => s + p.price, 0)
   const budgetPct = Math.min(100, (totalCost / 100) * 100)
 
-  const { data: teams } = useTeams()
   const eliminatedSquadIds = new Set(
     (teams ?? []).filter(t => !t.is_active).map(t => t.squad_id)
   )

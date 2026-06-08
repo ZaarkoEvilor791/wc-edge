@@ -62,8 +62,27 @@ export async function getSuggestedSquad() {
   return rows[0] ?? null
 }
 
-export async function matchPlayersByName(name: string) {
-  const like = `%${name.toLowerCase()}%`
+export async function matchPlayersByName(rawName: string) {
+  // Normalize: strip FIFA UI truncation ("..."), remove diacritics, replace Unicode
+  // lookalikes (e.g. Cyrillic і → i) so "Martínez", "Nuno Men...", "Cherkі" all match.
+  const wasTruncated = rawName.trim().endsWith('...')
+  const cleaned = rawName
+    .trim()
+    .replace(/\.{2,}$/, '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')  // strip combining diacritics
+    .replace(/[^\x00-\x7F]/g, 'i')   // non-ASCII lookalikes (Cyrillic і etc.) → i
+    .toLowerCase()
+    .trim()
+
+  if (!cleaned) return null
+
+  // $1 = substring match (full names), $2 = prefix match (truncated names)
+  // Always try both; prefer substring hits in ORDER BY.
+  const subLike = `%${cleaned}%`
+  const prefLike = `${cleaned}%`
+
   const rows = await q<{
     element: number; position: string; price: number; squad_id: number
     name: string; team_abbr: string; xp: number; low_sample: boolean
@@ -80,12 +99,23 @@ export async function matchPlayersByName(name: string) {
     FROM players p
     LEFT JOIN teams t ON t.squad_id = p.squad_id
     LEFT JOIN (SELECT element, xp FROM projections WHERE round = 1) proj ON proj.element = p.element
-    WHERE lower(COALESCE(p.known_name, '')) ILIKE $1
-       OR lower(COALESCE(p.last_name, '')) ILIKE $1
-       OR lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,''))) ILIKE $1
-    ORDER BY p.price DESC
+    WHERE
+      unaccent(lower(COALESCE(p.known_name, '')))                                              ILIKE $1
+      OR unaccent(lower(COALESCE(p.last_name, '')))                                            ILIKE $1
+      OR unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $1
+      OR unaccent(lower(COALESCE(p.known_name, '')))                                          ILIKE $2
+      OR unaccent(lower(COALESCE(p.last_name, '')))                                            ILIKE $2
+      OR unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $2
+    ORDER BY
+      CASE
+        WHEN unaccent(lower(COALESCE(p.known_name, '')))                                              ILIKE $1 THEN 0
+        WHEN unaccent(lower(COALESCE(p.last_name, '')))                                              ILIKE $1 THEN 0
+        WHEN unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $1 THEN 0
+        ELSE 1
+      END,
+      p.price DESC
     LIMIT 1
-  `, [like])
+  `, [subLike, prefLike])
   return rows[0] ?? null
 }
 

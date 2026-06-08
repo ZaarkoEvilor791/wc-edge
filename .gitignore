@@ -8,3 +8,4 @@ engine/engine/__pycache__/
 *.pyc
 .DS_Store
 __pycache__/
+*.log
