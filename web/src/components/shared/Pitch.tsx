@@ -1,6 +1,6 @@
 import type { SquadPlayer, Projection } from '../../types/wc'
 import { getXI } from '../../utils/squad'
-import { POS_COUNT } from '../../config/gameRules'
+import { POS_COUNT, POS_REQUIRED } from '../../config/gameRules'
 import PitchPlayerCard from './PitchPlayerCard'
 import EmptySlotCard from './EmptySlotCard'
 
@@ -140,16 +140,32 @@ export default function Pitch({
           Bench
         </p>
         <div className="flex gap-2">
-          {bench.map((p) => (
-            <PitchPlayerCard
-              key={p.element}
-              player={p}
-              xp={xpFor(p, projections, round)}
-              isBench
-              eliminated={eliminatedSquadIds?.has(p.squad_id)}
-              onClick={() => onPlayerClick(p)}
-            />
-          ))}
+          {(['GK', 'DEF', 'MID', 'FWD'] as const).flatMap((pos) => {
+            const benchForPos = bench.filter((p) => p.position === pos)
+            const expected = Math.max(0, (POS_REQUIRED[pos] ?? 0) - (counts[pos] ?? 1))
+            const missing = Math.max(0, expected - benchForPos.length)
+            return [
+              ...benchForPos.map((p) => (
+                <PitchPlayerCard
+                  key={p.element}
+                  player={p}
+                  xp={xpFor(p, projections, round)}
+                  isBench
+                  eliminated={eliminatedSquadIds?.has(p.squad_id)}
+                  onClick={() => onPlayerClick(p)}
+                />
+              )),
+              ...(onEmptySlotClick
+                ? Array.from({ length: missing }).map((_, i) => (
+                    <EmptySlotCard
+                      key={`bench-empty-${pos}-${i}`}
+                      position={pos}
+                      onClick={() => onEmptySlotClick(pos)}
+                    />
+                  ))
+                : []),
+            ]
+          })}
         </div>
       </div>
     </div>

@@ -47,10 +47,12 @@ export const useSquadStore = create<SquadStore>()(
     }),
     {
       name: 'wc-edge-squad',
-      onRehydrateStorage: () => (state) => {
-        if (state && !isValidFormation(state.formationCounts)) {
-          state.formationCounts = DEFAULT_FORMATION
+      version: 1,
+      migrate: (persistedState: any) => {
+        if (!isValidFormation(persistedState?.formationCounts)) {
+          return { ...persistedState, formationCounts: DEFAULT_FORMATION }
         }
+        return persistedState
       },
     },
   ),
