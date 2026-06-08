@@ -338,7 +338,7 @@ app.post('/api/squad/from-screenshot', async (req, res) => {
     const SCREENSHOT_PREFILL = '{"players":['
     const visionRes = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 128,
+      max_tokens: 256,
       messages: [
         {
           role: 'user',
@@ -349,7 +349,7 @@ app.post('/api/squad/from-screenshot', async (req, res) => {
             },
             {
               type: 'text',
-              text: 'List every player name visible in this FIFA Fantasy squad screenshot as JSON.',
+              text: 'List every player name and position (GK, DEF, MID, or FWD) visible in this FIFA Fantasy squad screenshot as JSON. Use the pitch rows and bench badges to determine position.',
             },
           ],
         },
@@ -357,25 +357,31 @@ app.post('/api/squad/from-screenshot', async (req, res) => {
       ],
     })
     const completion = visionRes.content.find((b) => b.type === 'text')?.text ?? ''
-    let names: string[]
+    let players: { name: string; position?: string }[]
     try {
-      const parsed = JSON.parse(SCREENSHOT_PREFILL + completion) as { players: string[] }
-      names = parsed.players
+      const parsed = JSON.parse(SCREENSHOT_PREFILL + completion) as { players: unknown[] }
+      players = parsed.players.map((p) => {
+        if (typeof p === 'string') return { name: p }
+        const obj = p as Record<string, unknown>
+        return { name: String(obj.name ?? ''), position: typeof obj.position === 'string' ? obj.position.toUpperCase() : undefined }
+      }).filter((p) => p.name.trim().length > 0)
     } catch {
       return res.status(422).json({ error: 'Could not parse player names from screenshot' })
     }
-    // Coerce to strings — model sometimes returns objects like {name:"X"} instead of "X"
-    const nameStrings: string[] = names
-      .map((n) => (typeof n === 'string' ? n : typeof n === 'object' && n !== null ? String((n as Record<string, unknown>).name ?? '') : String(n)))
-      .filter((n) => n.trim().length > 0)
-    if (nameStrings.length === 0) {
+    if (players.length === 0) {
       return res.status(422).json({ error: 'No player names found in screenshot' })
     }
-    const results = await Promise.all(nameStrings.map(async (name) => ({ name, match: await matchPlayersByName(name) })))
+    const VALID_POS = new Set(['GK', 'DEF', 'MID', 'FWD'])
+    const results = await Promise.all(
+      players.map(async ({ name, position }) => ({
+        name,
+        match: await matchPlayersByName(name, position && VALID_POS.has(position) ? position : undefined),
+      }))
+    )
     res.json({
       matched: results.filter((r) => r.match).map((r) => r.match),
       unmatched: results.filter((r) => !r.match).map((r) => r.name),
-      total: nameStrings.length,
+      total: players.length,
     })
   } catch (err) {
     res.status(502).json({ error: 'Screenshot processing failed', detail: String(err) })

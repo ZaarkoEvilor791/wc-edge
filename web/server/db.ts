@@ -62,7 +62,7 @@ export async function getSuggestedSquad() {
   return rows[0] ?? null
 }
 
-export async function matchPlayersByName(rawName: string) {
+export async function matchPlayersByName(rawName: string, position?: string) {
   // Normalize: strip FIFA UI truncation ("..."), remove diacritics, replace Unicode
   // lookalikes (e.g. Cyrillic і → i) so "Martínez", "Nuno Men...", "Cherkі" all match.
   const cleaned = rawName
@@ -82,40 +82,54 @@ export async function matchPlayersByName(rawName: string) {
   const subLike = `%${cleaned}%`
   const prefLike = `${cleaned}%`
 
-  const rows = await q<{
-    element: number; position: string; price: number; squad_id: number
-    name: string; team_abbr: string; xp: number; low_sample: boolean
-  }>(`
-    SELECT
-      p.element,
-      p.position,
-      p.price,
-      p.squad_id,
-      COALESCE(p.known_name, TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,''))) AS name,
-      COALESCE(t.abbr, '') AS team_abbr,
-      COALESCE(proj.xp, 0) AS xp,
-      false AS low_sample
-    FROM players p
-    LEFT JOIN teams t ON t.squad_id = p.squad_id
-    LEFT JOIN (SELECT element, xp FROM projections WHERE round = 1) proj ON proj.element = p.element
-    WHERE
-      unaccent(lower(COALESCE(p.known_name, '')))                                              ILIKE $1
-      OR unaccent(lower(COALESCE(p.last_name, '')))                                            ILIKE $1
-      OR unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $1
-      OR unaccent(lower(COALESCE(p.known_name, '')))                                          ILIKE $2
-      OR unaccent(lower(COALESCE(p.last_name, '')))                                            ILIKE $2
-      OR unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $2
-    ORDER BY
-      CASE
-        WHEN unaccent(lower(COALESCE(p.known_name, '')))                                              ILIKE $1 THEN 0
-        WHEN unaccent(lower(COALESCE(p.last_name, '')))                                              ILIKE $1 THEN 0
-        WHEN unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $1 THEN 0
-        ELSE 1
-      END,
-      p.price DESC
-    LIMIT 1
-  `, [subLike, prefLike])
-  return rows[0] ?? null
+  // When position is known (from screenshot pitch layout / bench badges), filter to that
+  // position first. Falls back to position-agnostic search if no rows are found.
+  const posFilter = position ? `AND p.position = '${position}'` : ''
+
+  const tryMatch = async (extraFilter: string) => {
+    const rows = await q<{
+      element: number; position: string; price: number; squad_id: number
+      name: string; team_abbr: string; xp: number; low_sample: boolean
+    }>(`
+      SELECT
+        p.element,
+        p.position,
+        p.price,
+        p.squad_id,
+        COALESCE(p.known_name, TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,''))) AS name,
+        COALESCE(t.abbr, '') AS team_abbr,
+        COALESCE(proj.xp, 0) AS xp,
+        false AS low_sample
+      FROM players p
+      LEFT JOIN teams t ON t.squad_id = p.squad_id
+      LEFT JOIN (SELECT element, xp FROM projections WHERE round = 1) proj ON proj.element = p.element
+      WHERE (
+        unaccent(lower(COALESCE(p.known_name, '')))                                              ILIKE $1
+        OR unaccent(lower(COALESCE(p.last_name, '')))                                            ILIKE $1
+        OR unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $1
+        OR unaccent(lower(COALESCE(p.known_name, '')))                                          ILIKE $2
+        OR unaccent(lower(COALESCE(p.last_name, '')))                                            ILIKE $2
+        OR unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $2
+      ) ${extraFilter}
+      ORDER BY
+        CASE
+          WHEN unaccent(lower(COALESCE(p.known_name, '')))                                              ILIKE $1 THEN 0
+          WHEN unaccent(lower(COALESCE(p.last_name, '')))                                              ILIKE $1 THEN 0
+          WHEN unaccent(lower(TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')))) ILIKE $1 THEN 0
+          ELSE 1
+        END,
+        p.price DESC
+      LIMIT 1
+    `, [subLike, prefLike])
+    return rows[0] ?? null
+  }
+
+  // Try position-filtered match first; fall back to position-agnostic if no result
+  if (posFilter) {
+    const hit = await tryMatch(posFilter)
+    if (hit) return hit
+  }
+  return tryMatch('')
 }
 
 export async function getTeamFdr(round: number) {
