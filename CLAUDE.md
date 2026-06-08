@@ -14,10 +14,10 @@
 
 ---
 
-## Current State (Session 20 complete — Manual transfer flow shipped)
+## Current State (Session 21 complete — Screenshot name matching fix)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `5f583e7`
+Latest commit: `9e942ac`
 
 **Tests:** 51 vitest (4 files) + 31 pytest — all green.
 
@@ -34,6 +34,21 @@ Latest commit: `5f583e7`
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+
+---
+
+## Session 21 — What was shipped (commit `9e942ac`)
+
+**Web — `server/db.ts`:**
+- `matchPlayersByName` overhauled for screenshot reliability: strips FIFA UI truncation (`...`), removes combining diacritics via NFD normalization, maps Cyrillic lookalikes → ASCII before querying.
+- Uses `unaccent()` + ILIKE on both substring (`%name%`) and prefix (`name%`) patterns so truncated names like "Nuno Men..." and accented names like "Martínez" resolve correctly.
+- Prefix hits ranked below substring hits in ORDER BY to prefer exact matches.
+
+**Web — `src/pages/Squad.tsx`:**
+- Moved `useTeams()` hook call above `useState` declarations (React rules of hooks ordering fix).
+
+**Misc:**
+- Added `*.log` to `.gitignore`.
 
 ---
 
@@ -135,15 +150,16 @@ Latest commit: `5f583e7`
 
 ## Next Session Priorities
 
-1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
-2. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
-3. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
-4. **Tournament operations** — mark eliminated teams as the tournament progresses:
+1. **Fix Squad page** — broken as of Session 21, needs diagnosis.
+2. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
+3. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
+4. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
+5. **Tournament operations** — mark eliminated teams as the tournament progresses:
    ```sql
    UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
    ```
    Engine cron auto-refreshes projections at 04:00 + 18:00 UTC.
-4. **Manual engine trigger** if projections go stale:
+6. **Manual engine trigger** if projections go stale:
    ```bash
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
    # With post-group FDR update (run after group stage ends ~June 27):
