@@ -12,8 +12,9 @@ import Spinner from '../components/shared/Spinner'
 import StatCard from '../components/shared/StatCard'
 import Pitch from '../components/shared/Pitch'
 import PlayerProfileModal from '../components/shared/PlayerProfileModal'
+import UnmatchedBanner from '../components/shared/UnmatchedBanner'
 
-function PlayerCard({ player, isCaptain, onClick }: { player: SquadPlayer; isCaptain: boolean; onClick: () => void }) {
+function PlayerCard({ player, isCaptain, eliminated, onClick }: { player: SquadPlayer; isCaptain: boolean; eliminated: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -26,15 +27,16 @@ function PlayerCard({ player, isCaptain, onClick }: { player: SquadPlayer; isCap
         <span className="w-8 text-center text-xs font-bold text-slate-500">{player.position}</span>
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-slate-100">{player.name}</span>
+            <span className={clsx('text-sm font-medium', eliminated ? 'text-slate-400' : 'text-slate-100')}>{player.name}</span>
             {isCaptain && <span className="rounded bg-accent px-1 text-[10px] font-bold text-accent-fg">C</span>}
             {player.low_sample && <span className="rounded bg-slate-700 px-1 text-[10px] text-slate-400">?</span>}
+            {eliminated && <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Eliminated</span>}
           </div>
           <span className="text-xs text-slate-500">{player.team_abbr}</span>
         </div>
       </div>
       <div className="text-right">
-        <div className="text-sm font-semibold text-accent">{player.xp.toFixed(1)} xP</div>
+        <div className={clsx('text-sm font-semibold', eliminated ? 'text-slate-500' : 'text-accent')}>{player.xp.toFixed(1)} xP</div>
         <div className="text-xs text-slate-500">£{player.price.toFixed(1)}m</div>
       </div>
     </button>
@@ -67,12 +69,14 @@ function SwapDrawer({
   target,
   options,
   subIn,
+  eliminatedSquadIds,
   onSwap,
   onCancel,
 }: {
   target: SquadPlayer
   options: SquadPlayer[]
   subIn: boolean
+  eliminatedSquadIds: Set<number>
   onSwap: (replacement: SquadPlayer) => void
   onCancel: () => void
 }) {
@@ -113,22 +117,32 @@ function SwapDrawer({
           </p>
         ) : (
           <div className="flex-1 space-y-2 overflow-y-auto">
-            {eligible.map((p) => (
-              <button
-                key={p.element}
-                onClick={() => onSwap(p)}
-                className="flex w-full items-center justify-between rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-left transition-colors hover:border-accent/50 hover:bg-slate-700"
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-100">{p.name}</p>
-                  <p className="text-xs text-slate-500">{p.team_abbr} · {p.position}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-accent">{p.xp.toFixed(1)} xP</p>
-                  <p className="text-xs text-slate-500">£{p.price.toFixed(1)}m</p>
-                </div>
-              </button>
-            ))}
+            {eligible.map((p) => {
+              const isEliminated = eliminatedSquadIds.has(p.squad_id)
+              return (
+                <button
+                  key={p.element}
+                  onClick={() => onSwap(p)}
+                  className="flex w-full items-center justify-between rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-left transition-colors hover:border-accent/50 hover:bg-slate-700"
+                >
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className={clsx('text-sm font-medium', isEliminated ? 'text-slate-400' : 'text-slate-100')}>{p.name}</p>
+                      {isEliminated && (
+                        <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                          Eliminated
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">{p.team_abbr} · {p.position}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={clsx('text-sm font-semibold', isEliminated ? 'text-slate-500' : 'text-accent')}>{p.xp.toFixed(1)} xP</p>
+                    <p className="text-xs text-slate-500">£{p.price.toFixed(1)}m</p>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>
@@ -195,6 +209,7 @@ export default function Squad() {
   const eliminatedSquadIds = new Set(
     (teams ?? []).filter(t => !t.is_active).map(t => t.squad_id)
   )
+  const eliminatedInSquad = displaySquad.filter(p => eliminatedSquadIds.has(p.squad_id))
 
   const countByTeam: Record<string, number> = {}
   displaySquad.forEach((p) => { countByTeam[p.team_abbr] = (countByTeam[p.team_abbr] ?? 0) + 1 })
@@ -229,6 +244,27 @@ export default function Squad() {
           </button>
         </div>
       </div>
+
+      {/* Eliminated players notification */}
+      {eliminatedInSquad.length > 0 && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-700/40 bg-amber-900/10 px-3 py-2.5">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 mt-0.5 text-amber-500">
+            <path d="M7 1L13 12H1L7 1z" strokeLinejoin="round" />
+            <path d="M7 5.5v3M7 10v.5" strokeLinecap="round" />
+          </svg>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-amber-400">
+              {eliminatedInSquad.length} eliminated player{eliminatedInSquad.length > 1 ? 's' : ''} in your squad
+            </p>
+            <p className="mt-0.5 text-xs text-amber-600/80 truncate">
+              {eliminatedInSquad.map(p => p.name).join(', ')} — head to Transfers to replace {eliminatedInSquad.length > 1 ? 'them' : 'them'}.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Unrecognised players notification */}
+      <UnmatchedBanner showTransferLink />
 
       {/* Stat cards */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -295,6 +331,7 @@ export default function Squad() {
                       key={p.element}
                       player={p}
                       isCaptain={p.element === activeCaptain}
+                      eliminated={eliminatedSquadIds.has(p.squad_id)}
                       onClick={() => setSelectedPlayer(p)}
                     />
                   ))}
@@ -330,6 +367,7 @@ export default function Squad() {
           target={swapTarget}
           options={swapTargetIsBench ? xi : bench}
           subIn={swapTargetIsBench}
+          eliminatedSquadIds={eliminatedSquadIds}
           onSwap={handleSwap}
           onCancel={() => setSwapTarget(null)}
         />

@@ -8,6 +8,10 @@ interface AppStore {
   setMobileMenuOpen: (v: boolean) => void
   wcOnboardingOpen: boolean
   setWcOnboardingOpen: (v: boolean) => void
+  // Non-persisted: names the OCR failed to match after screenshot upload
+  unmatchedNames: string[] | null
+  setUnmatchedNames: (names: string[]) => void
+  clearUnmatchedNames: () => void
 }
 
 export const useAppStore = create<AppStore>()(
@@ -19,6 +23,9 @@ export const useAppStore = create<AppStore>()(
       setMobileMenuOpen: (v) => set({ mobileMenuOpen: v }),
       wcOnboardingOpen: false,
       setWcOnboardingOpen: (v) => set({ wcOnboardingOpen: v }),
+      unmatchedNames: null,
+      setUnmatchedNames: (names) => set({ unmatchedNames: names.length > 0 ? names : null }),
+      clearUnmatchedNames: () => set({ unmatchedNames: null }),
     }),
     {
       name: 'wc-edge-storage',

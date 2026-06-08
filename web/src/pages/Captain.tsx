@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import clsx from 'clsx'
 import { useSquadStore } from '../store/squadStore'
-import { useProjections, useTeamFdr, useCurrentRound, useRounds } from '../hooks/useWC'
+import { useProjections, useTeamFdr, useCurrentRound, useRounds, useTeams } from '../hooks/useWC'
 
 const FDR_STYLE: Record<number, string> = {
   1: 'bg-emerald-500/20 text-emerald-400',
@@ -41,6 +41,11 @@ export default function Captain() {
   const round = currentRound?.id ?? 1
   const { data: projections } = useProjections(round)
   const { data: fdrData } = useTeamFdr(round)
+  const { data: teams } = useTeams()
+  const eliminatedSquadIds = useMemo(
+    () => new Set((teams ?? []).filter(t => !t.is_active).map(t => t.squad_id)),
+    [teams],
+  )
 
   const sorted = [...squad].sort((a, b) => b.xp - a.xp)
 
@@ -85,6 +90,7 @@ export default function Captain() {
           const proj = projMap.get(p.element)
           const fdr = fdrMap.get(p.squad_id)
           const variance = proj?.variance
+          const isEliminated = eliminatedSquadIds.has(p.squad_id)
 
           return (
             <button
@@ -101,10 +107,15 @@ export default function Captain() {
             >
               <span className="w-6 shrink-0 text-sm tabular-nums text-slate-500">{i + 1}</span>
               <div className="ml-3 min-w-0 flex-1">
-                <div className="text-sm font-medium text-slate-100">
+                <div className={clsx('flex items-center gap-1.5 text-sm font-medium', isEliminated ? 'text-slate-400' : 'text-slate-100')}>
                   {p.name}
-                  {i === 0 && captain !== p.element && (
-                    <span className="ml-2 text-xs text-accent">TOP PICK</span>
+                  {i === 0 && captain !== p.element && !isEliminated && (
+                    <span className="text-xs text-accent">TOP PICK</span>
+                  )}
+                  {isEliminated && (
+                    <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      Eliminated
+                    </span>
                   )}
                 </div>
                 <div className="text-xs text-slate-500">{p.position} · {p.team_abbr}</div>
@@ -123,7 +134,7 @@ export default function Captain() {
                 {captain === p.element && (
                   <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accent">C</span>
                 )}
-                <span className="w-16 text-right text-sm font-semibold text-accent">{p.xp.toFixed(1)} xP</span>
+                <span className={clsx('w-16 text-right text-sm font-semibold', isEliminated ? 'text-slate-500' : 'text-accent')}>{p.xp.toFixed(1)} xP</span>
               </div>
             </button>
           )

@@ -10,6 +10,7 @@ import BrowseAllModal from '../components/shared/BrowseAllModal'
 import JerseyIcon from '../components/shared/JerseyIcon'
 import { getKit } from '../data/teamColors'
 import Pitch from '../components/shared/Pitch'
+import UnmatchedBanner from '../components/shared/UnmatchedBanner'
 
 const POS_COLOR: Record<string, string> = {
   GK: 'text-yellow-400',
@@ -431,6 +432,9 @@ export default function Transfers() {
           <p className="text-slate-400">No squad loaded. Go to Squad page first.</p>
         </div>
       )}
+
+      {/* Unrecognised players notification */}
+      <UnmatchedBanner />
 
       {/* Squad list — primary UI */}
       {hasSquad && (

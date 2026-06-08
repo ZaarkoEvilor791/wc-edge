@@ -196,23 +196,31 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
                   {filtered.slice(0, 100).map((p) => {
                     const newCost = squadCost - outRef!.price + p.price
                     const overBudget = newCost > budget + 0.001
+                    const isEliminated = !p.is_active
                     const xpDelta = p.xp - outRef!.xp
                     return (
                       <button
                         key={p.element}
                         onClick={() => handleCandidateTap(p)}
-                        disabled={overBudget}
+                        disabled={overBudget || isEliminated}
                         className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-slate-100">{p.name}</p>
-                          <p className="text-xs text-slate-400">{p.team_abbr}</p>
+                          <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                            {p.team_abbr}
+                            {isEliminated && (
+                              <span className="rounded px-1 py-0.5 text-[10px] font-semibold uppercase bg-slate-700 text-slate-400">
+                                Eliminated
+                              </span>
+                            )}
+                          </p>
                         </div>
                         <div className="ml-3 text-right shrink-0 space-y-0.5">
                           <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
                           <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
-                          <p className={`text-xs font-semibold ${overBudget ? 'text-rose-400' : xpDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {overBudget ? 'Over budget' : `${xpDelta >= 0 ? '+' : ''}${xpDelta.toFixed(1)} xP`}
+                          <p className={`text-xs font-semibold ${isEliminated ? 'text-slate-500' : overBudget ? 'text-rose-400' : xpDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {isEliminated ? 'Not eligible' : overBudget ? 'Over budget' : `${xpDelta >= 0 ? '+' : ''}${xpDelta.toFixed(1)} xP`}
                           </p>
                         </div>
                       </button>
@@ -223,7 +231,7 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
                       onClick={() => setShowEliminated(true)}
                       className="w-full py-3 text-xs text-slate-500 hover:text-slate-300 border-t border-slate-800/60"
                     >
-                      Show {eliminatedHiddenCount} eliminated player{eliminatedHiddenCount > 1 ? 's' : ''}
+                      Show {eliminatedHiddenCount} eliminated player{eliminatedHiddenCount > 1 ? 's' : ''} (not eligible for transfer in)
                     </button>
                   )}
                 </>
@@ -318,31 +326,43 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
                     <p className="p-4 text-center text-sm text-slate-500">No players found</p>
                   ) : (
                     <>
-                      {filtered.slice(0, 100).map((p) => (
-                        <button
-                          key={p.element}
-                          onClick={() => handleCandidateTap(p)}
-                          className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-slate-100">{p.name}</p>
-                            <p className="text-xs text-slate-400">
-                              {p.team_abbr}{' '}
-                              <span className={`font-semibold ${POS_COLOR[p.position]}`}>{p.position}</span>
-                            </p>
-                          </div>
-                          <div className="ml-3 text-right shrink-0">
-                            <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
-                            <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
-                          </div>
-                        </button>
-                      ))}
+                      {filtered.slice(0, 100).map((p) => {
+                        const isEliminated = !p.is_active
+                        return (
+                          <button
+                            key={p.element}
+                            onClick={() => handleCandidateTap(p)}
+                            disabled={isEliminated}
+                            className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-slate-100">{p.name}</p>
+                              <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                                {p.team_abbr}{' '}
+                                <span className={`font-semibold ${POS_COLOR[p.position]}`}>{p.position}</span>
+                                {isEliminated && (
+                                  <span className="rounded px-1 py-0.5 text-[10px] font-semibold uppercase bg-slate-700 text-slate-400">
+                                    Eliminated
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <div className="ml-3 text-right shrink-0">
+                              <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
+                              <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
+                              {isEliminated && (
+                                <p className="text-[10px] text-slate-500">Not eligible</p>
+                              )}
+                            </div>
+                          </button>
+                        )
+                      })}
                       {eliminatedHiddenCount > 0 && (
                         <button
                           onClick={() => setShowEliminated(true)}
                           className="w-full py-3 text-xs text-slate-500 hover:text-slate-300 border-t border-slate-800/60"
                         >
-                          Show {eliminatedHiddenCount} eliminated player{eliminatedHiddenCount > 1 ? 's' : ''}
+                          Show {eliminatedHiddenCount} eliminated player{eliminatedHiddenCount > 1 ? 's' : ''} (not eligible for transfer in)
                         </button>
                       )}
                     </>
