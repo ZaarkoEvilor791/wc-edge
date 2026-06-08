@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useSquadFromScreenshot, useSuggestedSquad } from '../../hooks/useWC'
 import { useSquadStore } from '../../store/squadStore'
 import { fillSquadFromSuggested } from '../../utils/squad'
@@ -11,6 +11,7 @@ type Step = 'idle' | 'upload' | 'processing' | 'success' | 'error'
 interface Props {
   open: boolean
   onClose: () => void
+  startAtUpload?: boolean
 }
 
 function readFileAsBase64(file: File): Promise<{ base64: string; mimeType: string }> {
@@ -28,13 +29,14 @@ function readFileAsBase64(file: File): Promise<{ base64: string; mimeType: strin
   })
 }
 
-function ModalContent({ onClose }: { onClose: () => void }) {
+function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAtUpload?: boolean }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { setSquad, setCaptain } = useSquadStore()
   const { mutateAsync: processScreenshot } = useSquadFromScreenshot()
   const { data: suggestedData } = useSuggestedSquad()
 
-  const [step, setStep] = useState<Step>('idle')
+  const [step, setStep] = useState<Step>(startAtUpload ? 'upload' : 'idle')
   const [matched, setMatched] = useState<SquadPlayer[]>([])
   const [unmatched, setUnmatched] = useState<string[]>([])
   const [dragOver, setDragOver] = useState(false)
@@ -97,7 +99,7 @@ function ModalContent({ onClose }: { onClose: () => void }) {
     if (top) setCaptain(top.element)
     localStorage.setItem('wc-onboarded', '1')
     onClose()
-    navigate('/squad')
+    if (location.pathname !== '/squad') navigate('/squad')
   }
 
   const previewNames = matched.slice(0, 5).map((p) => p.name).join(' · ')
@@ -159,13 +161,13 @@ function ModalContent({ onClose }: { onClose: () => void }) {
           {step === 'upload' && (
             <div className="space-y-4">
               <button
-                onClick={() => setStep('idle')}
+                onClick={() => startAtUpload ? onClose() : setStep('idle')}
                 className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M8 2L4 6l4 4" />
                 </svg>
-                Back
+                {startAtUpload ? 'Cancel' : 'Back'}
               </button>
               <p className="text-sm text-slate-300">
                 Take a screenshot of your squad on{' '}
@@ -277,7 +279,7 @@ function ModalContent({ onClose }: { onClose: () => void }) {
   )
 }
 
-export default function OnboardingModal({ open, onClose }: Props) {
+export default function OnboardingModal({ open, onClose, startAtUpload }: Props) {
   if (!open) return null
-  return createPortal(<ModalContent onClose={onClose} />, document.body)
+  return createPortal(<ModalContent onClose={onClose} startAtUpload={startAtUpload} />, document.body)
 }

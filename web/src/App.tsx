@@ -28,6 +28,7 @@ function RequireSquad({ children }: { children: React.ReactNode }) {
 export default function App() {
   const wcOnboardingOpen = useAppStore((s) => s.wcOnboardingOpen)
   const setWcOnboardingOpen = useAppStore((s) => s.setWcOnboardingOpen)
+  const squad = useSquadStore((s) => s.squad)
   // dismissed tracks whether the user has ever closed the onboarding — must be
   // actual state (not derived-once) so calling onClose() causes a re-render
   const [dismissed, setDismissed] = useState(() => !!localStorage.getItem('wc-onboarded'))
@@ -38,6 +39,7 @@ export default function App() {
     <Layout>
       <OnboardingModal
         open={showOnboarding}
+        startAtUpload={wcOnboardingOpen && squad.length > 0}
         onClose={() => {
           localStorage.setItem('wc-onboarded', '1')
           setDismissed(true)
