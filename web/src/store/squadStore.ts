@@ -2,6 +2,13 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { SquadPlayer } from '../types/wc'
 
+const DEFAULT_FORMATION = { DEF: 4, MID: 4, FWD: 2 }
+
+function isValidFormation(f: { DEF: number; MID: number; FWD: number } | undefined): boolean {
+  if (!f) return false
+  return f.DEF + f.MID + f.FWD === 10 && f.DEF >= 3 && f.MID >= 3 && f.FWD >= 1
+}
+
 interface SquadStore {
   squad: SquadPlayer[]
   captain: number | null
@@ -22,8 +29,8 @@ export const useSquadStore = create<SquadStore>()(
       captain: null,
       viceCaptain: null,
       budget: 100,
-      formationCounts: { DEF: 4, MID: 4, FWD: 2 },
-      setFormationCounts: (f) => set({ formationCounts: f }),
+      formationCounts: DEFAULT_FORMATION,
+      setFormationCounts: (f) => set({ formationCounts: isValidFormation(f) ? f : DEFAULT_FORMATION }),
       setSquad: (squad) => {
         // Deduplicate by element before storing
         const seen = new Set<number>()
@@ -40,6 +47,11 @@ export const useSquadStore = create<SquadStore>()(
     }),
     {
       name: 'wc-edge-squad',
+      onRehydrateStorage: () => (state) => {
+        if (state && !isValidFormation(state.formationCounts)) {
+          state.formationCounts = DEFAULT_FORMATION
+        }
+      },
     },
   ),
 )

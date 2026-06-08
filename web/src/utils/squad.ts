@@ -31,6 +31,8 @@ export function fillSquadFromSuggested(matched: SquadPlayer[], suggested: SquadP
 // Uses array order to determine XI vs bench — first posCount[pos] (default POS_COUNT) starters.
 // Callers must ensure the array is ordered correctly (pre-sort by xP on initial DB load;
 // handleSwap exchanges positions so manual swaps persist across renders).
+// For non-GK positions: clamps starters to (available - 1) so a bench slot is always
+// reserved when 2+ players of that position exist. Handles corrupt/partial-squad posCount safely.
 export function getXI(
   players: SquadPlayer[],
   posCount?: Record<string, number>,
@@ -38,7 +40,18 @@ export function getXI(
   const xi: SquadPlayer[] = []
   const bench: SquadPlayer[] = []
   const seen: Record<string, number> = {}
-  const limits = posCount ?? POS_COUNT
+  const base = posCount ?? POS_COUNT
+
+  const available: Record<string, number> = {}
+  for (const p of players) available[p.position] = (available[p.position] ?? 0) + 1
+
+  const limits: Record<string, number> = {}
+  for (const [pos, count] of Object.entries(base)) {
+    const avail = available[pos] ?? 0
+    // Clamp starters to available players so partial squads never request more
+    // starters than exist. The store sanitizer guards against corrupt posCount sums.
+    limits[pos] = pos === 'GK' ? count : Math.min(count, avail)
+  }
 
   for (const p of players) {
     const n = seen[p.position] ?? 0

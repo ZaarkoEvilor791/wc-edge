@@ -124,6 +124,134 @@ describe('optimiseXI', () => {
   })
 })
 
+const ALL_FORMATIONS = [
+  { DEF: 4, MID: 4, FWD: 2 },
+  { DEF: 4, MID: 3, FWD: 3 },
+  { DEF: 3, MID: 5, FWD: 2 },
+  { DEF: 3, MID: 4, FWD: 3 },
+  { DEF: 5, MID: 3, FWD: 2 },
+  { DEF: 5, MID: 4, FWD: 1 },
+  { DEF: 4, MID: 5, FWD: 1 },
+]
+
+describe('getXI — formation-aware XI/bench split', () => {
+  it.each(ALL_FORMATIONS)('formation $DEF-$MID-$FWD → XI=11, bench=4 with full squad', (f) => {
+    const { xi, bench } = getXI(SQUAD, { GK: 1, ...f })
+    expect(xi).toHaveLength(11)
+    expect(bench).toHaveLength(4)
+  })
+
+  it('xi + bench always equals squad length (invariant)', () => {
+    const { xi, bench } = getXI(SQUAD)
+    expect(xi.length + bench.length).toBe(SQUAD.length)
+  })
+
+  it('xi + bench invariant holds for every formation', () => {
+    for (const f of ALL_FORMATIONS) {
+      const { xi, bench } = getXI(SQUAD, { GK: 1, ...f })
+      expect(xi.length + bench.length).toBe(SQUAD.length)
+    }
+  })
+})
+
+// 13-player partial squad: 2GK/4DEF/4MID/3FWD (one DEF and one MID missing vs full)
+const PARTIAL_13 = [
+  p(1, 'GK'), p(2, 'GK'),
+  p(3, 'DEF'), p(4, 'DEF'), p(5, 'DEF'), p(6, 'DEF'),
+  p(8, 'MID'), p(9, 'MID'), p(10, 'MID'), p(11, 'MID'),
+  p(13, 'FWD'), p(14, 'FWD'), p(15, 'FWD'),
+]
+
+describe('getXI — partial squad', () => {
+  it('xi + bench = 13 for 13-player squad (no data loss)', () => {
+    const { xi, bench } = getXI(PARTIAL_13, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+    expect(xi.length + bench.length).toBe(13)
+  })
+
+  it('partial squad bench reflects available players beyond starters', () => {
+    // PARTIAL_13: 2GK/4DEF/4MID/3FWD with 4-4-2 formation
+    // GK: 1 starter, 1 bench. DEF: 4 starters, 0 bench (exactly used up). MID: same. FWD: 2 starters, 1 bench.
+    const { bench } = getXI(PARTIAL_13, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+    expect(bench.filter(p => p.position === 'GK')).toHaveLength(1)
+    expect(bench.filter(p => p.position === 'DEF')).toHaveLength(0)
+    expect(bench.filter(p => p.position === 'MID')).toHaveLength(0)
+    expect(bench.filter(p => p.position === 'FWD')).toHaveLength(1)
+    expect(bench).toHaveLength(2)
+  })
+
+  it('single player of a position goes to XI not bench', () => {
+    // 14 players: 1 GK only
+    const oneGkSquad = [
+      p(1, 'GK'),
+      p(3, 'DEF'), p(4, 'DEF'), p(5, 'DEF'), p(6, 'DEF'), p(7, 'DEF'),
+      p(8, 'MID'), p(9, 'MID'), p(10, 'MID'), p(11, 'MID'), p(12, 'MID'),
+      p(13, 'FWD'), p(14, 'FWD'), p(15, 'FWD'),
+    ]
+    const { xi } = getXI(oneGkSquad, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+    expect(xi.filter(p => p.position === 'GK')).toHaveLength(1)
+  })
+
+  it('empty squad returns empty xi and bench', () => {
+    const { xi, bench } = getXI([])
+    expect(xi).toHaveLength(0)
+    expect(bench).toHaveLength(0)
+  })
+
+  it('limits starters to available players when posCount exceeds squad size', () => {
+    // Squad with only 4 DEF — posCount asks for 5 starters; clamp caps to 4
+    const fourDefSquad = SQUAD.filter(p => !(p.position === 'DEF' && p.element === 7))
+    const { xi } = getXI(fourDefSquad, { GK: 1, DEF: 5, MID: 4, FWD: 2 })
+    expect(xi.filter(p => p.position === 'DEF')).toHaveLength(4)
+  })
+})
+
+describe('optimiseXI — formation invariants', () => {
+  it('returned formation always has DEF+MID+FWD === 10', () => {
+    const { formation } = optimiseXI(SQUAD)
+    expect(formation.DEF + formation.MID + formation.FWD).toBe(10)
+  })
+
+  it('DEF+MID+FWD=10 holds regardless of xP distribution', () => {
+    const allMidSquad = [
+      p(1, 'GK', 5), p(2, 'GK', 3),
+      p(3, 'DEF', 1), p(4, 'DEF', 1), p(5, 'DEF', 1), p(6, 'DEF', 1), p(7, 'DEF', 1),
+      p(8, 'MID', 10), p(9, 'MID', 10), p(10, 'MID', 10), p(11, 'MID', 10), p(12, 'MID', 10),
+      p(13, 'FWD', 1), p(14, 'FWD', 1), p(15, 'FWD', 1),
+    ]
+    const { formation } = optimiseXI(allMidSquad)
+    expect(formation.DEF + formation.MID + formation.FWD).toBe(10)
+  })
+
+  it('optimiseXI → getXI round-trip: always bench=4 for full squad', () => {
+    const { squad: optimised, formation } = optimiseXI(SQUAD)
+    const { xi, bench } = getXI(optimised, { GK: 1, ...formation })
+    expect(xi).toHaveLength(11)
+    expect(bench).toHaveLength(4)
+  })
+
+  it('skips formations requiring more DEF than available', () => {
+    // 5 DEF available but squad has unusual xP distribution — still must pick valid formation
+    const lowDefSquad = [
+      p(1, 'GK', 5), p(2, 'GK', 3),
+      p(3, 'DEF', 7), p(4, 'DEF', 6), p(5, 'DEF', 5), p(16, 'DEF', 4), p(17, 'DEF', 3),
+      p(8, 'MID', 8), p(9, 'MID', 7), p(10, 'MID', 7), p(11, 'MID', 6), p(12, 'MID', 5),
+      p(13, 'FWD', 1), p(14, 'FWD', 1), p(15, 'FWD', 1),
+    ]
+    const { formation } = optimiseXI(lowDefSquad)
+    // FWD=1 preferred since FWD xP is low — any valid formation is acceptable
+    expect(formation.DEF + formation.MID + formation.FWD).toBe(10)
+    expect(formation.FWD).toBeGreaterThanOrEqual(1)
+  })
+
+  it('formation is always one of the 7 predefined formations', () => {
+    const { formation } = optimiseXI(SQUAD)
+    const match = ALL_FORMATIONS.some(
+      f => f.DEF === formation.DEF && f.MID === formation.MID && f.FWD === formation.FWD
+    )
+    expect(match).toBe(true)
+  })
+})
+
 describe('fillSquadFromSuggested', () => {
   it('returns 15 players when matched is empty', () => {
     const result = fillSquadFromSuggested([], SUGGESTED)
