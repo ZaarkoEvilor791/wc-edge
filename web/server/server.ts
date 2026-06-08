@@ -364,14 +364,18 @@ app.post('/api/squad/from-screenshot', async (req, res) => {
     } catch {
       return res.status(422).json({ error: 'Could not parse player names from screenshot' })
     }
-    if (!Array.isArray(names) || names.length === 0) {
+    // Coerce to strings — model sometimes returns objects like {name:"X"} instead of "X"
+    const nameStrings: string[] = names
+      .map((n) => (typeof n === 'string' ? n : typeof n === 'object' && n !== null ? String((n as Record<string, unknown>).name ?? '') : String(n)))
+      .filter((n) => n.trim().length > 0)
+    if (nameStrings.length === 0) {
       return res.status(422).json({ error: 'No player names found in screenshot' })
     }
-    const results = await Promise.all(names.map(async (name) => ({ name, match: await matchPlayersByName(name) })))
+    const results = await Promise.all(nameStrings.map(async (name) => ({ name, match: await matchPlayersByName(name) })))
     res.json({
       matched: results.filter((r) => r.match).map((r) => r.match),
       unmatched: results.filter((r) => !r.match).map((r) => r.name),
-      total: names.length,
+      total: nameStrings.length,
     })
   } catch (err) {
     res.status(502).json({ error: 'Screenshot processing failed', detail: String(err) })
