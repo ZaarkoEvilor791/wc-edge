@@ -17,7 +17,7 @@
 ## Current State (Session 22 complete — Screenshot squad fill-in + Transfers pitch view)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: TBD
+Latest commit: `499ed2b`
 
 **Tests:** 57 vitest (4 files) + 31 pytest — all green.
 
