@@ -154,7 +154,7 @@ function SwapDrawer({
 
 export default function Squad() {
   const { data, isLoading, error } = useSuggestedSquad()
-  const { squad, captain, viceCaptain, formationCounts, setSquad, setCaptain, setFormationCounts } = useSquadStore()
+  const { squad, captain, viceCaptain, formationCounts, setSquad, setCaptain, setViceCaptain, setFormationCounts } = useSquadStore()
   const { squadViewMode: viewMode, setSquadViewMode: setViewMode, setWcOnboardingOpen } = useAppStore()
   const currentRound = useCurrentRound()
   const round = currentRound?.id ?? 1
@@ -222,8 +222,9 @@ export default function Squad() {
     setSquad(optimised)
     setFormationCounts(formation)
     const { xi: newXI } = getXI(optimised, { GK: 1, ...formation })
-    const bestCaptain = [...newXI].sort((a, b) => b.xp - a.xp)[0]
-    if (bestCaptain) setCaptain(bestCaptain.element)
+    const sorted = [...newXI].sort((a, b) => b.xp - a.xp)
+    if (sorted[0]) setCaptain(sorted[0].element)
+    if (sorted[1]) setViceCaptain(sorted[1].element)
   }
 
   function handleAdd(inPlayer: SquadPlayer) {
@@ -240,7 +241,7 @@ export default function Squad() {
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-slate-100">My Squad</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="flex items-center gap-1 rounded-lg border border-slate-700 p-0.5">
             <button
               onClick={() => setViewMode('pitch')}
@@ -265,7 +266,7 @@ export default function Squad() {
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M6 1l1.5 3h3l-2.4 1.8.9 3L6 7.2 3 8.8l.9-3L1.5 4h3z" />
             </svg>
-            {formationCounts.DEF}-{formationCounts.MID}-{formationCounts.FWD}
+            <span className="hidden sm:inline">{formationCounts.DEF}-{formationCounts.MID}-{formationCounts.FWD}</span>
           </button>
         </div>
       </div>

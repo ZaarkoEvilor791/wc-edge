@@ -471,7 +471,7 @@ export default function Transfers() {
             </button>
           </div>
 
-          {viewMode === 'list' || suggestions !== null ? (
+          {viewMode === 'list' ? (
             <SquadList
               squad={squad}
               eliminatedSquadIds={eliminatedSquadIds}

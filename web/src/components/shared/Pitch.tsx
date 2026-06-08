@@ -151,6 +151,8 @@ export default function Pitch({
                   player={p}
                   xp={xpFor(p, projections, round)}
                   isBench
+                  isCaptain={p.element === captain}
+                  isViceCaptain={p.element === viceCaptain}
                   eliminated={eliminatedSquadIds?.has(p.squad_id)}
                   onClick={() => onPlayerClick(p)}
                 />

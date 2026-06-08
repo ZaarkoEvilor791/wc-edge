@@ -14,12 +14,12 @@
 
 ---
 
-## Current State (Session 27 complete — Captain/VC badges, persistent pitch view, Optimise XI, screenshot as-is)
+## Current State (Session 28 complete — VC badge wired, Optimise XI mobile fix, Smart suggest view fix, bench C/VC badges)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `3724711`
+Latest commit: Session 28
 
-**Tests:** 60 vitest (4 files) + 33 pytest — all green.
+**Tests:** 79 vitest (4 files) + 33 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 79.91 xP)
 
@@ -38,6 +38,23 @@ Latest commit: `3724711`
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
 **Prod smoke test (Session 26):** All green — FDR 48 rows ✓, 8 rounds ✓, 1,481 players ✓, `/api/chat` scoring rules correct ✓, `/api/live` stale fallback ✓.
+
+---
+
+## Session 28 — What was shipped
+
+**Web — VC badge wired:**
+- `Captain.tsx`: `viceCaptain` + `setViceCaptain` destructured from store. VC button added to each player row (suppressed for whoever is already captain). Active state = `bg-slate-300 text-slate-800`; inactive = outlined border.
+- `Squad.tsx` `handleOptimiseXI`: sets VC = 2nd-highest xP XI player (simple: `sorted[1].element`) alongside captain. `setViceCaptain` added to store destructure.
+
+**Web — Optimise XI button mobile fix (`Squad.tsx`):**
+- Header right div changed to `flex-wrap justify-end`. Formation label wrapped in `<span className="hidden sm:inline">` — button is always visible on narrow screens as icon-only; label appears on sm+.
+
+**Web — Smart suggest retains view mode (`Transfers.tsx`):**
+- Removed `|| suggestions !== null` from squad display ternary (line ~474). `viewMode` is now always respected; pitch view stays pitch during smart suggest flow. SuggestionsPreview renders above squad display regardless.
+
+**Web — Bench C/VC badges (`Pitch.tsx`):**
+- Bench strip `PitchPlayerCard` now receives `isCaptain={p.element === captain}` and `isViceCaptain={p.element === viceCaptain}`. C/VC badges visible if either player is on the bench.
 
 ---
 
@@ -292,8 +309,8 @@ Latest commit: `3724711`
 
 ## Outstanding (pre-tournament, by June 11)
 
-- **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle, Optimise XI, empty slot card → add mode.
-- **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA Fantasy screenshot; verify partial match shows empty slot cards on pitch.
+- **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle, Optimise XI button + VC button on Captain page, empty slot card → add mode.
+- **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA Fantasy screenshot; verify partial match shows empty slot cards on pitch, unmatched banner shows unrecognised players.
 
 ---
 
@@ -312,9 +329,11 @@ Latest commit: `3724711`
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
    ```
 
-3. **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle, Optimise XI button, empty slot card tap → add mode.
+3. **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle, Optimise XI button, VC button on Captain page, empty slot card tap → add mode.
 
-4. **Phase 2 (post-tournament)** — extend StatsBomb extraction for tackles + key passes; add to xP model.
+4. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA Fantasy screenshot; verify partial match shows empty slot cards on pitch, unmatched banner shows unrecognised players.
+
+5. **Phase 2 (post-tournament)** — extend StatsBomb extraction for tackles + key passes; add to xP model.
 
 ---
 
@@ -587,3 +606,7 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **BrowseAllModal add mode budget check** — `squadCost + candidate.price > budget + 0.001`. `squadCost` is computed internally from the `squad` prop. Pass `budget={100}` (total, not remaining) from Squad page.
 - **Squad corrupt check is duplicates-only** — `new Set(elements).size !== squad.length`. Partial squads (< 15 players from screenshot) are kept as-is; EmptySlotCard fills visual gaps. The old strict 15/2GK/5DEF/5MID/3FWD check is gone.
 - **`squadViewMode` persisted in appStore** — default `'pitch'`. Old users without this key in localStorage get `'pitch'` on first load (Zustand merges initial state). Both Squad and Transfers read/write from store; no local useState for view mode.
+- **`setViceCaptain` must be destructured separately** — not in the default Captain.tsx destructure before Session 28. Always destructure explicitly: `const { ..., viceCaptain, setViceCaptain } = useSquadStore()`.
+- **VC auto-promotion is advisory** — if captain plays 0 min, FIFA Fantasy auto-gives 2× to VC (only if no manual changes made during live round). App VC badge is a planning aid; actual swap must be done on the FIFA Fantasy website.
+- **Smart suggest in Transfers no longer forces list view** — `viewMode` is always respected. SuggestionsPreview renders above squad display regardless of view. Pitch `onPlayerClick` calls `setManualOut` same as list tap.
+- **Bench strip C/VC badges** — bench `PitchPlayerCard` receives `isCaptain`/`isViceCaptain` same as XI rows. Badges visible on bench cards if captain/VC is on the bench.

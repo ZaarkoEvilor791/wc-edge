@@ -35,7 +35,7 @@ function formatDeadlineDate(dateStr: string | null | undefined) {
 }
 
 export default function Captain() {
-  const { squad, captain, setCaptain } = useSquadStore()
+  const { squad, captain, viceCaptain, setCaptain, setViceCaptain } = useSquadStore()
   const currentRound = useCurrentRound()
   const { data: rounds } = useRounds()
   const round = currentRound?.id ?? 1
@@ -135,6 +135,20 @@ export default function Captain() {
                   <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accent">C</span>
                 )}
                 <span className={clsx('w-16 text-right text-sm font-semibold', isEliminated ? 'text-slate-500' : 'text-accent')}>{p.xp.toFixed(1)} xP</span>
+                {p.element !== captain && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setViceCaptain(p.element) }}
+                    className={clsx(
+                      'ml-1 flex h-6 w-8 shrink-0 items-center justify-center rounded text-[10px] font-black',
+                      p.element === viceCaptain
+                        ? 'bg-slate-300 text-slate-800'
+                        : 'border border-slate-700 text-slate-500 hover:border-slate-500',
+                    )}
+                    title="Set as vice captain"
+                  >
+                    VC
+                  </button>
+                )}
               </div>
             </button>
           )
