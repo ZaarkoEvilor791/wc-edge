@@ -14,12 +14,12 @@
 
 ---
 
-## Current State (Session 26 complete — Eliminated badges, unrecognised player notification, prod smoke test)
+## Current State (Session 27 complete — Captain/VC badges, persistent pitch view, Optimise XI, screenshot as-is)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `954b240`
+Latest commit: `3724711`
 
-**Tests:** 57 vitest (4 files) + 33 pytest — all green.
+**Tests:** 60 vitest (4 files) + 33 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 79.91 xP)
 
@@ -38,6 +38,40 @@ Latest commit: `954b240`
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
 **Prod smoke test (Session 26):** All green — FDR 48 rows ✓, 8 rounds ✓, 1,481 players ✓, `/api/chat` scoring rules correct ✓, `/api/live` stale fallback ✓.
+
+---
+
+## Session 27 — What was shipped (commit `3724711`)
+
+**Web — Captain/VC badge fix (`PitchPlayerCard.tsx`):**
+- Replaced flat `©` text with filled circular badges: gold `C` (18px, `bg-[#E8B84B]`), slate `VC` (18px, `bg-slate-300`).
+- Positioned at `-top-1.5 -right-1.5 z-10` — visible on green pitch, outside card border.
+
+**Web — viceCaptain wired to pitch (`Pitch.tsx`, `Squad.tsx`):**
+- `Pitch.tsx`: new `viceCaptain?: number | null` prop threaded through `FormationRow` → `PitchPlayerCard`.
+- `Squad.tsx`: destructures `viceCaptain` from `useSquadStore()`, passes to `<Pitch>`.
+
+**Web — empty slot cards (`EmptySlotCard.tsx` new, `Pitch.tsx`, `BrowseAllModal.tsx`):**
+- `EmptySlotCard.tsx`: dashed border `+` placeholder, `w-[72px]`, position label. Appears in pitch rows for unfilled slots.
+- `Pitch.tsx`: new `posCount?: Record<string, number>` and `onEmptySlotClick?: (position: string) => void` props. When `onEmptySlotClick` is provided, appends `EmptySlotCard` components for any gaps between actual players and `posCount` for that row.
+- `BrowseAllModal.tsx`: new `addPosition?: string` + `onAdd?: (p: SquadPlayer) => void` props. When `addPosition` is set: position-locked add mode, budget check `squadCost + price ≤ budget`, calls `onAdd` on tap. No outgoing player card.
+- `Squad.tsx`: `addPosition` state — clicking an empty slot sets it; `<BrowseAllModal addPosition={...} onAdd={handleAdd}>` renders when set; `handleAdd` appends player sorted by position+xP.
+
+**Web — persistent view mode (`appStore.ts`, `Squad.tsx`, `Transfers.tsx`):**
+- `appStore.ts`: added `squadViewMode: 'pitch' | 'list'` (default `'pitch'`) + `setSquadViewMode`, persisted via `partialize`.
+- Both pages replaced local `useState` with `useAppStore()` — view mode survives route changes.
+
+**Web — Optimise XI (`squad.ts`, `squadStore.ts`, `Squad.tsx`):**
+- `squad.ts` `optimiseXI(players)`: tries 7 formations (4-4-2, 4-3-3, 3-5-2, 3-4-3, 5-3-2, 5-4-1, 4-5-1), picks highest total xP XI, returns reordered squad array + winning formation. Skips formations requiring more of a position than available.
+- `squad.ts` `getXI(players, posCount?)`: optional second arg overrides `POS_COUNT` for formation-aware XI/bench split. All callers still work (defaults to `POS_COUNT`).
+- `squadStore.ts`: `formationCounts: { DEF, MID, FWD }` (default `{4,4,2}`) + `setFormationCounts`, fully persisted.
+- `Squad.tsx`: Optimise XI button in header shows current formation label (e.g. `5-3-2`); clicking calls `optimiseXI`, updates squad + formationCounts + auto-sets captain to best-xP starter. `getXI(displaySquad, { GK:1, ...formationCounts })` used for both pitch rendering and SwapDrawer options so formation-awareness is consistent.
+
+**Web — screenshot load as-is (`OnboardingModal.tsx`, `Squad.tsx`):**
+- `OnboardingModal.tsx`: removed `fillSquadFromSuggested` call — `setSquad(matched)` stores exactly what the OCR found, even if < 15. Also removed `useSuggestedSquad` import (now unused).
+- `Squad.tsx` corrupt check: only flags duplicates (`new Set(elements).size !== squad.length`). Partial squads (e.g. 12 players) render normally with EmptySlotCard placeholders for gaps.
+
+**Tests:** +3 `optimiseXI` unit tests (formation selection, starters-before-bench ordering, correct player count) → 60/60 green.
 
 ---
 
@@ -258,31 +292,27 @@ Latest commit: `954b240`
 
 ## Outstanding (pre-tournament, by June 11)
 
-- **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle.
-- **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA Fantasy screenshot.
+- **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle, Optimise XI, empty slot card → add mode.
+- **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA Fantasy screenshot; verify partial match shows empty slot cards on pitch.
 
 ---
 
 ## Next Session Priorities
 
-1. **Squad UI/UX overhaul** (plan in `~/.claude/plans/plan-clean-ui-ux-for-cozy-hamming.md`):
-   - **Captain/VC badge fix** — filled circular badges (gold C, silver VC), 18px, `z-10`, `-top-1.5 -right-1.5`. Wire `viceCaptain` from store → Pitch → PitchPlayerCard.
-   - **Pitch view as persistent default** — add `squadViewMode: 'pitch' | 'list'` to `appStore` (persisted). Squad + Transfers both read from store instead of local `useState`.
-   - **Screenshot load as-is** — `OnboardingModal` stores matched players directly (remove `fillSquadFromSuggested`). Squad corrupt check: duplicates only (remove `squad.length !== 15`). Pitch renders clickable `EmptySlotCard` placeholders for unfilled slots; tapping opens BrowseAllModal in add mode (`addPosition` + `onAdd` props).
-   - **Optimise XI button** — `optimiseXI(players)` in `squad.ts`: tries 7 formations (4-4-2, 4-3-3, 3-5-2, 3-4-3, 5-3-2, 5-4-1, 4-5-1), returns best reordered squad array + formation counts. `getXI` gains optional `posCount` override param. Store `formationCounts` in `squadStore` (persisted). Squad page shows button + formation label; auto-sets captain to highest-xP starter.
-
-2. **Tournament operations** — mark eliminated teams as the tournament progresses:
+1. **Tournament operations** — mark eliminated teams as the tournament progresses:
    ```sql
    UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
    ```
    Engine cron auto-refreshes projections at 04:00 + 18:00 UTC.
 
-3. **Manual engine trigger** if projections go stale:
+2. **Manual engine trigger** if projections go stale:
    ```bash
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
    # With post-group FDR update (run after group stage ends ~June 27):
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
    ```
+
+3. **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle, Optimise XI button, empty slot card tap → add mode.
 
 4. **Phase 2 (post-tournament)** — extend StatsBomb extraction for tackles + key passes; add to xP model.
 
@@ -549,4 +579,11 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **`unmatchedNames` in appStore is non-persisted** — excluded from `partialize`. Clears on page reload. Set by OnboardingModal after screenshot confirm; cleared on explicit banner dismiss or re-upload with zero unmatched.
 - **`UnmatchedBanner` renders null when no unmatched names** — safe to place on any page; invisible for perfect-match uploads.
 - **Eliminated candidates in BrowseAllModal are disabled, not hidden** — when "Show N eliminated" is toggled, they appear with badge + "Not eligible" label but `disabled` button. Cannot be transferred in.
-- **`viceCaptain` in squadStore** — stored as `number | null` (element ID), persisted. Not yet wired to Pitch (Session 27 work). Captain page uses it for advisory display only; actual captain swap must be done on FIFA Fantasy website.
+- **`viceCaptain` in squadStore** — stored as `number | null` (element ID), persisted. Wired to Pitch via `viceCaptain` prop → `PitchPlayerCard isViceCaptain`. Captain page uses it for advisory display; actual captain swap must be done on FIFA Fantasy website.
+- **`formationCounts` in squadStore** — persisted `{DEF, MID, FWD}`, default `{4,4,2}`. Used by Squad.tsx as `{ GK:1, ...formationCounts }` for both `getXI` (XI/bench split) and Pitch `posCount` prop (empty slot computation). Always pass `{ GK:1, ...formationCounts }` to `getXI` in Squad, not bare `POS_COUNT`, so SwapDrawer options remain formation-aware.
+- **`getXI` optional second arg** — `getXI(players, posCount?)` overrides the default `POS_COUNT` (4-4-2). All existing callers with one arg are unaffected. Pitch.tsx passes `counts = posCount ?? POS_COUNT` internally.
+- **`optimiseXI` skips impossible formations** — if squad has fewer players of a position than the formation requires (e.g. only 1 FWD), that formation is skipped. Always safe to call; worst case returns 4-4-2 if all other formations are infeasible.
+- **EmptySlotCard only shown when `onEmptySlotClick` is passed to Pitch** — Transfers page doesn't pass it, so no empty slots there. Squad page passes it; clicking opens BrowseAllModal in add mode.
+- **BrowseAllModal add mode budget check** — `squadCost + candidate.price > budget + 0.001`. `squadCost` is computed internally from the `squad` prop. Pass `budget={100}` (total, not remaining) from Squad page.
+- **Squad corrupt check is duplicates-only** — `new Set(elements).size !== squad.length`. Partial squads (< 15 players from screenshot) are kept as-is; EmptySlotCard fills visual gaps. The old strict 15/2GK/5DEF/5MID/3FWD check is gone.
+- **`squadViewMode` persisted in appStore** — default `'pitch'`. Old users without this key in localStorage get `'pitch'` on first load (Zustand merges initial state). Both Squad and Transfers read/write from store; no local useState for view mode.
