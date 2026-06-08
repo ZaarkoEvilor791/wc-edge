@@ -14,10 +14,10 @@
 
 ---
 
-## Current State (Session 22 complete — Screenshot squad fill-in + Transfers pitch view)
+## Current State (Session 23 complete — Screenshot matching fixes + re-sync UX)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `499ed2b`
+Latest commit: `23e7419`
 
 **Tests:** 57 vitest (4 files) + 31 pytest — all green.
 
@@ -37,7 +37,28 @@ Latest commit: `499ed2b`
 
 ---
 
-## Session 22 — What was shipped
+## Session 23 — What was shipped (commits `61b47b8`–`23e7419`)
+
+**Web — `server/server.ts` (`/api/squad/from-screenshot`):**
+- LLM prompt updated to extract name + position (GK/DEF/MID/FWD) for each player using pitch row layout and bench badges — eliminates wrong-player disambiguation (e.g. "Martínez" now resolves to Emiliano/GK not Lautaro/FWD).
+- `max_tokens` raised 128→256 to accommodate `{name, position}` objects for 15 players.
+- Robust coercion: handles both `"string"` and `{name, position}` formats from LLM; filters empty entries.
+
+**Web — `server/db.ts` (`matchPlayersByName`):**
+- Now accepts optional `position?: string` hint.
+- Two-pass query: position-filtered first (`AND p.position = $pos`), falls back to position-agnostic if no match. Prevents price-sort ambiguity from picking the wrong player when names are shared across positions.
+
+**Web — `src/components/shared/OnboardingModal.tsx`:**
+- Added `startAtUpload?: boolean` prop — when true, modal opens directly at the upload step (skips the idle "Build new team / I already have a team" screen).
+- "Back" button becomes "Cancel" (closes modal) when `startAtUpload` is true.
+- `handleConfirmSquad` no longer calls `navigate('/squad')` when already on that path — eliminates the render race that caused the just-confirmed squad to appear non-persistent.
+
+**Web — `src/App.tsx`:**
+- Passes `startAtUpload={wcOnboardingOpen && squad.length > 0}` to OnboardingModal — re-sync flow (squad already loaded) skips idle step; first-time onboarding still shows it.
+
+---
+
+## Session 22 — What was shipped (commits `499ed2b`–`93aa9fd`)
 
 **Web — `src/utils/squad.ts`:**
 - New `fillSquadFromSuggested(matched, suggested)` pure function: fills missing position slots from the suggested squad (top xP per position), excludes already-matched elements, returns sorted 15-player array. Used by OnboardingModal to guarantee a full squad is always stored.
@@ -437,5 +458,7 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **server.ts `export { app }`** — app is exported for supertest. `app.listen()` only runs when `NODE_ENV !== 'test'`.
 - **`FREE_TRANSFERS_BY_PHASE` in `Transfers.tsx`** — `{group:2, r32:6, r16:4, qf:4, sf:5, final:6}`. R32 uses 6 (unlimited in WC rules, capped at stepper max). Auto-set on mount from `currentRound.stage` via `roundPhase()`; resets on round selector change.
 - **`unaccent` extension** — `matchPlayersByName` uses `unaccent()`. Extension is installed on `fpledge` DB (`CREATE EXTENSION IF NOT EXISTS unaccent` — already run). Required before any fresh schema deploy on a new DB.
-- **`/from-screenshot` prefill boundary** — prefill string is `'{"players":['`; model must close `]` and `}`. Verify with a full 15-player screenshot before deploying — if JSON.parse throws, the model may need the full `{"players":["` prefix instead.
+- **`/from-screenshot` returns `{name, position}` objects** — LLM now extracts position (GK/DEF/MID/FWD) alongside name using pitch row layout and bench badges. `matchPlayersByName(name, position)` filters by position first, falls back to position-agnostic. `max_tokens=256` (up from 128) to fit object format for 15 players.
+- **`matchPlayersByName` two-pass query** — position-filtered pass first; if no rows returned, retries without position filter. Prevents price-sort ambiguity (e.g. Lautaro Martínez FWD £8.8m beating Emiliano Martínez GK £5.5m).
+- **Re-sync modal skips idle step** — `OnboardingModal` opens at upload step when `startAtUpload=true` (set by App.tsx when `wcOnboardingOpen && squad.length > 0`). First-time onboarding still shows idle step.
 - **LLM rate limit is in-memory only** — resets on Render dyno restart. Acceptable for free-tier single-instance; not suitable for multi-instance deployments.
