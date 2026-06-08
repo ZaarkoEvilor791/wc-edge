@@ -14,10 +14,10 @@
 
 ---
 
-## Current State (Session 23 complete — Screenshot matching fixes + re-sync UX)
+## Current State (Session 24 complete — Security fix + architecture cleanup)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `23e7419`
+Latest commit: `acfd494`
 
 **Tests:** 57 vitest (4 files) + 31 pytest — all green.
 
@@ -34,6 +34,27 @@ Latest commit: `23e7419`
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+
+---
+
+## Session 24 — What was shipped (commit `acfd494`)
+
+**Web — `server/db.ts` (`matchPlayersByName`):**
+- Fixed SQL injection: `position` parameter was string-interpolated into SQL (`` `AND p.position = '${position}'` ``). Now uses `$3` parameterized placeholder with `params` array extended conditionally. Server.ts already had a `VALID_POS` whitelist guard; db.ts now has defense in depth.
+
+**Web — `src/config/gameRules.ts` (new file):**
+- Single source of truth for game rule constants: `POS_REQUIRED`, `POS_COUNT`, `POS_ORDER`, `TOTAL_ROUNDS`.
+- Removed duplicate `POS_REQUIRED` and `POS_ORDER` declarations from `squadValidator.ts`, `squad.ts`, `Squad.tsx`, `Transfers.tsx` — all now import from here.
+
+**Web — `src/hooks/useWC.ts`:**
+- `usePlayerProjectionsAllRounds`: hardcoded `[1,2,3,4,5,6,7,8]` replaced with `Array.from({length: TOTAL_ROUNDS}, ...)`.
+- Extracted `proj` variable to replace 6 repeated `.find((p) => p.element === element)` calls per round.
+
+**Web — `src/utils/squad.ts`:**
+- Removed unused `_projections: Projection[]` and `_round: number` params from `getXI` signature. All callers updated (Squad.tsx, Pitch.tsx, squad.test.ts).
+
+**Web — `src/store/squadStore.ts` + `src/types/wc.ts`:**
+- Removed dead `bench: number[]` field from `SquadStore` interface, initial state, and `SquadState` type. Bench is computed by `getXI` from array order — never stored separately.
 
 ---
 
@@ -197,9 +218,9 @@ Latest commit: `23e7419`
 ## Next Session Priorities
 
 1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
-3. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
-4. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
-5. **Tournament operations** — mark eliminated teams as the tournament progresses:
+2. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
+3. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
+4. **Tournament operations** — mark eliminated teams as the tournament progresses:
    ```sql
    UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
    ```
@@ -278,15 +299,17 @@ web/
 │       └── transferAdvisor.ts pure suggestTransfers() — greedy algorithm, no I/O
 └── src/
     ├── types/wc.ts
+    ├── config/
+    │   └── gameRules.ts       POS_REQUIRED, POS_COUNT, POS_ORDER, TOTAL_ROUNDS
     ├── domain/
     │   └── squadValidator.ts  validateSquad(), roundPhase(), COUNTRY_LIMIT
-    ├── utils/squad.ts         getXI(), swapInSquad() — array-order XI/bench invariant
+    ├── utils/squad.ts         getXI(players), swapInSquad() — array-order XI/bench invariant
     ├── store/appStore.ts      sidebar + onboarding state (Zustand + persist)
     ├── store/squadStore.ts    squad[], captain, viceCaptain (Zustand + persist)
     ├── hooks/useWC.ts         React Query hooks
     ├── services/wcApi.ts      fetch wrappers
     ├── __tests__/             transferAdvisor, squadValidator, squad utils,
-    │                          server.routes (43 vitest total)
+    │                          server.routes (57 vitest total)
     ├── components/shared/     Pitch, PitchPlayerCard, PlayerProfileModal,
     │                          OnboardingModal, SwapDrawer, RoundXpChart,
     │                          StatCard, Spinner, Logo, BrowseAllModal
@@ -462,3 +485,7 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **`matchPlayersByName` two-pass query** — position-filtered pass first; if no rows returned, retries without position filter. Prevents price-sort ambiguity (e.g. Lautaro Martínez FWD £8.8m beating Emiliano Martínez GK £5.5m).
 - **Re-sync modal skips idle step** — `OnboardingModal` opens at upload step when `startAtUpload=true` (set by App.tsx when `wcOnboardingOpen && squad.length > 0`). First-time onboarding still shows idle step.
 - **LLM rate limit is in-memory only** — resets on Render dyno restart. Acceptable for free-tier single-instance; not suitable for multi-instance deployments.
+- **`matchPlayersByName` position param is `$3`** — parameterized, not interpolated. params array is `[subLike, prefLike]` for position-agnostic pass and `[subLike, prefLike, position]` for position-filtered pass. Never revert to template literal interpolation.
+- **`getXI` takes only `players`** — removed `_projections` and `_round` params (were always unused). Signature is `getXI(players: SquadPlayer[])`.
+- **`bench` field removed from store** — `SquadStore` and `SquadState` no longer have a `bench: number[]` field. Bench is computed on the fly by `getXI` from array order.
+- **Game rule constants live in `src/config/gameRules.ts`** — `POS_REQUIRED`, `POS_COUNT`, `POS_ORDER`, `TOTAL_ROUNDS`. All other files import from there; do not redeclare locally.
