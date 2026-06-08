@@ -14,12 +14,12 @@
 
 ---
 
-## Current State (Session 24 complete — Security fix + architecture cleanup)
+## Current State (Session 25 complete — Complete scoring rules + xP formula fix)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `acfd494`
+Latest commit: `452970a`
 
-**Tests:** 57 vitest (4 files) + 31 pytest — all green.
+**Tests:** 57 vitest (4 files) + 33 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 77.96 xP)
 
@@ -34,6 +34,31 @@ Latest commit: `acfd494`
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+
+---
+
+## Session 25 — What was shipped (commit `452970a`)
+
+**Web — `src/config/gameRules.ts`:**
+- Added `SCORING` export with all 19 scoring constants — single source of truth for frontend + AI system prompt. Covers: appearance, goals, clean sheets, assists, saves, penalty save, goal conceded, tackles, chances, shots on target, yellow/red cards, own goal, penalty won/conceded, FK goal bonus, scouting bonus, qualification booster.
+
+**Engine — `engine/engine/config.py`:**
+- Added 12 missing constants: `OWN_GOAL`, `PENALTY_WON`, `PENALTY_CONCEDED`, `PENALTY_SAVE`, `FREE_KICK_GOAL`, `QUAL_BOOSTER`, `TACKLES_PER_PT`, `CHANCES_PER_PT`, `SHOTS_PER_PT`. Now mirrors `gameRules.ts` completely.
+
+**Web — `server/server.ts`:**
+- Replaced hardcoded scoring string in `/api/chat` system prompt with `buildScoringContext()` generated from `SCORING` import. AI advisor now answers correctly on all 19 scoring rules and can never drift from constants again.
+
+**Engine — `engine/engine/wc_model.py`:**
+- Fixed appearance formula: `APPEARANCE_FULL * mf` → `APPEARANCE_PART * min(1, mf+0.15) + APPEARANCE_PART * mf`. Rotation players and subs now credited for likely partial-minute appearances. Added `APPEARANCE_PART` to config imports.
+
+**Web — `src/components/shared/PlayerProfileModal.tsx`:**
+- Added xP breakdown table in Overview tab below the xP chart. Shows model-derived components for Round 1: Goals (expected), Clean sheet, Appearance, and Other (assists/saves/deductions). Only model-computed values shown — no fabricated stat estimates.
+
+**Web — `src/pages/Assistant.tsx`:**
+- Added "How are points scored in WC 2026 Fantasy?" starter chip to `GENERIC_CHIPS`.
+
+**Tests — `engine/tests/test_model.py`:**
+- +2 tests: `test_appearance_formula_accounts_for_partial_appearances` (mf=0.3 sub player: 0.75 > old 0.60), `test_appearance_starter_close_to_full_appearance` (mf=0.9 starter: 1.90).
 
 ---
 
@@ -217,10 +242,11 @@ Latest commit: `acfd494`
 
 ## Next Session Priorities
 
-1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
-2. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
-3. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
-4. **Tournament operations** — mark eliminated teams as the tournament progresses:
+1. **Re-run engine** — appearance formula changed; re-run `py -m engine.wc_run` to refresh projections in DB.
+2. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
+3. **Top up Anthropic credits** → test `/api/chat` (ask "how much for a penalty save?" to verify new rules) and `/api/squad/from-screenshot`.
+4. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
+5. **Tournament operations** — mark eliminated teams as the tournament progresses:
    ```sql
    UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
    ```
@@ -231,6 +257,7 @@ Latest commit: `acfd494`
    # With post-group FDR update (run after group stage ends ~June 27):
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
    ```
+7. **Phase 2 (post-tournament)** — extend StatsBomb extraction for tackles + key passes; add to xP model.
 
 ---
 
@@ -243,8 +270,8 @@ npm run dev       # Express :3001 + Vite :5173 concurrently
 # requires web/.env: DATABASE_URL + ANTHROPIC_API_KEY
 
 # Tests
-cd web && npm test           # 43 vitest
-cd engine && py -m pytest tests/ -v   # 31 pytest
+cd web && npm test           # 57 vitest
+cd engine && py -m pytest tests/ -v   # 33 pytest
 
 # Engine (Windows PowerShell)
 cd engine
@@ -284,7 +311,7 @@ engine/
 │   ├── db.py            psycopg3 pool, search_path=wc,public
 │   └── config.py        scoring constants, API keys, league IDs
 ├── tests/
-│   └── test_model.py    31 pytest tests
+│   └── test_model.py    33 pytest tests
 └── data/
     ├── sb_cache.json         1441 StatsBomb players
     ├── name_overrides.json   13 hard-coded name mappings
@@ -300,7 +327,7 @@ web/
 └── src/
     ├── types/wc.ts
     ├── config/
-    │   └── gameRules.ts       POS_REQUIRED, POS_COUNT, POS_ORDER, TOTAL_ROUNDS
+    │   └── gameRules.ts       POS_REQUIRED, POS_COUNT, POS_ORDER, TOTAL_ROUNDS, SCORING (19 constants)
     ├── domain/
     │   └── squadValidator.ts  validateSquad(), roundPhase(), COUNTRY_LIMIT
     ├── utils/squad.ts         getXI(players), swapInSquad() — array-order XI/bench invariant
@@ -411,7 +438,10 @@ gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true  # 
 - **Server returns up to 6 transfer suggestions** — `freeTransfers` is badge threshold only, not loop limit.
 - **blend_live_observations is zero-op pre-tournament** — checks rounds WHERE status='COMPLETE'; safe to call on every engine run.
 - **Post-group cron hardcoded June 27** — simpler than status-checking; acceptable for v1.
-- **`/api/chat` system prompt uses XML tags** — `<role>`, `<rules>`, `<squad>` segregate static rules from dynamic user context; reduces hallucination on scoring rules. Output instruction: `≤120 tokens. No preamble.`
+- **`/api/chat` system prompt uses XML tags** — `<role>`, `<rules>`, `<squad>` segregate static rules from dynamic user context; reduces hallucination on scoring rules. Output instruction: `≤120 tokens. No preamble.` Scoring block generated from `buildScoringContext()` (imported from `gameRules.ts` SCORING constants) — never hardcode scoring rules in server.ts again.
+- **`SCORING` in `gameRules.ts` is the single source of truth** — 19 constants mirrored in `engine/config.py`. When rules change, update both. `buildScoringContext()` in server.ts reads from `SCORING` directly.
+- **Appearance formula** — `APPEARANCE_PART * min(1, mf+0.15) + APPEARANCE_PART * mf`. The +0.15 is a rough p(sub appearance) offset. Starters (mf≈0.9): 1.0 + 0.9 = 1.9 pts. Rotation (mf≈0.5): 0.65 + 0.5 = 1.15 pts. Old formula was `2 * mf` which ignored partial appearances.
+- **xP breakdown in PlayerProfileModal** — shows model-derived components only: goals (`-log(1-p_goal) * GOAL_PTS[pos]`), clean sheet (`p_cs * CS_PTS[pos]`), appearance, and an "other" bucket for assists+saves+deductions. Do NOT add components the model doesn't compute (tackles, chances, SoT — those are Phase 2).
 - **`/from-screenshot` prefills assistant turn** — passes `{"role":"assistant","content":"{"players":["}` to force valid JSON from token 1; removes regex extraction. max_tokens=128 (15 names × ~8 chars ≈ 60–80 tokens).
 - **LLM routes are rate-limited** — 10 req/min/IP via in-memory token bucket on `/api/chat` + `/api/squad/from-screenshot`.
 
