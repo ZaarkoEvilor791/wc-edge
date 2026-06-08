@@ -1,14 +1,19 @@
 import type { SquadPlayer, Projection } from '../../types/wc'
 import { getXI } from '../../utils/squad'
+import { POS_COUNT } from '../../config/gameRules'
 import PitchPlayerCard from './PitchPlayerCard'
+import EmptySlotCard from './EmptySlotCard'
 
 interface Props {
   players: SquadPlayer[]
   projections: Projection[]
   round: number
   captain: number | null
+  viceCaptain?: number | null
+  posCount?: Record<string, number>
   eliminatedSquadIds?: Set<number>
   onPlayerClick: (player: SquadPlayer) => void
+  onEmptySlotClick?: (position: string) => void
 }
 
 function xpFor(p: SquadPlayer, projections: Projection[], round: number): number {
@@ -17,18 +22,26 @@ function xpFor(p: SquadPlayer, projections: Projection[], round: number): number
 
 function FormationRow({
   players,
+  emptySlots,
+  position,
   projections,
   round,
   captain,
+  viceCaptain,
   eliminatedSquadIds,
   onPlayerClick,
+  onEmptySlotClick,
 }: {
   players: SquadPlayer[]
+  emptySlots: number
+  position: string
   projections: Projection[]
   round: number
   captain: number | null
+  viceCaptain?: number | null
   eliminatedSquadIds?: Set<number>
   onPlayerClick: (p: SquadPlayer) => void
+  onEmptySlotClick?: (position: string) => void
 }) {
   return (
     <div className="flex justify-center gap-2">
@@ -38,21 +51,41 @@ function FormationRow({
           player={p}
           xp={xpFor(p, projections, round)}
           isCaptain={p.element === captain}
+          isViceCaptain={p.element === viceCaptain}
           eliminated={eliminatedSquadIds?.has(p.squad_id)}
           onClick={() => onPlayerClick(p)}
         />
+      ))}
+      {onEmptySlotClick && Array.from({ length: emptySlots }).map((_, i) => (
+        <EmptySlotCard key={`empty-${position}-${i}`} position={position} onClick={() => onEmptySlotClick(position)} />
       ))}
     </div>
   )
 }
 
-export default function Pitch({ players, projections, round, captain, eliminatedSquadIds, onPlayerClick }: Props) {
-  const { xi, bench } = getXI(players)
+export default function Pitch({
+  players,
+  projections,
+  round,
+  captain,
+  viceCaptain,
+  posCount,
+  eliminatedSquadIds,
+  onPlayerClick,
+  onEmptySlotClick,
+}: Props) {
+  const counts = posCount ?? POS_COUNT
+  const { xi, bench } = getXI(players, counts)
 
   const gk = xi.filter((p) => p.position === 'GK')
   const def = xi.filter((p) => p.position === 'DEF')
   const mid = xi.filter((p) => p.position === 'MID')
   const fwd = xi.filter((p) => p.position === 'FWD')
+
+  const emptyGK = Math.max(0, (counts.GK ?? 1) - gk.length)
+  const emptyDEF = Math.max(0, (counts.DEF ?? 4) - def.length)
+  const emptyMID = Math.max(0, (counts.MID ?? 4) - mid.length)
+  const emptyFWD = Math.max(0, (counts.FWD ?? 2) - fwd.length)
 
   return (
     <div className="w-full">
@@ -94,10 +127,10 @@ export default function Pitch({ players, projections, round, captain, eliminated
 
         {/* Player rows */}
         <div className="relative flex flex-col gap-3 px-3 py-4">
-          <FormationRow players={fwd} projections={projections} round={round} captain={captain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} />
-          <FormationRow players={mid} projections={projections} round={round} captain={captain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} />
-          <FormationRow players={def} projections={projections} round={round} captain={captain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} />
-          <FormationRow players={gk} projections={projections} round={round} captain={captain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} />
+          <FormationRow players={fwd} emptySlots={emptyFWD} position="FWD" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={mid} emptySlots={emptyMID} position="MID" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={def} emptySlots={emptyDEF} position="DEF" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={gk} emptySlots={emptyGK} position="GK" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
         </div>
       </div>
 

@@ -7,10 +7,12 @@ interface SquadStore {
   captain: number | null
   viceCaptain: number | null
   budget: number
+  formationCounts: { DEF: number; MID: number; FWD: number }
   setSquad: (squad: SquadPlayer[]) => void
   setCaptain: (element: number) => void
   setViceCaptain: (element: number) => void
   setBudget: (budget: number) => void
+  setFormationCounts: (f: { DEF: number; MID: number; FWD: number }) => void
 }
 
 export const useSquadStore = create<SquadStore>()(
@@ -20,6 +22,8 @@ export const useSquadStore = create<SquadStore>()(
       captain: null,
       viceCaptain: null,
       budget: 100,
+      formationCounts: { DEF: 4, MID: 4, FWD: 2 },
+      setFormationCounts: (f) => set({ formationCounts: f }),
       setSquad: (squad) => {
         // Deduplicate by element before storing
         const seen = new Set<number>()

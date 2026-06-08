@@ -1,10 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useSquadFromScreenshot, useSuggestedSquad } from '../../hooks/useWC'
+import { useSquadFromScreenshot } from '../../hooks/useWC'
 import { useSquadStore } from '../../store/squadStore'
 import { useAppStore } from '../../store/appStore'
-import { fillSquadFromSuggested } from '../../utils/squad'
 import type { SquadPlayer } from '../../types/wc'
 
 type Step = 'idle' | 'upload' | 'processing' | 'success' | 'error'
@@ -36,7 +35,6 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
   const { setSquad, setCaptain } = useSquadStore()
   const setUnmatchedNames = useAppStore((s) => s.setUnmatchedNames)
   const { mutateAsync: processScreenshot } = useSquadFromScreenshot()
-  const { data: suggestedData } = useSuggestedSquad()
 
   const [step, setStep] = useState<Step>(startAtUpload ? 'upload' : 'idle')
   const [matched, setMatched] = useState<SquadPlayer[]>([])
@@ -93,11 +91,8 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
   }
 
   const handleConfirmSquad = () => {
-    const filled = suggestedData?.squad_json
-      ? fillSquadFromSuggested(matched, suggestedData.squad_json)
-      : matched
-    setSquad(filled)
-    const top = [...filled].sort((a, b) => b.xp - a.xp)[0]
+    setSquad(matched)
+    const top = [...matched].sort((a, b) => b.xp - a.xp)[0]
     if (top) setCaptain(top.element)
     setUnmatchedNames(unmatched)
     localStorage.setItem('wc-onboarded', '1')

@@ -33,9 +33,14 @@ export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isVice
       )}
     >
       {/* Captain / VC badge */}
-      {(isCaptain || isViceCaptain) && (
-        <span className="absolute top-0.5 right-1 text-[9px] font-bold text-accent leading-none">
-          {isCaptain ? '©' : 'VC'}
+      {isCaptain && (
+        <span className="absolute -top-1.5 -right-1.5 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#E8B84B] text-[9px] font-black text-slate-900 leading-none">
+          C
+        </span>
+      )}
+      {isViceCaptain && !isCaptain && (
+        <span className="absolute -top-1.5 -right-1.5 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-slate-300 text-[8px] font-black text-slate-700 leading-none">
+          VC
         </span>
       )}
 

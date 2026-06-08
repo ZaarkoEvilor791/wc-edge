@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getXI, swapInSquad, fillSquadFromSuggested } from '../utils/squad'
+import { getXI, swapInSquad, fillSquadFromSuggested, optimiseXI } from '../utils/squad'
 import type { SquadPlayer } from '../types/wc'
 
 function p(element: number, position: SquadPlayer['position'], xp = 5): SquadPlayer {
@@ -86,6 +86,41 @@ describe('swapInSquad', () => {
     const { xi, bench } = getXI(swapped)
     expect(bench.find((p) => p.element === 3)).toBeTruthy()
     expect(xi.find((p) => p.element === 7)).toBeTruthy()
+  })
+})
+
+describe('optimiseXI', () => {
+  it('returns all 15 players in reordered squad', () => {
+    const { squad } = optimiseXI(SQUAD)
+    expect(squad).toHaveLength(15)
+    expect(squad.map(p => p.element).sort()).toEqual(SQUAD.map(p => p.element).sort())
+  })
+
+  it('picks the formation that maximises XI xP', () => {
+    // Give FWDs very high xP so a 4-3-3 (3 FWDs) should beat 4-4-2 (2 FWDs)
+    const highFwdSquad = [
+      p(1, 'GK', 5), p(2, 'GK', 3),
+      p(3, 'DEF', 4), p(4, 'DEF', 4), p(5, 'DEF', 4), p(6, 'DEF', 4), p(7, 'DEF', 4),
+      p(8, 'MID', 3), p(9, 'MID', 3), p(10, 'MID', 3), p(11, 'MID', 3), p(12, 'MID', 3),
+      p(13, 'FWD', 10), p(14, 'FWD', 10), p(15, 'FWD', 10),
+    ]
+    const { formation } = optimiseXI(highFwdSquad)
+    // Should prefer 3 FWD formations (4-3-3 or 3-4-3)
+    expect(formation.FWD).toBe(3)
+  })
+
+  it('starters appear before bench within each position in the returned squad', () => {
+    const { squad, formation } = optimiseXI(SQUAD)
+    const gks = squad.filter(p => p.position === 'GK')
+    const defs = squad.filter(p => p.position === 'DEF')
+    // First GK should be starter, second bench
+    expect(gks[0].xp).toBeGreaterThanOrEqual(gks[1]?.xp ?? -Infinity)
+    // First N DEFs should have xP >= rest
+    const starterDEFs = defs.slice(0, formation.DEF)
+    const benchDEFs = defs.slice(formation.DEF)
+    if (benchDEFs.length > 0) {
+      expect(Math.min(...starterDEFs.map(p => p.xp))).toBeGreaterThanOrEqual(Math.max(...benchDEFs.map(p => p.xp)))
+    }
   })
 })
 

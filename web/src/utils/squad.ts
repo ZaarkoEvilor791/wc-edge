@@ -28,25 +28,76 @@ export function fillSquadFromSuggested(matched: SquadPlayer[], suggested: SquadP
   return combined
 }
 
-// Uses array order to determine XI vs bench — first POS_COUNT[pos] of each position = starters.
+// Uses array order to determine XI vs bench — first posCount[pos] (default POS_COUNT) starters.
 // Callers must ensure the array is ordered correctly (pre-sort by xP on initial DB load;
 // handleSwap exchanges positions so manual swaps persist across renders).
-export function getXI(players: SquadPlayer[]): { xi: SquadPlayer[]; bench: SquadPlayer[] } {
+export function getXI(
+  players: SquadPlayer[],
+  posCount?: Record<string, number>,
+): { xi: SquadPlayer[]; bench: SquadPlayer[] } {
   const xi: SquadPlayer[] = []
   const bench: SquadPlayer[] = []
-  const posCount: Record<string, number> = {}
+  const seen: Record<string, number> = {}
+  const limits = posCount ?? POS_COUNT
 
   for (const p of players) {
-    const seen = posCount[p.position] ?? 0
-    if (seen < (POS_COUNT[p.position] ?? 1)) {
+    const n = seen[p.position] ?? 0
+    if (n < (limits[p.position] ?? 1)) {
       xi.push(p)
     } else {
       bench.push(p)
     }
-    posCount[p.position] = seen + 1
+    seen[p.position] = n + 1
   }
 
   return { xi, bench }
+}
+
+const FORMATIONS: Array<{ DEF: number; MID: number; FWD: number }> = [
+  { DEF: 4, MID: 4, FWD: 2 },
+  { DEF: 4, MID: 3, FWD: 3 },
+  { DEF: 3, MID: 5, FWD: 2 },
+  { DEF: 3, MID: 4, FWD: 3 },
+  { DEF: 5, MID: 3, FWD: 2 },
+  { DEF: 5, MID: 4, FWD: 1 },
+  { DEF: 4, MID: 5, FWD: 1 },
+]
+
+// Tries 7 formations and returns the squad reordered so the best XI (highest total xP) is first.
+// Starters come before bench within each position group, both sorted xP DESC.
+export function optimiseXI(players: SquadPlayer[]): {
+  squad: SquadPlayer[]
+  formation: { DEF: number; MID: number; FWD: number }
+} {
+  const byPos: Record<string, SquadPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] }
+  for (const p of players) byPos[p.position]?.push(p)
+  for (const pos of POS_ORDER) byPos[pos].sort((a, b) => b.xp - a.xp)
+
+  let bestXP = -Infinity
+  let bestFormation = FORMATIONS[0]
+
+  for (const f of FORMATIONS) {
+    if (f.DEF > byPos.DEF.length || f.MID > byPos.MID.length || f.FWD > byPos.FWD.length) continue
+    const xp =
+      byPos.GK.slice(0, 1).reduce((s, p) => s + p.xp, 0) +
+      byPos.DEF.slice(0, f.DEF).reduce((s, p) => s + p.xp, 0) +
+      byPos.MID.slice(0, f.MID).reduce((s, p) => s + p.xp, 0) +
+      byPos.FWD.slice(0, f.FWD).reduce((s, p) => s + p.xp, 0)
+    if (xp > bestXP) {
+      bestXP = xp
+      bestFormation = f
+    }
+  }
+
+  const counts: Record<string, number> = { GK: 1, DEF: bestFormation.DEF, MID: bestFormation.MID, FWD: bestFormation.FWD }
+  const reordered: SquadPlayer[] = []
+  for (const pos of POS_ORDER) {
+    const group = byPos[pos]
+    const n = counts[pos] ?? 1
+    reordered.push(...group.slice(0, n), ...group.slice(n))
+  }
+
+  return { squad: reordered, formation: bestFormation }
 }
 
 // Swap two players by element ID, preserving array order for all other players.

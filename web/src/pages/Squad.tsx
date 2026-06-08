@@ -5,7 +5,7 @@ import { useSuggestedSquad, useProjections, useCurrentRound, useTeams } from '..
 import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
-import { getXI, swapInSquad } from '../utils/squad'
+import { getXI, swapInSquad, optimiseXI } from '../utils/squad'
 import { roundPhase, COUNTRY_LIMIT } from '../domain/squadValidator'
 import { POS_ORDER } from '../config/gameRules'
 import Spinner from '../components/shared/Spinner'
@@ -13,6 +13,7 @@ import StatCard from '../components/shared/StatCard'
 import Pitch from '../components/shared/Pitch'
 import PlayerProfileModal from '../components/shared/PlayerProfileModal'
 import UnmatchedBanner from '../components/shared/UnmatchedBanner'
+import BrowseAllModal from '../components/shared/BrowseAllModal'
 
 function PlayerCard({ player, isCaptain, eliminated, onClick }: { player: SquadPlayer; isCaptain: boolean; eliminated: boolean; onClick: () => void }) {
   return (
@@ -153,27 +154,21 @@ function SwapDrawer({
 
 export default function Squad() {
   const { data, isLoading, error } = useSuggestedSquad()
-  const { squad, captain, setSquad, setCaptain } = useSquadStore()
-  const setWcOnboardingOpen = useAppStore((s) => s.setWcOnboardingOpen)
+  const { squad, captain, viceCaptain, formationCounts, setSquad, setCaptain, setFormationCounts } = useSquadStore()
+  const { squadViewMode: viewMode, setSquadViewMode: setViewMode, setWcOnboardingOpen } = useAppStore()
   const currentRound = useCurrentRound()
   const round = currentRound?.id ?? 1
   const { data: projections } = useProjections(round)
   const { data: teams } = useTeams()
 
-  const [viewMode, setViewMode] = useState<'pitch' | 'list'>('pitch')
   const [selectedPlayer, setSelectedPlayer] = useState<SquadPlayer | null>(null)
   const [swapTarget, setSwapTarget] = useState<SquadPlayer | null>(null)
+  const [addPosition, setAddPosition] = useState<string | null>(null)
 
   useEffect(() => {
     if (!data?.squad_json) return
-    const isCorrupt = squad.length > 0 && (
-      new Set(squad.map(p => p.element)).size !== squad.length ||
-      squad.length !== 15 ||
-      squad.filter(p => p.position === 'GK').length !== 2 ||
-      squad.filter(p => p.position === 'DEF').length !== 5 ||
-      squad.filter(p => p.position === 'MID').length !== 5 ||
-      squad.filter(p => p.position === 'FWD').length !== 3
-    )
+    const isCorrupt = squad.length > 0 &&
+      new Set(squad.map(p => p.element)).size !== squad.length
     if (squad.length === 0 || isCorrupt) {
       // Pre-sort by xP within each position so array order = starter order for getXI
       const byPos: Record<string, SquadPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] }
@@ -199,7 +194,7 @@ export default function Squad() {
 
   const displaySquad = squad.length > 0 ? squad : data.squad_json
   const activeCaptain = captain ?? [...displaySquad].sort((a, b) => b.xp - a.xp)[0]?.element
-  const { xi, bench } = getXI(displaySquad)
+  const { xi, bench } = getXI(displaySquad, { GK: 1, ...formationCounts })
   const selectedIsBench = bench.some((p) => p.element === selectedPlayer?.element)
   const swapTargetIsBench = bench.some((p) => p.element === swapTarget?.element)
 
@@ -222,25 +217,55 @@ export default function Squad() {
     setSwapTarget(null)
   }
 
+  function handleOptimiseXI() {
+    const { squad: optimised, formation } = optimiseXI(displaySquad)
+    setSquad(optimised)
+    setFormationCounts(formation)
+    const { xi: newXI } = getXI(optimised, { GK: 1, ...formation })
+    const bestCaptain = [...newXI].sort((a, b) => b.xp - a.xp)[0]
+    if (bestCaptain) setCaptain(bestCaptain.element)
+  }
+
+  function handleAdd(inPlayer: SquadPlayer) {
+    const updated = [...displaySquad, inPlayer]
+    updated.sort((a, b) => {
+      const diff = POS_ORDER.indexOf(a.position) - POS_ORDER.indexOf(b.position)
+      return diff !== 0 ? diff : b.xp - a.xp
+    })
+    setSquad(updated)
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-slate-100">My Squad</h1>
-        <div className="flex items-center gap-1 rounded-lg border border-slate-700 p-0.5">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg border border-slate-700 p-0.5">
+            <button
+              onClick={() => setViewMode('pitch')}
+              className={clsx('rounded p-1.5 transition-colors', viewMode === 'pitch' ? 'bg-slate-700' : 'hover:bg-slate-800')}
+              title="Pitch view"
+            >
+              <PitchIcon active={viewMode === 'pitch'} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={clsx('rounded p-1.5 transition-colors', viewMode === 'list' ? 'bg-slate-700' : 'hover:bg-slate-800')}
+              title="List view"
+            >
+              <ListIcon active={viewMode === 'list'} />
+            </button>
+          </div>
           <button
-            onClick={() => setViewMode('pitch')}
-            className={clsx('rounded p-1.5 transition-colors', viewMode === 'pitch' ? 'bg-slate-700' : 'hover:bg-slate-800')}
-            title="Pitch view"
+            onClick={handleOptimiseXI}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-accent/50 hover:text-accent"
+            title="Optimise starting XI across 7 formations"
           >
-            <PitchIcon active={viewMode === 'pitch'} />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={clsx('rounded p-1.5 transition-colors', viewMode === 'list' ? 'bg-slate-700' : 'hover:bg-slate-800')}
-            title="List view"
-          >
-            <ListIcon active={viewMode === 'list'} />
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M6 1l1.5 3h3l-2.4 1.8.9 3L6 7.2 3 8.8l.9-3L1.5 4h3z" />
+            </svg>
+            {formationCounts.DEF}-{formationCounts.MID}-{formationCounts.FWD}
           </button>
         </div>
       </div>
@@ -309,8 +334,11 @@ export default function Squad() {
           projections={projections ?? []}
           round={round}
           captain={activeCaptain ?? null}
+          viceCaptain={viceCaptain ?? null}
+          posCount={{ GK: 1, ...formationCounts }}
           eliminatedSquadIds={eliminatedSquadIds}
           onPlayerClick={setSelectedPlayer}
+          onEmptySlotClick={(pos) => setAddPosition(pos)}
         />
       )}
 
@@ -370,6 +398,18 @@ export default function Squad() {
           eliminatedSquadIds={eliminatedSquadIds}
           onSwap={handleSwap}
           onCancel={() => setSwapTarget(null)}
+        />
+      )}
+
+      {addPosition && (
+        <BrowseAllModal
+          squad={displaySquad}
+          round={round}
+          budget={100}
+          onSwap={() => {}}
+          onClose={() => setAddPosition(null)}
+          addPosition={addPosition}
+          onAdd={(p) => { handleAdd(p); setAddPosition(null) }}
         />
       )}
     </div>

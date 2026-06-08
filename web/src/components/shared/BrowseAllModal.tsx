@@ -18,14 +18,17 @@ interface Props {
   onSwap: (inPlayer: SquadPlayer, outPlayer: SquadPlayer) => void
   onClose: () => void
   initialOut?: SquadPlayer  // when set: OUT→IN mode (position locked, skip squad picker)
+  addPosition?: string       // when set: add mode (no outgoing player, just adds to squad)
+  onAdd?: (p: SquadPlayer) => void
 }
 
-export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, initialOut }: Props) {
+export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, initialOut, addPosition, onAdd }: Props) {
   const { data: players } = usePlayers()
   const { data: projections } = useProjections(round)
   const { data: teams } = useTeams()
 
-  const isOutFirstMode = !!initialOut
+  const isAddMode = !!addPosition
+  const isOutFirstMode = !isAddMode && !!initialOut
 
   const [posFilter, setPosFilter] = useState<Pos | 'ALL'>('ALL')
   const [search, setSearch] = useState('')
@@ -68,24 +71,25 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
   const filtered = useMemo(() => {
     return candidates.filter((p) => {
       if (!showEliminated && !p.is_active) return false
-      // In OUT→IN mode, lock position to the outgoing player's position
+      if (isAddMode && p.position !== addPosition) return false
       if (isOutFirstMode && p.position !== initialOut!.position) return false
-      if (!isOutFirstMode && posFilter !== 'ALL' && p.position !== posFilter) return false
+      if (!isAddMode && !isOutFirstMode && posFilter !== 'ALL' && p.position !== posFilter) return false
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [candidates, posFilter, search, showEliminated, isOutFirstMode, initialOut])
+  }, [candidates, posFilter, search, showEliminated, isAddMode, addPosition, isOutFirstMode, initialOut])
 
   const eliminatedHiddenCount = useMemo(() => {
     if (showEliminated) return 0
     return candidates.filter((p) => {
       if (p.is_active) return false
+      if (isAddMode && p.position !== addPosition) return false
       if (isOutFirstMode && p.position !== initialOut!.position) return false
-      if (!isOutFirstMode && posFilter !== 'ALL' && p.position !== posFilter) return false
+      if (!isAddMode && !isOutFirstMode && posFilter !== 'ALL' && p.position !== posFilter) return false
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     }).length
-  }, [candidates, posFilter, search, showEliminated, isOutFirstMode, initialOut])
+  }, [candidates, posFilter, search, showEliminated, isAddMode, addPosition, isOutFirstMode, initialOut])
 
   // IN→OUT mode: squad players eligible to sell (same position as selected incoming player)
   const outOptions = useMemo(() => {
@@ -94,7 +98,14 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
   }, [squad, selectedIn])
 
   function handleCandidateTap(candidate: (typeof candidates)[number]) {
-    if (isOutFirstMode) {
+    if (isAddMode) {
+      // Add mode: no outgoing player, just add to squad
+      if (squadCost + candidate.price > budget + 0.001) return
+      onAdd?.({ element: candidate.element, name: candidate.name, position: candidate.position,
+        price: candidate.price, xp: candidate.xp, team_abbr: candidate.team_abbr,
+        squad_id: candidate.squad_id, low_sample: candidate.low_sample })
+      onClose()
+    } else if (isOutFirstMode) {
       // OUT→IN: confirm immediately
       const newCost = squadCost - initialOut!.price + candidate.price
       if (newCost > budget + 0.001) return
@@ -138,11 +149,11 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
         <div className="flex items-center justify-between p-4 border-b border-slate-800">
           <div>
             <h2 className="text-base font-semibold text-slate-100">
-              {isOutFirstMode ? 'Pick replacement' : selectedIn ? 'Who do you want to sell?' : 'Browse All Players'}
+              {isAddMode ? `Add ${addPosition} player` : isOutFirstMode ? 'Pick replacement' : selectedIn ? 'Who do you want to sell?' : 'Browse All Players'}
             </h2>
-            {isOutFirstMode && (
+            {(isAddMode || isOutFirstMode) && (
               <p className="text-xs text-slate-500 mt-0.5">
-                {initialOut!.position} replacements only
+                {isAddMode ? `${addPosition} only` : `${initialOut!.position} replacements only`}
               </p>
             )}
           </div>
@@ -150,6 +161,51 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
             ×
           </button>
         </div>
+
+        {/* Add mode: position-locked browse, no outgoing player */}
+        {isAddMode && (
+          <>
+            <div className="px-3 pb-2 pt-3 border-b border-slate-800">
+              <input
+                type="text"
+                placeholder={`Search ${addPosition} players…`}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-accent"
+              />
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {filtered.length === 0 ? (
+                <p className="p-4 text-center text-sm text-slate-500">No {addPosition} players found</p>
+              ) : (
+                filtered.slice(0, 100).map((p) => {
+                  const overBudget = squadCost + p.price > budget + 0.001
+                  const isEliminated = !p.is_active
+                  return (
+                    <button
+                      key={p.element}
+                      onClick={() => handleCandidateTap(p)}
+                      disabled={overBudget || isEliminated}
+                      className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-100">{p.name}</p>
+                        <p className="text-xs text-slate-400">{p.team_abbr}</p>
+                      </div>
+                      <div className="ml-3 text-right shrink-0 space-y-0.5">
+                        <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
+                        <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
+                        {(overBudget || isEliminated) && (
+                          <p className="text-[10px] text-rose-400">{isEliminated ? 'Not eligible' : 'Over budget'}</p>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </>
+        )}
 
         {/* OUT→IN mode: show outgoing player card + candidate browse */}
         {isOutFirstMode && (
@@ -241,7 +297,7 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
         )}
 
         {/* IN→OUT mode: existing flow (pick IN from browse list, then pick OUT from squad) */}
-        {!isOutFirstMode && (
+        {!isAddMode && !isOutFirstMode && (
           <>
             {selectedIn ? (
               <div className="flex flex-col p-4 gap-3 overflow-y-auto">

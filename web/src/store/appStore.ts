@@ -8,6 +8,8 @@ interface AppStore {
   setMobileMenuOpen: (v: boolean) => void
   wcOnboardingOpen: boolean
   setWcOnboardingOpen: (v: boolean) => void
+  squadViewMode: 'pitch' | 'list'
+  setSquadViewMode: (v: 'pitch' | 'list') => void
   // Non-persisted: names the OCR failed to match after screenshot upload
   unmatchedNames: string[] | null
   setUnmatchedNames: (names: string[]) => void
@@ -23,13 +25,15 @@ export const useAppStore = create<AppStore>()(
       setMobileMenuOpen: (v) => set({ mobileMenuOpen: v }),
       wcOnboardingOpen: false,
       setWcOnboardingOpen: (v) => set({ wcOnboardingOpen: v }),
+      squadViewMode: 'pitch' as const,
+      setSquadViewMode: (v) => set({ squadViewMode: v }),
       unmatchedNames: null,
       setUnmatchedNames: (names) => set({ unmatchedNames: names.length > 0 ? names : null }),
       clearUnmatchedNames: () => set({ unmatchedNames: null }),
     }),
     {
       name: 'wc-edge-storage',
-      partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed }),
+      partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed, squadViewMode: state.squadViewMode }),
     },
   ),
 )

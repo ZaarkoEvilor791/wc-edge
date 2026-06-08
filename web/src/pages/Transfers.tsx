@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSquadStore } from '../store/squadStore'
+import { useAppStore } from '../store/appStore'
 import { useTransferSuggest, useCurrentRound, useRounds, useTeams, useProjections } from '../hooks/useWC'
 import { roundPhase } from '../domain/squadValidator'
 import type { RoundPhase } from '../domain/squadValidator'
@@ -291,7 +292,7 @@ export default function Transfers() {
   const [prevSquads, setPrevSquads] = useState<SquadPlayer[][]>([])
   const [manualOut, setManualOut] = useState<SquadPlayer | null>(null)
   const [showBrowseAll, setShowBrowseAll] = useState(false)
-  const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list')
+  const { squadViewMode: viewMode, setSquadViewMode: setViewMode } = useAppStore()
 
   const { mutate: suggest, isPending } = useTransferSuggest()
   const { data: teams } = useTeams()
