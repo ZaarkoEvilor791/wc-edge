@@ -14,10 +14,10 @@
 
 ---
 
-## Current State (Session 21 complete — Screenshot name matching fix)
+## Current State (Session 21 complete — Squad page fix + screenshot name matching)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `9e942ac`
+Latest commit: `fd6e417`
 
 **Tests:** 51 vitest (4 files) + 31 pytest — all green.
 
@@ -37,15 +37,19 @@ Latest commit: `9e942ac`
 
 ---
 
-## Session 21 — What was shipped (commit `9e942ac`)
+## Session 21 — What was shipped (commits `9e942ac`–`fd6e417`)
 
 **Web — `server/db.ts`:**
 - `matchPlayersByName` overhauled for screenshot reliability: strips FIFA UI truncation (`...`), removes combining diacritics via NFD normalization, maps Cyrillic lookalikes → ASCII before querying.
 - Uses `unaccent()` + ILIKE on both substring (`%name%`) and prefix (`name%`) patterns so truncated names like "Nuno Men..." and accented names like "Martínez" resolve correctly.
 - Prefix hits ranked below substring hits in ORDER BY to prefer exact matches.
+- Removed unused `wasTruncated` variable.
 
 **Web — `src/pages/Squad.tsx`:**
-- Moved `useTeams()` hook call above `useState` declarations (React rules of hooks ordering fix).
+- Moved `useTeams()` hook above `useState` and early returns — fixes React hooks violation that caused Squad page to crash on initial load (hook was previously called after `if (isLoading) return`).
+
+**DB:**
+- `CREATE EXTENSION IF NOT EXISTS unaccent` run against `fpledge` DB — required for `unaccent()` calls in `matchPlayersByName`.
 
 **Misc:**
 - Added `*.log` to `.gitignore`.
@@ -150,8 +154,7 @@ Latest commit: `9e942ac`
 
 ## Next Session Priorities
 
-1. **Fix Squad page** — broken as of Session 21, needs diagnosis.
-2. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
+1. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
 3. **Top up Anthropic credits** → test `/api/chat` and `/api/squad/from-screenshot`.
 4. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
 5. **Tournament operations** — mark eliminated teams as the tournament progresses:
@@ -412,5 +415,6 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **`_fetch_group_results` field names** — reads `homeSquadId`/`awaySquadId` and `homeScore`/`awayScore` from rounds.json tournaments. Falls back to `homeId`/`awayId` if primary keys absent. Returns `{}` on any error.
 - **server.ts `export { app }`** — app is exported for supertest. `app.listen()` only runs when `NODE_ENV !== 'test'`.
 - **`FREE_TRANSFERS_BY_PHASE` in `Transfers.tsx`** — `{group:2, r32:6, r16:4, qf:4, sf:5, final:6}`. R32 uses 6 (unlimited in WC rules, capped at stepper max). Auto-set on mount from `currentRound.stage` via `roundPhase()`; resets on round selector change.
+- **`unaccent` extension** — `matchPlayersByName` uses `unaccent()`. Extension is installed on `fpledge` DB (`CREATE EXTENSION IF NOT EXISTS unaccent` — already run). Required before any fresh schema deploy on a new DB.
 - **`/from-screenshot` prefill boundary** — prefill string is `'{"players":['`; model must close `]` and `}`. Verify with a full 15-player screenshot before deploying — if JSON.parse throws, the model may need the full `{"players":["` prefix instead.
 - **LLM rate limit is in-memory only** — resets on Render dyno restart. Acceptable for free-tier single-instance; not suitable for multi-instance deployments.
