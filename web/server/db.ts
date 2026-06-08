@@ -65,7 +65,6 @@ export async function getSuggestedSquad() {
 export async function matchPlayersByName(rawName: string) {
   // Normalize: strip FIFA UI truncation ("..."), remove diacritics, replace Unicode
   // lookalikes (e.g. Cyrillic і → i) so "Martínez", "Nuno Men...", "Cherkі" all match.
-  const wasTruncated = rawName.trim().endsWith('...')
   const cleaned = rawName
     .trim()
     .replace(/\.{2,}$/, '')
