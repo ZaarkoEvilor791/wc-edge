@@ -1,10 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { getXI, swapInSquad } from '../utils/squad'
+import { getXI, swapInSquad, fillSquadFromSuggested } from '../utils/squad'
 import type { SquadPlayer } from '../types/wc'
 
-function p(element: number, position: SquadPlayer['position']): SquadPlayer {
-  return { element, position, name: `P${element}`, price: 5, xp: 5, team_abbr: 'TST', squad_id: 1, low_sample: false }
+function p(element: number, position: SquadPlayer['position'], xp = 5): SquadPlayer {
+  return { element, position, name: `P${element}`, price: 5, xp, team_abbr: 'TST', squad_id: 1, low_sample: false }
 }
+
+// A full valid suggested squad (2GK/5DEF/5MID/3FWD) with elements 101–115
+const SUGGESTED: SquadPlayer[] = [
+  p(101, 'GK', 8), p(102, 'GK', 6),
+  p(103, 'DEF', 7), p(104, 'DEF', 6), p(105, 'DEF', 5), p(106, 'DEF', 4), p(107, 'DEF', 3),
+  p(108, 'MID', 9), p(109, 'MID', 8), p(110, 'MID', 7), p(111, 'MID', 6), p(112, 'MID', 5),
+  p(113, 'FWD', 10), p(114, 'FWD', 9), p(115, 'FWD', 8),
+]
 
 // Canonical ordered squad: 2 GK, 5 DEF, 5 MID, 3 FWD
 // First GK = starter, second GK = bench
@@ -78,5 +86,50 @@ describe('swapInSquad', () => {
     const { xi, bench } = getXI(swapped, [], 1)
     expect(bench.find((p) => p.element === 3)).toBeTruthy()
     expect(xi.find((p) => p.element === 7)).toBeTruthy()
+  })
+})
+
+describe('fillSquadFromSuggested', () => {
+  it('returns 15 players when matched is empty', () => {
+    const result = fillSquadFromSuggested([], SUGGESTED)
+    expect(result).toHaveLength(15)
+  })
+
+  it('returns matched unchanged when all 15 are provided', () => {
+    const result = fillSquadFromSuggested(SUGGESTED, [])
+    expect(result).toHaveLength(15)
+    expect(result.map((p) => p.element)).toEqual(expect.arrayContaining(SUGGESTED.map((p) => p.element)))
+  })
+
+  it('fills missing positions from suggested', () => {
+    const partial = [p(1, 'GK'), p(2, 'GK'), p(3, 'DEF'), p(4, 'DEF'), p(5, 'DEF'), p(6, 'DEF'), p(7, 'DEF')]
+    const result = fillSquadFromSuggested(partial, SUGGESTED)
+    expect(result).toHaveLength(15)
+    expect(result.filter((p) => p.position === 'MID')).toHaveLength(5)
+    expect(result.filter((p) => p.position === 'FWD')).toHaveLength(3)
+  })
+
+  it('never introduces duplicate element IDs', () => {
+    const partial = SUGGESTED.slice(0, 10)
+    const result = fillSquadFromSuggested(partial, SUGGESTED)
+    const ids = result.map((p) => p.element)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('correct position composition: 2GK 5DEF 5MID 3FWD', () => {
+    const partial = [p(1, 'GK'), p(2, 'MID')]
+    const result = fillSquadFromSuggested(partial, SUGGESTED)
+    expect(result.filter((p) => p.position === 'GK')).toHaveLength(2)
+    expect(result.filter((p) => p.position === 'DEF')).toHaveLength(5)
+    expect(result.filter((p) => p.position === 'MID')).toHaveLength(5)
+    expect(result.filter((p) => p.position === 'FWD')).toHaveLength(3)
+  })
+
+  it('fills from top-xP available in suggested', () => {
+    const partial = [p(1, 'GK'), p(2, 'GK')]
+    const result = fillSquadFromSuggested(partial, SUGGESTED)
+    const mids = result.filter((p) => p.position === 'MID')
+    // Should pick the 5 highest-xP mids from SUGGESTED (108–112)
+    expect(mids.map((p) => p.element).sort()).toEqual([108, 109, 110, 111, 112])
   })
 })

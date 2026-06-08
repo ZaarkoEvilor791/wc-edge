@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSquadStore } from '../store/squadStore'
-import { useTransferSuggest, useCurrentRound, useRounds, useTeams } from '../hooks/useWC'
+import { useTransferSuggest, useCurrentRound, useRounds, useTeams, useProjections } from '../hooks/useWC'
 import { roundPhase } from '../domain/squadValidator'
 import type { RoundPhase } from '../domain/squadValidator'
 import type { TransferSuggestion, SquadPlayer, TransferCard } from '../types/wc'
 import BrowseAllModal from '../components/shared/BrowseAllModal'
 import JerseyIcon from '../components/shared/JerseyIcon'
 import { getKit } from '../data/teamColors'
+import Pitch from '../components/shared/Pitch'
 
 const POS_COLOR: Record<string, string> = {
   GK: 'text-yellow-400',
@@ -251,11 +252,33 @@ function SwapCard({
   )
 }
 
+function PitchIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+      className={active ? 'text-accent' : 'text-slate-500'}>
+      <rect x="1" y="1" width="14" height="14" rx="1" />
+      <line x1="1" y1="8" x2="15" y2="8" />
+      <ellipse cx="8" cy="8" rx="3" ry="3" />
+    </svg>
+  )
+}
+
+function ListIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+      className={active ? 'text-accent' : 'text-slate-500'}>
+      <line x1="3" y1="4" x2="13" y2="4" />
+      <line x1="3" y1="8" x2="13" y2="8" />
+      <line x1="3" y1="12" x2="13" y2="12" />
+    </svg>
+  )
+}
+
 // ---- Main page ----
 
 export default function Transfers() {
   const navigate = useNavigate()
-  const { squad, setSquad, budget } = useSquadStore()
+  const { squad, setSquad, budget, captain } = useSquadStore()
   const currentRound = useCurrentRound()
   const { data: rounds } = useRounds()
   const [selectedRound, setSelectedRound] = useState<number | null>(null)
@@ -268,11 +291,13 @@ export default function Transfers() {
   const [prevSquads, setPrevSquads] = useState<SquadPlayer[][]>([])
   const [manualOut, setManualOut] = useState<SquadPlayer | null>(null)
   const [showBrowseAll, setShowBrowseAll] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'pitch'>('list')
 
   const { mutate: suggest, isPending } = useTransferSuggest()
   const { data: teams } = useTeams()
 
   const round = selectedRound ?? currentRound?.id ?? 1
+  const { data: projections } = useProjections(round)
   const hasSquad = squad.length > 0
 
   const eliminatedSquadIds = new Set(
@@ -412,7 +437,27 @@ export default function Transfers() {
       {hasSquad && (
         <>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-300">Your Squad</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-slate-300">Your Squad</p>
+              {suggestions === null && (
+                <div className="flex items-center gap-0.5 rounded-lg border border-slate-700 p-0.5">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`rounded p-1.5 transition-colors ${viewMode === 'list' ? 'bg-slate-700' : 'hover:bg-slate-800'}`}
+                    title="List view"
+                  >
+                    <ListIcon active={viewMode === 'list'} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('pitch')}
+                    className={`rounded p-1.5 transition-colors ${viewMode === 'pitch' ? 'bg-slate-700' : 'hover:bg-slate-800'}`}
+                    title="Pitch view"
+                  >
+                    <PitchIcon active={viewMode === 'pitch'} />
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               onClick={analyze}
               disabled={isPending}
@@ -422,11 +467,22 @@ export default function Transfers() {
             </button>
           </div>
 
-          <SquadList
-            squad={squad}
-            eliminatedSquadIds={eliminatedSquadIds}
-            onSelectOut={(p) => setManualOut(p)}
-          />
+          {viewMode === 'list' || suggestions !== null ? (
+            <SquadList
+              squad={squad}
+              eliminatedSquadIds={eliminatedSquadIds}
+              onSelectOut={(p) => setManualOut(p)}
+            />
+          ) : (
+            <Pitch
+              players={squad}
+              projections={projections ?? []}
+              round={round}
+              captain={captain ?? null}
+              eliminatedSquadIds={eliminatedSquadIds}
+              onPlayerClick={(p) => setManualOut(p)}
+            />
+          )}
 
           <button
             onClick={() => setShowBrowseAll(true)}

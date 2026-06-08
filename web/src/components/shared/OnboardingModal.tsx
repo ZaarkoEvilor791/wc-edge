@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { useSquadFromScreenshot } from '../../hooks/useWC'
+import { useSquadFromScreenshot, useSuggestedSquad } from '../../hooks/useWC'
 import { useSquadStore } from '../../store/squadStore'
+import { fillSquadFromSuggested } from '../../utils/squad'
 import type { SquadPlayer } from '../../types/wc'
 
 type Step = 'idle' | 'upload' | 'processing' | 'success' | 'error'
@@ -31,6 +32,7 @@ function ModalContent({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const { setSquad, setCaptain } = useSquadStore()
   const { mutateAsync: processScreenshot } = useSquadFromScreenshot()
+  const { data: suggestedData } = useSuggestedSquad()
 
   const [step, setStep] = useState<Step>('idle')
   const [matched, setMatched] = useState<SquadPlayer[]>([])
@@ -87,8 +89,11 @@ function ModalContent({ onClose }: { onClose: () => void }) {
   }
 
   const handleConfirmSquad = () => {
-    setSquad(matched)
-    const top = [...matched].sort((a, b) => b.xp - a.xp)[0]
+    const filled = suggestedData?.squad_json
+      ? fillSquadFromSuggested(matched, suggestedData.squad_json)
+      : matched
+    setSquad(filled)
+    const top = [...filled].sort((a, b) => b.xp - a.xp)[0]
     if (top) setCaptain(top.element)
     localStorage.setItem('wc-onboarded', '1')
     onClose()
@@ -227,7 +232,7 @@ function ModalContent({ onClose }: { onClose: () => void }) {
                   </p>
                   {unmatched.length > 0 && (
                     <p className="text-xs text-slate-500">
-                      {unmatched.length} not recognised — optimal picks used for those spots
+                      {unmatched.length} not recognised — filled with top xP pick{unmatched.length > 1 ? 's' : ''} for {unmatched.length > 1 ? 'those positions' : 'that position'}
                     </p>
                   )}
                 </div>

@@ -14,12 +14,12 @@
 
 ---
 
-## Current State (Session 21 complete — Squad page fix + screenshot name matching)
+## Current State (Session 22 complete — Screenshot squad fill-in + Transfers pitch view)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `fd6e417`
+Latest commit: TBD
 
-**Tests:** 51 vitest (4 files) + 31 pytest — all green.
+**Tests:** 57 vitest (4 files) + 31 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 77.96 xP)
 
@@ -34,6 +34,27 @@ Latest commit: `fd6e417`
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+
+---
+
+## Session 22 — What was shipped
+
+**Web — `src/utils/squad.ts`:**
+- New `fillSquadFromSuggested(matched, suggested)` pure function: fills missing position slots from the suggested squad (top xP per position), excludes already-matched elements, returns sorted 15-player array. Used by OnboardingModal to guarantee a full squad is always stored.
+
+**Web — `src/components/shared/OnboardingModal.tsx`:**
+- `handleConfirmSquad` now calls `fillSquadFromSuggested` before `setSquad` — fixes the bug where uploading a screenshot that matched < 15 players would result in the Squad page silently overwriting the user's squad with the suggested squad (corrupt detection triggered on `squad.length !== 15`).
+- Uses `useSuggestedSquad()` hook (data already in React Query cache by confirm time); falls back to raw matched array if data unavailable.
+- Modal copy updated: "filled with top xP pick for that position" (was misleading "optimal picks used for those spots").
+
+**Web — `src/pages/Transfers.tsx`:**
+- Pitch/list view toggle added to "Your Squad" section header, same pattern as Squad page.
+- Toggle hidden while smart suggest flow is active (`suggestions !== null`) to prevent flow conflicts.
+- Pitch view uses existing `Pitch` component; `onPlayerClick` calls `setManualOut(p)` — same action as list tap, opens `BrowseAllModal` in OUT→IN mode.
+- Added `useProjections(round)` hook and `captain` from squad store.
+
+**Tests — `src/__tests__/squad.test.ts`:**
+- 6 new tests for `fillSquadFromSuggested`: empty match, full match, partial fill, no duplicates, correct 2GK/5DEF/5MID/3FWD composition, top-xP selection.
 
 ---
 
