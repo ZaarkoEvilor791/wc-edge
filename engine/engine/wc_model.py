@@ -9,6 +9,7 @@ import psycopg
 
 from .config import (
     APPEARANCE_FULL,
+    APPEARANCE_PART,
     CS_PTS,
     FIFA_BASE,
     GOAL_PTS,
@@ -210,7 +211,7 @@ def compute_round_projection(
         mf * xg90_adj * GOAL_PTS.get(pos_int, 5)
         + mf * xa90 * 3
         + pcs * CS_PTS.get(pos_int, 0) * mf
-        + APPEARANCE_FULL * mf
+        + APPEARANCE_PART * min(1.0, mf + 0.15) + APPEARANCE_PART * mf
         + saves_ev
         + xgc_deduct * mf
     )

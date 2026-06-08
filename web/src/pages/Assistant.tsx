@@ -14,6 +14,7 @@ const GENERIC_CHIPS = [
   'Who are the best value picks for WC 2026?',
   'Which goalkeeper has the best fixtures in round 1?',
   'Build me a strong £100m squad for the group stage',
+  'How are points scored in WC 2026 Fantasy?',
 ]
 
 function renderContent(text: string) {

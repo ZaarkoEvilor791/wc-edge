@@ -55,6 +55,19 @@ YELLOW_CARD = -1
 RED_CARD = -2
 SCOUTING_BONUS = 2     # >= 4 pts + < 5% ownership
 
+# Scoring events — defined in constants but not yet modelled (no per-player data pre-tournament)
+OWN_GOAL         = -2
+PENALTY_WON      =  2
+PENALTY_CONCEDED = -1
+PENALTY_SAVE     =  3   # GK only
+FREE_KICK_GOAL   =  1   # additional point for direct FK goal
+QUAL_BOOSTER     =  2   # player advances to next round (chip mechanic)
+
+# Stat-based bonuses — Phase 2: add to model once StatsBomb extraction covers these events
+TACKLES_PER_PT   =  3   # MID: +1 per 3 tackles
+CHANCES_PER_PT   =  2   # MID: +1 per 2 chances created
+SHOTS_PER_PT     =  2   # FWD: +1 per 2 shots on target
+
 # Budget / squad rules
 BUDGET_GROUP = 100.0
 BUDGET_R32 = 105.0

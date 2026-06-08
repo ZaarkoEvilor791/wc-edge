@@ -5,6 +5,7 @@ import type { SquadPlayer, Fixture } from '../../types/wc'
 import { usePlayerProjectionsAllRounds, usePlayers, useFixtures } from '../../hooks/useWC'
 import { useSquadStore } from '../../store/squadStore'
 import RoundXpChart from './RoundXpChart'
+import { SCORING } from '../../config/gameRules'
 
 const POS_LABEL: Record<string, string> = {
   GK: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD',
@@ -200,6 +201,42 @@ function ModalContent({ player, onClose, onSubOut, isBench }: { player: SquadPla
                   <RoundXpChart data={chartData} />
                 )}
               </div>
+
+              {/* xP breakdown — model-derived components for round 1 */}
+              {r1 && !r1.loading && r1.xp > 0 && (() => {
+                const pos = player.position as keyof typeof SCORING.GOAL_PTS
+                const goalXp = r1.p_goal > 0 ? -Math.log(1 - Math.min(r1.p_goal, 0.9999)) * (SCORING.GOAL_PTS[pos] ?? 5) : 0
+                const csXp = r1.p_cs * (SCORING.CLEAN_SHEET_PTS[pos] ?? 0)
+                const appXp = SCORING.APPEARANCE_PART * Math.min(1, r1.mf + 0.15) + SCORING.APPEARANCE_PART * r1.mf
+                const otherXp = r1.xp - goalXp - csXp - appXp
+                const rows: { label: string; pts: number }[] = [
+                  { label: 'Goals (exp.)', pts: goalXp },
+                  { label: 'Clean sheet', pts: csXp },
+                  { label: 'Appearance', pts: appXp },
+                  ...(Math.abs(otherXp) > 0.05 ? [{ label: player.position === 'GK' ? 'Saves / deductions' : 'Assists / deductions', pts: otherXp }] : []),
+                ].filter(r => Math.abs(r.pts) > 0.01)
+                return rows.length > 0 ? (
+                  <div>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                      xP Breakdown (R1)
+                    </p>
+                    <div className="divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-800/40 text-xs">
+                      {rows.map(({ label, pts }) => (
+                        <div key={label} className="flex items-center justify-between px-3 py-1.5">
+                          <span className="text-slate-400">{label}</span>
+                          <span className={pts < 0 ? 'font-medium text-rose-400' : 'font-medium text-slate-200'}>
+                            {pts > 0 ? '+' : ''}{pts.toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between px-3 py-1.5">
+                        <span className="font-semibold text-slate-300">Total xP</span>
+                        <span className="font-bold text-accent">{r1.xp.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null
+              })()}
             </div>
           )}
 

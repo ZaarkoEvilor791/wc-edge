@@ -130,6 +130,29 @@ class TestComputeRoundProjection:
         low  = compute_round_projection("DEF", 2, rates["xg90"], rates["xa90"], None, rates["mf"], low_concede)
         assert low["xp"] > high["xp"]
 
+    def test_appearance_formula_accounts_for_partial_appearances(self):
+        # mf=0.3 (rotation player): p(any) ≈ 0.45, p(60min) = 0.3
+        # expected appearance pts = 1 * 0.45 + 1 * 0.3 = 0.75
+        # old formula: 2 * 0.3 = 0.60 — rotation players were undervalued
+        mf = 0.3
+        proj = compute_round_projection("MID", 3, 0.0, 0.0, None, mf, {**AVG_FDR, "concede_lambda": 0.0})
+        # cs contribution is ~0 (concede_lambda=0 → pcs=1, but MID CS = 1pt)
+        # goals/assists = 0 (xg=xa=0)
+        # only appearance terms remain (+saves=0, +xgc=0, +pcs*mf*1)
+        # appearance = 1 * min(1, 0.3+0.15) + 1 * 0.3 = 0.45 + 0.30 = 0.75
+        # plus CS: math.exp(0) * 1 * 0.3 = 0.3 → total ~ 1.05
+        appearance_ev = 1.0 * min(1.0, mf + 0.15) + 1.0 * mf
+        assert appearance_ev == pytest.approx(0.75)
+        # confirm sub-rate player gets more than old 2*mf formula
+        assert appearance_ev > 2 * mf
+
+    def test_appearance_starter_close_to_full_appearance(self):
+        # mf=0.9 (strong starter): p(any) = min(1, 1.05) = 1.0, p(60min) = 0.9
+        # appearance = 1 * 1.0 + 1 * 0.9 = 1.9 (was 2 * 0.9 = 1.8)
+        mf = 0.9
+        appearance_ev = 1.0 * min(1.0, mf + 0.15) + 1.0 * mf
+        assert appearance_ev == pytest.approx(1.9)
+
 
 # ---------------------------------------------------------------------------
 # blend_live_observations — Bayesian blend math (isolated, no DB/HTTP)

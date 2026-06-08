@@ -16,6 +16,26 @@ import {
   getTeamFdr,
 } from './db'
 import { suggestTransfers } from './services/transferAdvisor'
+import { SCORING } from '../src/config/gameRules'
+
+function buildScoringContext(): string {
+  const s = SCORING
+  return [
+    `Goals: GK ${s.GOAL_PTS.GK}pts, DEF ${s.GOAL_PTS.DEF}pts, MID ${s.GOAL_PTS.MID}pts, FWD ${s.GOAL_PTS.FWD}pts.`,
+    `Assist ${s.ASSIST}pts.`,
+    `Clean sheet: GK/DEF ${s.CLEAN_SHEET_PTS.GK}pts, MID ${s.CLEAN_SHEET_PTS.MID}pt, FWD 0pt.`,
+    `Appearance ≥60min ${s.APPEARANCE_FULL}pts, <60min ${s.APPEARANCE_PART}pt.`,
+    `GK: +1pt per ${s.SAVES_PER_PT} saves. Penalty save +${s.PENALTY_SAVE}pts.`,
+    `GK/DEF: goal conceded (after 1st) ${s.GOAL_CONCEDED_PER}pt.`,
+    `MID: +1pt per ${s.TACKLES_PER_PT} tackles, +1pt per ${s.CHANCES_PER_PT} chances created.`,
+    `FWD: +1pt per ${s.SHOTS_ON_TARGET_PER_PT} shots on target.`,
+    `Direct FK goal +${s.FREE_KICK_GOAL_BONUS}pt bonus.`,
+    `Cards: yellow ${s.YELLOW_CARD}pt, red ${s.RED_CARD}pts.`,
+    `Own goal ${s.OWN_GOAL}pts. Penalty won +${s.PENALTY_WON}pts. Penalty conceded ${s.PENALTY_CONCEDED}pt.`,
+    `Scouting bonus +${s.SCOUTING_BONUS}pts (>4pts AND <5% owned).`,
+    `Qualification Booster chip: +${s.QUALIFICATION_BOOSTER}pts per XI player who advances (R32+ only).`,
+  ].join(' ')
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -291,7 +311,7 @@ app.post('/api/chat', async (req, res) => {
   const system = `<role>You are Edge, a FIFA WC 2026 Fantasy advisor. Reply in ≤120 tokens. No preamble. No sign-off.</role>
 
 <rules>
-Scoring: Goals — GK 9pts, DEF 7pts, MID 6pts, FWD 5pts. Assist 3pts. Clean sheet — GK/DEF 5pts, MID 1pt, FWD 0pt. Appearance ≥60min 2pts, <60min 1pt. GK +1pt/3 saves. Yellow −1pt, red −2pt. Scouting bonus +2pts (≥4pts AND <5% owned).
+${buildScoringContext()}
 Chips: Wildcard (free full reset, not usable in R32), 12th Man (pick one bench player to score for your team), Max Captain (highest scorer in XI auto-captained), Qualification Booster (+2pts to XI players who progress, R32+ only), Mystery Booster (revealed at R32).
 Budget: £100m group stage, £105m from R32. Country limit: 3 group+R32 / 4 R16 / 5 QF / 6 SF / 8 Final. Extra transfers: −3pts each.
 </rules>
