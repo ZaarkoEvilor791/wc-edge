@@ -14,14 +14,14 @@
 
 ---
 
-## Current State (Session 25 complete — Complete scoring rules + xP formula fix)
+## Current State (Session 26 complete — Eliminated badges, unrecognised player notification, prod smoke test)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
-Latest commit: `452970a`
+Latest commit: `954b240`
 
 **Tests:** 57 vitest (4 files) + 33 pytest — all green.
 
-**DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 77.96 xP)
+**DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 79.91 xP)
 
 **Squad composition:** 2GK/5DEF/5MID/3FWD · Ramírez + Osako as GKs · Mbappé/Salah/Ronaldo/Raphinha in XI
 
@@ -31,9 +31,33 @@ Latest commit: `452970a`
 
 **Render deploy:** `startCommand` = `cd web && node node_modules/.bin/tsx server/server.ts`
 
+**Render env vars:** `AI_ENABLED=true` confirmed set.
+
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+
+**Prod smoke test (Session 26):** All green — FDR 48 rows ✓, 8 rounds ✓, 1,481 players ✓, `/api/chat` scoring rules correct ✓, `/api/live` stale fallback ✓.
+
+---
+
+## Session 26 — What was shipped (commit `954b240`)
+
+**Engine — re-run `wc_run` after appearance formula fix:**
+- xP improved 77.96 → 79.91. Suggested squad updated in DB.
+
+**Web — eliminated team feature (BrowseAllModal, Squad, Transfers, Captain):**
+- `BrowseAllModal.tsx`: eliminated candidates disabled + "Eliminated" badge + "Not eligible" label when toggled visible; toggle button text updated to clarify they can't be transferred in.
+- `Squad.tsx` list view `PlayerCard`: "Eliminated" badge, grayed name/xP for eliminated players.
+- `Squad.tsx` + `Transfers.tsx`: amber warning banner (`eliminatedInSquad`) listing eliminated squad players by name, "Go to Transfers" CTA on Squad page only.
+- `Squad.tsx` `SwapDrawer`: receives `eliminatedSquadIds`, shows "Eliminated" badge on eligible swap options.
+- `Captain.tsx`: "Eliminated" badge on captain list rows; grayed name/xP; "TOP PICK" label suppressed for eliminated players.
+
+**Web — unrecognised player notification (new `UnmatchedBanner.tsx`):**
+- `appStore.ts`: non-persisted `unmatchedNames: string[] | null` + `setUnmatchedNames` + `clearUnmatchedNames`. NOT in `partialize` — clears on page reload, never persists to next session.
+- `OnboardingModal.tsx`: calls `setUnmatchedNames(unmatched)` on confirm — replaces on re-upload, clears on perfect match.
+- `UnmatchedBanner.tsx` (new): shared amber dismissible banner, caps display at 3 names + "+N more", `showTransferLink` prop renders "Go to Transfers →" on Squad page only. Returns null when no unmatched names.
+- `Squad.tsx` + `Transfers.tsx`: render `<UnmatchedBanner>` above main content; invisible for perfect-match uploads.
 
 ---
 
@@ -234,30 +258,33 @@ Latest commit: `452970a`
 
 ## Outstanding (pre-tournament, by June 11)
 
-- **Production smoke test** — verify all 5 pages on `https://wc-edge.onrender.com`. Check `/api/fdr?round=1` (expect 48 rows), `/api/live`, mobile Transfers (tap player → BrowseAllModal OUT→IN), SwapDrawer.
-- **Anthropic credits** — top up at console.anthropic.com → test Assistant chat + screenshot upload end-to-end.
-- **Render env var** — add `AI_ENABLED=true` in Render dashboard (Environment tab). Required for kill switch to work correctly.
+- **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle.
+- **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA Fantasy screenshot.
 
 ---
 
 ## Next Session Priorities
 
-1. **Re-run engine** — appearance formula changed; re-run `py -m engine.wc_run` to refresh projections in DB.
-2. **Prod smoke test** — all 5 pages, `/api/fdr?round=1`, `/api/live`, mobile Transfers (tap player → OUT→IN modal), SwapDrawer.
-3. **Top up Anthropic credits** → test `/api/chat` (ask "how much for a penalty save?" to verify new rules) and `/api/squad/from-screenshot`.
-4. **Add `AI_ENABLED=true`** in Render dashboard (Environment tab).
-5. **Tournament operations** — mark eliminated teams as the tournament progresses:
+1. **Squad UI/UX overhaul** (plan in `~/.claude/plans/plan-clean-ui-ux-for-cozy-hamming.md`):
+   - **Captain/VC badge fix** — filled circular badges (gold C, silver VC), 18px, `z-10`, `-top-1.5 -right-1.5`. Wire `viceCaptain` from store → Pitch → PitchPlayerCard.
+   - **Pitch view as persistent default** — add `squadViewMode: 'pitch' | 'list'` to `appStore` (persisted). Squad + Transfers both read from store instead of local `useState`.
+   - **Screenshot load as-is** — `OnboardingModal` stores matched players directly (remove `fillSquadFromSuggested`). Squad corrupt check: duplicates only (remove `squad.length !== 15`). Pitch renders clickable `EmptySlotCard` placeholders for unfilled slots; tapping opens BrowseAllModal in add mode (`addPosition` + `onAdd` props).
+   - **Optimise XI button** — `optimiseXI(players)` in `squad.ts`: tries 7 formations (4-4-2, 4-3-3, 3-5-2, 3-4-3, 5-3-2, 5-4-1, 4-5-1), returns best reordered squad array + formation counts. `getXI` gains optional `posCount` override param. Store `formationCounts` in `squadStore` (persisted). Squad page shows button + formation label; auto-sets captain to highest-xP starter.
+
+2. **Tournament operations** — mark eliminated teams as the tournament progresses:
    ```sql
    UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
    ```
    Engine cron auto-refreshes projections at 04:00 + 18:00 UTC.
-6. **Manual engine trigger** if projections go stale:
+
+3. **Manual engine trigger** if projections go stale:
    ```bash
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
    # With post-group FDR update (run after group stage ends ~June 27):
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
    ```
-7. **Phase 2 (post-tournament)** — extend StatsBomb extraction for tackles + key passes; add to xP model.
+
+4. **Phase 2 (post-tournament)** — extend StatsBomb extraction for tackles + key passes; add to xP model.
 
 ---
 
@@ -519,3 +546,7 @@ SCOUTING_BONUS = 2    # >= 4 pts + < 5% ownership
 - **`getXI` takes only `players`** — removed `_projections` and `_round` params (were always unused). Signature is `getXI(players: SquadPlayer[])`.
 - **`bench` field removed from store** — `SquadStore` and `SquadState` no longer have a `bench: number[]` field. Bench is computed on the fly by `getXI` from array order.
 - **Game rule constants live in `src/config/gameRules.ts`** — `POS_REQUIRED`, `POS_COUNT`, `POS_ORDER`, `TOTAL_ROUNDS`. All other files import from there; do not redeclare locally.
+- **`unmatchedNames` in appStore is non-persisted** — excluded from `partialize`. Clears on page reload. Set by OnboardingModal after screenshot confirm; cleared on explicit banner dismiss or re-upload with zero unmatched.
+- **`UnmatchedBanner` renders null when no unmatched names** — safe to place on any page; invisible for perfect-match uploads.
+- **Eliminated candidates in BrowseAllModal are disabled, not hidden** — when "Show N eliminated" is toggled, they appear with badge + "Not eligible" label but `disabled` button. Cannot be transferred in.
+- **`viceCaptain` in squadStore** — stored as `number | null` (element ID), persisted. Not yet wired to Pitch (Session 27 work). Captain page uses it for advisory display only; actual captain swap must be done on FIFA Fantasy website.
