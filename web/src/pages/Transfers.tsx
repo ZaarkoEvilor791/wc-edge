@@ -225,6 +225,17 @@ function SwapCard({
         <SwapPlayerCard player={suggestion.in} variant="in" />
       </div>
 
+      {isCostly && (() => {
+        const net = suggestion.xp_gain - 3
+        const worthIt = net > 0
+        return (
+          <div className={`mt-3 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold ${worthIt ? 'bg-emerald-950/40 text-emerald-400' : 'bg-rose-950/40 text-rose-400'}`}>
+            <span>Hit verdict</span>
+            <span>{worthIt ? '+' : ''}{net.toFixed(1)} xP net &nbsp;·&nbsp; {worthIt ? 'Worth the hit ✓' : 'Not worth the hit'}</span>
+          </div>
+        )
+      })()}
+
       <div className="mt-5 grid gap-3" style={{ gridTemplateColumns: canUndo ? 'auto 1fr 1fr' : '1fr 1fr' }}>
         {canUndo && (
           <button
