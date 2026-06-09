@@ -12,18 +12,24 @@ import {
   getProjections,
   getSuggestedSquad,
   getCurrentRoundId,
-  matchPlayersByName,
   getTeamFdr,
 } from './db'
 import { suggestTransfers } from './services/transferAdvisor'
+import { processSquadScreenshot, isAllowedMime, ScreenshotParseError, ScreenshotEmptyError } from './services/screenshotService'
 import { SCORING } from '../src/config/gameRules'
+import { ROUTES } from '../src/config/routes'
 
 function buildScoringContext(): string {
   const s = SCORING
+  const goalLine = (Object.entries(s.GOAL_PTS) as [string, number][])
+    .map(([pos, pts]) => `${pos} ${pts}pts`).join(', ')
+  const csLine = (Object.entries(s.CLEAN_SHEET_PTS) as [string, number][])
+    .filter(([, pts]) => pts > 0)
+    .map(([pos, pts]) => `${pos} ${pts}pts`).join(', ')
   return [
-    `Goals: GK ${s.GOAL_PTS.GK}pts, DEF ${s.GOAL_PTS.DEF}pts, MID ${s.GOAL_PTS.MID}pts, FWD ${s.GOAL_PTS.FWD}pts.`,
+    `Goals: ${goalLine}.`,
     `Assist ${s.ASSIST}pts.`,
-    `Clean sheet: GK/DEF ${s.CLEAN_SHEET_PTS.GK}pts, MID ${s.CLEAN_SHEET_PTS.MID}pt, FWD 0pt.`,
+    `Clean sheet: ${csLine}.`,
     `Appearance ≥60min ${s.APPEARANCE_FULL}pts, <60min ${s.APPEARANCE_PART}pt.`,
     `GK: +1pt per ${s.SAVES_PER_PT} saves. Penalty save +${s.PENALTY_SAVE}pts.`,
     `GK/DEF: goal conceded (after 1st) ${s.GOAL_CONCEDED_PER}pt.`,
@@ -36,6 +42,7 @@ function buildScoringContext(): string {
     `Qualification Booster chip: +${s.QUALIFICATION_BOOSTER}pts per XI player who advances (R32+ only).`,
   ].join(' ')
 }
+export const _buildScoringContext = buildScoringContext
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -70,9 +77,9 @@ async function fifaProxy(url: string, ttlMs: number, res: express.Response) {
   }
 }
 
-app.get('/wc/players.json', (_, res) => fifaProxy(`${FIFA_BASE}/players.json`, 5 * 60_000, res))
-app.get('/wc/rounds.json', (_, res) => fifaProxy(`${FIFA_BASE}/rounds.json`, 5 * 60_000, res))
-app.get('/wc/squads_fifa.json', (_, res) => fifaProxy(`${FIFA_BASE}/squads_fifa.json`, 30 * 60_000, res))
+app.get(ROUTES.fifaPlayers, (_, res) => fifaProxy(`${FIFA_BASE}/players.json`, 5 * 60_000, res))
+app.get(ROUTES.fifaRounds, (_, res) => fifaProxy(`${FIFA_BASE}/rounds.json`, 5 * 60_000, res))
+app.get(ROUTES.fifaSquads, (_, res) => fifaProxy(`${FIFA_BASE}/squads_fifa.json`, 30 * 60_000, res))
 
 app.get('/api/fixtures/:squadId', async (req, res) => {
   const squadId = Number(req.params.squadId)
@@ -107,7 +114,7 @@ app.get('/api/fixtures/:squadId', async (req, res) => {
 
 // ---- DB API routes ----
 
-app.get('/api/players', async (_, res) => {
+app.get(ROUTES.players, async (_, res) => {
   try {
     const players = await getPlayers()
     res.json(players.map((p) => ({
@@ -119,7 +126,7 @@ app.get('/api/players', async (_, res) => {
   }
 })
 
-app.get('/api/teams', async (_, res) => {
+app.get(ROUTES.teams, async (_, res) => {
   try {
     res.json(await getTeams())
   } catch (err) {
@@ -127,7 +134,7 @@ app.get('/api/teams', async (_, res) => {
   }
 })
 
-app.get('/api/rounds', async (_, res) => {
+app.get(ROUTES.rounds, async (_, res) => {
   try {
     res.json(await getRounds())
   } catch (err) {
@@ -135,7 +142,7 @@ app.get('/api/rounds', async (_, res) => {
   }
 })
 
-app.get('/api/projections', async (req, res) => {
+app.get(ROUTES.projections, async (req, res) => {
   const round = Number(req.query.round)
   if (!round || Number.isNaN(round)) {
     return res.status(400).json({ error: 'round query param required' })
@@ -147,7 +154,7 @@ app.get('/api/projections', async (req, res) => {
   }
 })
 
-app.get('/api/squad/suggest', async (_, res) => {
+app.get(ROUTES.suggestSquad, async (_, res) => {
   try {
     const squad = await getSuggestedSquad()
     if (!squad) return res.status(404).json({ error: 'No suggested squad yet' })
@@ -157,7 +164,7 @@ app.get('/api/squad/suggest', async (_, res) => {
   }
 })
 
-app.post('/api/squad/optimize', async (_, res) => {
+app.post(ROUTES.optimizeSquad, async (_, res) => {
   // Placeholder: trigger Python optimizer via shell or return current suggestion
   try {
     const squad = await getSuggestedSquad()
@@ -168,7 +175,7 @@ app.post('/api/squad/optimize', async (_, res) => {
   }
 })
 
-app.post('/api/transfers/suggest', async (req, res) => {
+app.post(ROUTES.suggestTransfers, async (req, res) => {
   const { squad, round, freeTransfers, budget = 100 } = req.body as {
     squad: number[]
     round: number
@@ -214,7 +221,7 @@ app.post('/api/transfers/suggest', async (req, res) => {
   }
 })
 
-app.get('/api/fdr', async (req, res) => {
+app.get(ROUTES.fdr, async (req, res) => {
   const round = Number(req.query.round)
   if (!round || Number.isNaN(round)) {
     return res.status(400).json({ error: 'round query param required' })
@@ -292,7 +299,7 @@ function checkRateLimit(ip: string, maxPerMin: number, maxPerDay: number): boole
   return true
 }
 
-app.post('/api/chat', async (req, res) => {
+app.post(ROUTES.chat, async (req, res) => {
   if (!anthropic) {
     return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' })
   }
@@ -321,8 +328,8 @@ Budget: £100m group stage, £105m from R32. Country limit: 3 group+R32 / 4 R16 
   try {
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      system,
+      max_tokens: 200,
+      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
       messages,
     })
     const text = response.content.find((b) => b.type === 'text')?.text ?? ''
@@ -334,10 +341,7 @@ Budget: £100m group stage, £105m from R32. Country limit: 3 group+R32 / 4 R16 
 
 // ---- Squad from screenshot ----
 
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
-type AllowedMime = typeof ALLOWED_MIME[number]
-
-app.post('/api/squad/from-screenshot', async (req, res) => {
+app.post(ROUTES.fromScreenshot, async (req, res) => {
   if (!anthropic) {
     return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' })
   }
@@ -351,59 +355,15 @@ app.post('/api/squad/from-screenshot', async (req, res) => {
   if (!imageBase64 || !mimeType) {
     return res.status(400).json({ error: 'imageBase64 and mimeType required' })
   }
-  if (!ALLOWED_MIME.includes(mimeType as AllowedMime)) {
+  if (!isAllowedMime(mimeType)) {
     return res.status(400).json({ error: 'Unsupported image type' })
   }
   try {
-    const SCREENSHOT_PREFILL = '{"players":['
-    const visionRes = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 256,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mimeType as AllowedMime, data: imageBase64 },
-            },
-            {
-              type: 'text',
-              text: 'List every player name and position (GK, DEF, MID, or FWD) visible in this FIFA Fantasy squad screenshot as JSON. Use the pitch rows and bench badges to determine position.',
-            },
-          ],
-        },
-        { role: 'assistant', content: SCREENSHOT_PREFILL },
-      ],
-    })
-    const completion = visionRes.content.find((b) => b.type === 'text')?.text ?? ''
-    let players: { name: string; position?: string }[]
-    try {
-      const parsed = JSON.parse(SCREENSHOT_PREFILL + completion) as { players: unknown[] }
-      players = parsed.players.map((p) => {
-        if (typeof p === 'string') return { name: p }
-        const obj = p as Record<string, unknown>
-        return { name: String(obj.name ?? ''), position: typeof obj.position === 'string' ? obj.position.toUpperCase() : undefined }
-      }).filter((p) => p.name.trim().length > 0)
-    } catch {
-      return res.status(422).json({ error: 'Could not parse player names from screenshot' })
-    }
-    if (players.length === 0) {
-      return res.status(422).json({ error: 'No player names found in screenshot' })
-    }
-    const VALID_POS = new Set(['GK', 'DEF', 'MID', 'FWD'])
-    const results = await Promise.all(
-      players.map(async ({ name, position }) => ({
-        name,
-        match: await matchPlayersByName(name, position && VALID_POS.has(position) ? position : undefined),
-      }))
-    )
-    res.json({
-      matched: results.filter((r) => r.match).map((r) => r.match),
-      unmatched: results.filter((r) => !r.match).map((r) => r.name),
-      total: players.length,
-    })
+    const currentRound = await getCurrentRoundId()
+    res.json(await processSquadScreenshot(anthropic, imageBase64, mimeType, currentRound))
   } catch (err) {
+    if (err instanceof ScreenshotParseError) return res.status(422).json({ error: err.message })
+    if (err instanceof ScreenshotEmptyError) return res.status(422).json({ error: err.message })
     res.status(502).json({ error: 'Screenshot processing failed', detail: String(err) })
   }
 })

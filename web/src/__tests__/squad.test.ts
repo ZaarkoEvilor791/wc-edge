@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getXI, swapInSquad, fillSquadFromSuggested, optimiseXI } from '../utils/squad'
+import { getXI, swapInSquad, fillSquadFromSuggested, optimiseXI, getEligibleSwapTargets } from '../utils/squad'
 import type { SquadPlayer } from '../types/wc'
 
 function p(element: number, position: SquadPlayer['position'], xp = 5): SquadPlayer {
@@ -295,5 +295,48 @@ describe('fillSquadFromSuggested', () => {
     const mids = result.filter((p) => p.position === 'MID')
     // Should pick the 5 highest-xP mids from SUGGESTED (108–112)
     expect(mids.map((p) => p.element).sort()).toEqual([108, 109, 110, 111, 112])
+  })
+})
+
+// SQUAD XI from default posCount: GK=1, DEF=4, MID=4, FWD=2
+// xi: [1(GK), 3,4,5,6(DEF), 8,9,10,11(MID), 13,14(FWD)] = 11
+// bench: [2(GK), 7(DEF), 12(MID), 15(FWD)] = 4
+describe('getEligibleSwapTargets', () => {
+  const { xi, bench } = getXI(SQUAD)
+
+  it('GK source returns only the other GK', () => {
+    const result = getEligibleSwapTargets(xi, bench, p(1, 'GK'))
+    expect(result).toEqual(new Set([2]))
+  })
+
+  it('GK source excludes itself', () => {
+    const result = getEligibleSwapTargets(xi, bench, p(1, 'GK'))
+    expect(result.has(1)).toBe(false)
+  })
+
+  it('XI MID source: bench FWD is eligible (DEF stays 4, MID→3, FWD→3)', () => {
+    const result = getEligibleSwapTargets(xi, bench, p(8, 'MID'))
+    expect(result.has(15)).toBe(true)  // bench FWD
+  })
+
+  it('XI DEF source with only 4 DEF: bench MID is eligible (DEF→3, MID→5, FWD→2)', () => {
+    const result = getEligibleSwapTargets(xi, bench, p(3, 'DEF'))
+    expect(result.has(12)).toBe(true)  // bench MID
+  })
+
+  it('XI DEF source: bench DEF swap stays eligible (DEF remains 4)', () => {
+    const result = getEligibleSwapTargets(xi, bench, p(3, 'DEF'))
+    expect(result.has(7)).toBe(true)  // bench DEF
+  })
+
+  it('bench FWD source: XI MID swap would produce FWD=3, MID=3 — eligible', () => {
+    const result = getEligibleSwapTargets(xi, bench, p(15, 'FWD'))
+    expect(result.has(8)).toBe(true)  // XI MID → produces DEF=4, MID=3, FWD=3 ✓
+  })
+
+  it('swapSource not in squad still returns a set without crashing', () => {
+    const ghost = p(999, 'MID')
+    const result = getEligibleSwapTargets(xi, bench, ghost)
+    expect(result instanceof Set).toBe(true)
   })
 })

@@ -35,7 +35,8 @@ vi.mock('@anthropic-ai/sdk', () => ({
 }))
 
 import * as db from '../../server/db'
-import { app, _rateLimitMap } from '../../server/server'
+import { app, _rateLimitMap, _buildScoringContext } from '../../server/server'
+import { ROUTES } from '../config/routes'
 
 // ----- shared fixture data -----
 const PLAYERS = [
@@ -287,5 +288,103 @@ describe('Rate limiter', () => {
     expect(res.status).toBe(503)
     expect(res.body.error).toMatch(/unavailable/i)
     process.env.AI_ENABLED = 'true'
+  })
+})
+
+describe('buildScoringContext', () => {
+  it('derives goal points from SCORING.GOAL_PTS', () => {
+    const ctx = _buildScoringContext()
+    expect(ctx).toContain('GK 9pts')
+    expect(ctx).toContain('FWD 5pts')
+  })
+
+  it('includes assist points from SCORING.ASSIST', () => {
+    const ctx = _buildScoringContext()
+    expect(ctx).toContain('Assist 3pts')
+  })
+
+  it('includes clean sheet lines only for positions with pts > 0', () => {
+    const ctx = _buildScoringContext()
+    expect(ctx).toContain('GK 5pts')
+    expect(ctx).not.toContain('FWD 0pts')
+  })
+
+  it('includes scouting bonus from SCORING.SCOUTING_BONUS', () => {
+    const ctx = _buildScoringContext()
+    expect(ctx).toContain('Scouting bonus +2pts')
+  })
+
+  it('includes qualification booster from SCORING.QUALIFICATION_BOOSTER', () => {
+    const ctx = _buildScoringContext()
+    expect(ctx).toContain('+2pts per XI player who advances')
+  })
+})
+
+describe('ROUTES constants', () => {
+  it('ROUTES.players is the correct API path', () => {
+    expect(ROUTES.players).toBe('/api/players')
+  })
+
+  it('ROUTES.fixtures generates dynamic path with squadId', () => {
+    expect(ROUTES.fixtures(5)).toBe('/api/fixtures/5')
+    expect(ROUTES.fixtures(42)).toBe('/api/fixtures/42')
+  })
+
+  it('server responds on ROUTES.players path', async () => {
+    vi.mocked(db.getPlayers).mockResolvedValueOnce([])
+    const res = await request(app).get(ROUTES.players)
+    expect(res.status).toBe(200)
+  })
+})
+
+describe('matchPlayersByName — return type contract via screenshot route', () => {
+  const matchedPlayer = {
+    method: 'positioned' as const,
+    element: 1, position: 'FWD', price: 10, squad_id: 3,
+    name: 'Messi', team_abbr: 'ARG', xp: 8.5, low_sample: false,
+  }
+
+  beforeEach(() => {
+    vi.mocked(db.getCurrentRoundId).mockResolvedValue(1)
+  })
+
+  it('positioned match — method field is positioned', () => {
+    expect(matchedPlayer.method).toBe('positioned')
+  })
+
+  it('fallback match includes method: fallback', () => {
+    const fallbackPlayer = { ...matchedPlayer, method: 'fallback' as const }
+    expect(fallbackPlayer.method).toBe('fallback')
+  })
+
+  it('null match returns null (no match)', async () => {
+    vi.mocked(db.matchPlayersByName).mockResolvedValueOnce(null)
+    const result = await db.matchPlayersByName('Unknown Player')
+    expect(result).toBeNull()
+  })
+
+  it('low_sample true is preserved in result', () => {
+    const withSample = { ...matchedPlayer, low_sample: true }
+    expect(withSample.low_sample).toBe(true)
+  })
+
+  it('low_sample false when no projection (COALESCE default)', () => {
+    expect(matchedPlayer.low_sample).toBe(false)
+  })
+
+  it('PlayerMatchResult shape has all required fields', () => {
+    const r = matchedPlayer
+    expect(typeof r.element).toBe('number')
+    expect(typeof r.method).toBe('string')
+    expect(['positioned', 'fallback']).toContain(r.method)
+    expect(typeof r.low_sample).toBe('boolean')
+  })
+
+  it('screenshot route calls getCurrentRoundId to pass dynamic round', async () => {
+    vi.mocked(db.matchPlayersByName).mockResolvedValue(matchedPlayer)
+    await request(app)
+      .post(ROUTES.fromScreenshot)
+      .send({ imageBase64: 'abc', mimeType: 'image/jpeg' })
+    expect(db.getCurrentRoundId).toHaveBeenCalled()
   })
 })

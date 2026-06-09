@@ -4,7 +4,7 @@ import { useSuggestedSquad, useProjections, useCurrentRound, useTeams } from '..
 import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
-import { getXI, swapInSquad, optimiseXI } from '../utils/squad'
+import { getXI, swapInSquad, optimiseXI, getEligibleSwapTargets } from '../utils/squad'
 import { roundPhase, COUNTRY_LIMIT } from '../domain/squadValidator'
 import { POS_ORDER } from '../config/gameRules'
 import Spinner from '../components/shared/Spinner'
@@ -115,25 +115,7 @@ export default function Squad() {
 
   const eligibleElements = (() => {
     if (!swapSource) return new Set<number>()
-    if (swapSource.position === 'GK') {
-      return new Set([...xi, ...bench].filter(p => p.position === 'GK' && p.element !== swapSource.element).map(p => p.element))
-    }
-    const currentDEF = xi.filter(p => p.position === 'DEF').length
-    const currentMID = xi.filter(p => p.position === 'MID').length
-    const currentFWD = xi.filter(p => p.position === 'FWD').length
-    const sourceIsXI = xi.some(p => p.element === swapSource.element)
-    const candidates = sourceIsXI ? bench : xi
-    const result: number[] = []
-    for (const p of candidates) {
-      if (p.position === 'GK' || p.element === swapSource.element) continue
-      const out = sourceIsXI ? swapSource : p
-      const into = sourceIsXI ? p : swapSource
-      const newDEF = currentDEF - (out.position === 'DEF' ? 1 : 0) + (into.position === 'DEF' ? 1 : 0)
-      const newMID = currentMID - (out.position === 'MID' ? 1 : 0) + (into.position === 'MID' ? 1 : 0)
-      const newFWD = currentFWD - (out.position === 'FWD' ? 1 : 0) + (into.position === 'FWD' ? 1 : 0)
-      if (newDEF >= 3 && newMID >= 2 && newFWD >= 1) result.push(p.element)
-    }
-    return new Set(result)
+    return getEligibleSwapTargets(xi, bench, swapSource)
   })()
 
   const totalCost = displaySquad.reduce((s, p) => s + p.price, 0)

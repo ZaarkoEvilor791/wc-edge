@@ -1,4 +1,5 @@
 import type { Player, Round, Team, Projection, SuggestedSquad, TransferSuggestResponse, Fixture, TeamFdr } from '../types/wc'
+import { ROUTES } from '../config/routes'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path)
@@ -17,25 +18,25 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const wcApi = {
-  players: () => get<Player[]>('/api/players'),
-  teams: () => get<Team[]>('/api/teams'),
-  rounds: () => get<Round[]>('/api/rounds'),
-  projections: (round: number) => get<Projection[]>(`/api/projections?round=${round}`),
-  suggestedSquad: () => get<SuggestedSquad>('/api/squad/suggest'),
-  optimizeSquad: (body: { round?: number }) => post<SuggestedSquad>('/api/squad/optimize', body),
+  players: () => get<Player[]>(ROUTES.players),
+  teams: () => get<Team[]>(ROUTES.teams),
+  rounds: () => get<Round[]>(ROUTES.rounds),
+  projections: (round: number) => get<Projection[]>(`${ROUTES.projections}?round=${round}`),
+  suggestedSquad: () => get<SuggestedSquad>(ROUTES.suggestSquad),
+  optimizeSquad: (body: { round?: number }) => post<SuggestedSquad>(ROUTES.optimizeSquad, body),
   transferSuggest: (body: { squad: number[]; round: number; freeTransfers: number; budget?: number }) =>
-    post<TransferSuggestResponse>('/api/transfers/suggest', body),
-  live: (round: number) => get<unknown>(`/api/live?round=${round}`),
+    post<TransferSuggestResponse>(ROUTES.suggestTransfers, body),
+  live: (round: number) => get<unknown>(`${ROUTES.live}?round=${round}`),
   chat: (body: { messages: { role: string; content: string }[]; squad?: number[]; squadNames?: string[] }) =>
-    post<{ content: string }>('/api/chat', body),
+    post<{ content: string }>(ROUTES.chat, body),
   squadFromScreenshot: (imageBase64: string, mimeType: string) =>
     post<{ matched: import('../types/wc').SquadPlayer[]; unmatched: string[]; total: number }>(
-      '/api/squad/from-screenshot',
+      ROUTES.fromScreenshot,
       { imageBase64, mimeType },
     ),
-  fixtures: (squadId: number) => get<Fixture[]>(`/api/fixtures/${squadId}`),
-  teamFdr: (round: number) => get<TeamFdr[]>(`/api/fdr?round=${round}`),
+  fixtures: (squadId: number) => get<Fixture[]>(ROUTES.fixtures(squadId)),
+  teamFdr: (round: number) => get<TeamFdr[]>(`${ROUTES.fdr}?round=${round}`),
   // FIFA Fantasy proxies
-  fifaPlayers: () => get<unknown[]>('/wc/players.json'),
-  fifaRounds: () => get<unknown[]>('/wc/rounds.json'),
+  fifaPlayers: () => get<unknown[]>(ROUTES.fifaPlayers),
+  fifaRounds: () => get<unknown[]>(ROUTES.fifaRounds),
 }

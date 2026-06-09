@@ -62,7 +62,19 @@ export async function getSuggestedSquad() {
   return rows[0] ?? null
 }
 
-export async function matchPlayersByName(rawName: string, position?: string) {
+export type PlayerMatchResult = {
+  method: 'positioned' | 'fallback'
+  element: number
+  position: string
+  price: number
+  squad_id: number
+  name: string
+  team_abbr: string
+  xp: number
+  low_sample: boolean
+}
+
+export async function matchPlayersByName(rawName: string, position?: string, round?: number): Promise<PlayerMatchResult | null> {
   // Normalize: strip FIFA UI truncation ("..."), remove diacritics, replace Unicode
   // lookalikes (e.g. Cyrillic і → i) so "Martínez", "Nuno Men...", "Cherkі" all match.
   const cleaned = rawName
@@ -85,11 +97,15 @@ export async function matchPlayersByName(rawName: string, position?: string) {
   // When position is known (from screenshot pitch layout / bench badges), filter to that
   // position first. Falls back to position-agnostic search if no rows are found.
   // Use $3 parameterized placeholder — never interpolate position into SQL.
+  // $3 = position filter (when provided), $4 = round for projection join
+  const effectiveRound = round ?? 1
   const posFilter = position ? 'AND p.position = $3' : ''
-  const baseParams: unknown[] = [subLike, prefLike]
-  const posParams: unknown[] = position ? [subLike, prefLike, position] : baseParams
+  const baseParams: unknown[] = [subLike, prefLike, effectiveRound]
+  // When position filter is used: $1=subLike, $2=prefLike, $3=position, $4=round
+  // Without position filter: $1=subLike, $2=prefLike, $3=round
+  const posParams: unknown[] = position ? [subLike, prefLike, position, effectiveRound] : baseParams
 
-  const tryMatch = async (extraFilter: string, params: unknown[]) => {
+  const tryMatch = async (extraFilter: string, params: unknown[], roundParam: string) => {
     const rows = await q<{
       element: number; position: string; price: number; squad_id: number
       name: string; team_abbr: string; xp: number; low_sample: boolean
@@ -102,10 +118,10 @@ export async function matchPlayersByName(rawName: string, position?: string) {
         COALESCE(p.known_name, TRIM(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,''))) AS name,
         COALESCE(t.abbr, '') AS team_abbr,
         COALESCE(proj.xp, 0) AS xp,
-        false AS low_sample
+        COALESCE(proj.low_sample, false) AS low_sample
       FROM players p
       LEFT JOIN teams t ON t.squad_id = p.squad_id
-      LEFT JOIN (SELECT element, xp FROM projections WHERE round = 1) proj ON proj.element = p.element
+      LEFT JOIN (SELECT element, xp, low_sample FROM projections WHERE round = ${roundParam}) proj ON proj.element = p.element
       WHERE (
         unaccent(lower(COALESCE(p.known_name, '')))                                              ILIKE $1
         OR unaccent(lower(COALESCE(p.last_name, '')))                                            ILIKE $1
@@ -129,10 +145,13 @@ export async function matchPlayersByName(rawName: string, position?: string) {
 
   // Try position-filtered match first; fall back to position-agnostic if no result
   if (posFilter) {
-    const hit = await tryMatch(posFilter, posParams)
-    if (hit) return hit
+    // With position: params are [subLike, prefLike, position, round] → round is $4
+    const hit = await tryMatch(posFilter, posParams, '$4')
+    if (hit) return { ...hit, method: 'positioned' as const }
   }
-  return tryMatch('', baseParams)
+  // Without position: params are [subLike, prefLike, round] → round is $3
+  const hit = await tryMatch('', baseParams, '$3')
+  return hit ? { ...hit, method: 'fallback' as const } : null
 }
 
 export async function getTeamFdr(round: number) {

@@ -1,0 +1,17 @@
+export const ROUTES = {
+  players:          '/api/players',
+  teams:            '/api/teams',
+  rounds:           '/api/rounds',
+  projections:      '/api/projections',
+  suggestSquad:     '/api/squad/suggest',
+  optimizeSquad:    '/api/squad/optimize',
+  suggestTransfers: '/api/transfers/suggest',
+  fdr:              '/api/fdr',
+  live:             '/api/live',
+  chat:             '/api/chat',
+  fromScreenshot:   '/api/squad/from-screenshot',
+  fifaPlayers:      '/wc/players.json',
+  fifaRounds:       '/wc/rounds.json',
+  fifaSquads:       '/wc/squads_fifa.json',
+  fixtures: (squadId: number) => `/api/fixtures/${squadId}`,
+} as const

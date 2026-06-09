@@ -114,6 +114,39 @@ export function optimiseXI(players: SquadPlayer[]): {
   return { squad: reordered, formation: bestFormation }
 }
 
+// Returns eligible swap targets for `source` given the current XI/bench split.
+// GK can only swap with another GK. Outfield swaps must keep DEF≥3, MID≥2, FWD≥1.
+// Callers keep this in an IIFE after early-return guards to avoid Rules of Hooks.
+export function getEligibleSwapTargets(
+  xi: SquadPlayer[],
+  bench: SquadPlayer[],
+  source: SquadPlayer,
+): Set<number> {
+  if (source.position === 'GK') {
+    return new Set(
+      [...xi, ...bench]
+        .filter(p => p.position === 'GK' && p.element !== source.element)
+        .map(p => p.element),
+    )
+  }
+  const currentDEF = xi.filter(p => p.position === 'DEF').length
+  const currentMID = xi.filter(p => p.position === 'MID').length
+  const currentFWD = xi.filter(p => p.position === 'FWD').length
+  const sourceIsXI = xi.some(p => p.element === source.element)
+  const candidates = sourceIsXI ? bench : xi
+  const result: number[] = []
+  for (const p of candidates) {
+    if (p.position === 'GK' || p.element === source.element) continue
+    const out = sourceIsXI ? source : p
+    const into = sourceIsXI ? p : source
+    const newDEF = currentDEF - (out.position === 'DEF' ? 1 : 0) + (into.position === 'DEF' ? 1 : 0)
+    const newMID = currentMID - (out.position === 'MID' ? 1 : 0) + (into.position === 'MID' ? 1 : 0)
+    const newFWD = currentFWD - (out.position === 'FWD' ? 1 : 0) + (into.position === 'FWD' ? 1 : 0)
+    if (newDEF >= 3 && newMID >= 2 && newFWD >= 1) result.push(p.element)
+  }
+  return new Set(result)
+}
+
 // Swap two players by element ID, preserving array order for all other players.
 // This is the only safe way to mutate squad order — direct array manipulation
 // would break getXI's array-order invariant for non-swapped positions.
