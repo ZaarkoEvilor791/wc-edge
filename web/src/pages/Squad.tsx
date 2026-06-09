@@ -69,6 +69,7 @@ function ListIcon({ active }: { active: boolean }) {
 function SwapDrawer({
   target,
   options,
+  xi,
   subIn,
   eliminatedSquadIds,
   onSwap,
@@ -76,12 +77,31 @@ function SwapDrawer({
 }: {
   target: SquadPlayer
   options: SquadPlayer[]
+  xi: SquadPlayer[]
   subIn: boolean
   eliminatedSquadIds: Set<number>
   onSwap: (replacement: SquadPlayer) => void
   onCancel: () => void
 }) {
-  const eligible = options.filter((p) => p.position === target.position && p.element !== target.element)
+  const eligible = (() => {
+    if (target.position === 'GK') {
+      return options.filter((p) => p.position === 'GK' && p.element !== target.element)
+    }
+    const currentDEF = xi.filter((p) => p.position === 'DEF').length
+    const currentMID = xi.filter((p) => p.position === 'MID').length
+    const currentFWD = xi.filter((p) => p.position === 'FWD').length
+    return options.filter((p) => {
+      if (p.position === 'GK' || p.element === target.element) return false
+      // subIn: target is bench (entering XI), p is XI candidate (leaving XI)
+      // !subIn: target is XI (leaving XI), p is bench candidate (entering XI)
+      const out = subIn ? p : target
+      const into = subIn ? target : p
+      const newDEF = currentDEF - (out.position === 'DEF' ? 1 : 0) + (into.position === 'DEF' ? 1 : 0)
+      const newMID = currentMID - (out.position === 'MID' ? 1 : 0) + (into.position === 'MID' ? 1 : 0)
+      const newFWD = currentFWD - (out.position === 'FWD' ? 1 : 0) + (into.position === 'FWD' ? 1 : 0)
+      return newDEF >= 3 && newMID >= 2 && newFWD >= 1
+    })
+  })()
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onCancel}>
@@ -114,7 +134,7 @@ function SwapDrawer({
 
         {eligible.length === 0 ? (
           <p className="py-4 text-center text-sm text-slate-500">
-            No eligible {target.position} {subIn ? 'starters' : 'on the bench'}
+            No valid swap options
           </p>
         ) : (
           <div className="flex-1 space-y-2 overflow-y-auto">
@@ -214,6 +234,16 @@ export default function Squad() {
   function handleSwap(replacement: SquadPlayer) {
     if (!swapTarget) return
     setSquad(swapInSquad(displaySquad, swapTarget.element, replacement.element))
+    if (swapTarget.position !== replacement.position && swapTarget.position !== 'GK' && replacement.position !== 'GK') {
+      // swapTargetIsBench: swapTarget enters XI, replacement leaves XI
+      const movingOut = swapTargetIsBench ? replacement : swapTarget
+      const movingIn = swapTargetIsBench ? swapTarget : replacement
+      setFormationCounts({
+        DEF: formationCounts.DEF - (movingOut.position === 'DEF' ? 1 : 0) + (movingIn.position === 'DEF' ? 1 : 0),
+        MID: formationCounts.MID - (movingOut.position === 'MID' ? 1 : 0) + (movingIn.position === 'MID' ? 1 : 0),
+        FWD: formationCounts.FWD - (movingOut.position === 'FWD' ? 1 : 0) + (movingIn.position === 'FWD' ? 1 : 0),
+      })
+    }
     setSwapTarget(null)
   }
 
@@ -261,7 +291,7 @@ export default function Squad() {
           <button
             onClick={handleOptimiseXI}
             className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-accent/50 hover:text-accent"
-            title="Optimise starting XI across 7 formations"
+            title="Optimise starting XI across 8 formations"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M6 1l1.5 3h3l-2.4 1.8.9 3L6 7.2 3 8.8l.9-3L1.5 4h3z" />
@@ -395,6 +425,7 @@ export default function Squad() {
         <SwapDrawer
           target={swapTarget}
           options={swapTargetIsBench ? xi : bench}
+          xi={xi}
           subIn={swapTargetIsBench}
           eliminatedSquadIds={eliminatedSquadIds}
           onSwap={handleSwap}

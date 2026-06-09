@@ -74,9 +74,10 @@ const FORMATIONS: Array<{ DEF: number; MID: number; FWD: number }> = [
   { DEF: 5, MID: 3, FWD: 2 },
   { DEF: 5, MID: 4, FWD: 1 },
   { DEF: 4, MID: 5, FWD: 1 },
+  { DEF: 5, MID: 2, FWD: 3 },
 ]
 
-// Tries 7 formations and returns the squad reordered so the best XI (highest total xP) is first.
+// Tries 8 formations and returns the squad reordered so the best XI (highest total xP) is first.
 // Starters come before bench within each position group, both sorted xP DESC.
 export function optimiseXI(players: SquadPlayer[]): {
   squad: SquadPlayer[]

@@ -6,7 +6,7 @@ const DEFAULT_FORMATION = { DEF: 4, MID: 4, FWD: 2 }
 
 function isValidFormation(f: { DEF: number; MID: number; FWD: number } | undefined): boolean {
   if (!f) return false
-  return f.DEF + f.MID + f.FWD === 10 && f.DEF >= 3 && f.MID >= 3 && f.FWD >= 1
+  return f.DEF + f.MID + f.FWD === 10 && f.DEF >= 3 && f.MID >= 2 && f.FWD >= 1
 }
 
 interface SquadStore {

@@ -132,6 +132,7 @@ const ALL_FORMATIONS = [
   { DEF: 5, MID: 3, FWD: 2 },
   { DEF: 5, MID: 4, FWD: 1 },
   { DEF: 4, MID: 5, FWD: 1 },
+  { DEF: 5, MID: 2, FWD: 3 },
 ]
 
 describe('getXI — formation-aware XI/bench split', () => {
@@ -243,7 +244,7 @@ describe('optimiseXI — formation invariants', () => {
     expect(formation.FWD).toBeGreaterThanOrEqual(1)
   })
 
-  it('formation is always one of the 7 predefined formations', () => {
+  it('formation is always one of the 8 predefined formations', () => {
     const { formation } = optimiseXI(SQUAD)
     const match = ALL_FORMATIONS.some(
       f => f.DEF === formation.DEF && f.MID === formation.MID && f.FWD === formation.FWD
