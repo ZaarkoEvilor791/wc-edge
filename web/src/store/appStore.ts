@@ -43,7 +43,12 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'wc-edge-storage',
-      partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed, squadViewMode: state.squadViewMode }),
+      partialize: (state) => ({
+        sidebarCollapsed: state.sidebarCollapsed,
+        squadViewMode: state.squadViewMode,
+        chatMessages: state.chatMessages,
+        chatChipsUsed: state.chatChipsUsed,
+      }),
     },
   ),
 )

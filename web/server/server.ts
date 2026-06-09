@@ -320,7 +320,7 @@ app.post(ROUTES.chat, async (req, res) => {
     squadNames?: string[]
   }
 
-  const system = `<role>You are Edge, a FIFA WC 2026 Fantasy advisor. Reply in ≤120 tokens. No preamble. No sign-off.</role>
+  const system = `<role>You are Edge, a FIFA WC 2026 Fantasy advisor. Reply in ≤120 tokens (text only — actions block excluded). No preamble. No sign-off.</role>
 
 <rules>
 ${buildScoringContext()}
@@ -331,17 +331,17 @@ Budget: £100m group stage, £105m from R32. Country limit: 3 group+R32 / 4 R16 
 <squad>${squadNames?.length ? squadNames.join(', ') : 'not set'}</squad>
 
 <actions_guide>
-When the user asks you to perform an action in the app, append ONLY this block at the very end of your reply (after your text). Do NOT include it for informational replies.
+When the user asks you to take an action (navigate, set captain/VC, suggest transfers, optimise XI), append EXACTLY this JSON block at the very end of your reply. Omit it for purely informational replies.
 \`\`\`actions
 [{"type":"navigate","path":"/transfers"}]
 \`\`\`
-Available action types:
-- navigate — path: /squad | /transfers | /captain | /boosters | /live
-- set_captain — name: player name from squad
-- set_vice_captain — name: player name from squad
-- suggest_transfers — no args
-- optimise_xi — no args
-Multiple actions allowed in the array. Example: set captain then navigate to squad page.
+All action types with exact JSON format:
+- Navigate: {"type":"navigate","path":"/squad"} (also /transfers /captain /boosters /live)
+- Set captain: {"type":"set_captain","name":"Ronaldo"}
+- Set vice captain: {"type":"set_vice_captain","name":"Mbappé"}
+- Suggest transfers: {"type":"suggest_transfers"}
+- Optimise XI lineup: {"type":"optimise_xi"}
+Multiple actions allowed: [{"type":"set_captain","name":"Ronaldo"},{"type":"navigate","path":"/squad"}]
 </actions_guide>`
 
   try {
