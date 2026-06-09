@@ -12,7 +12,7 @@
 
 ---
 
-## Current State (Session 30 complete)
+## Current State (Session 31 complete)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
@@ -34,12 +34,25 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 
 ---
 
+## Session 31 — What was shipped
+
+- **Data-driven booster recommendations** — `Boosters.tsx` rewritten. 5 pure `rec*` functions compute "Best round to play" client-side from squad xP projections + FDR. No new API endpoints, zero AI credits on page load.
+  - `recMaxCaptain`: round where max XI player xP is highest
+  - `rec12thMan`: round where best non-squad player (budget-filtered, active team) has highest xP
+  - `recQualBooster`: R32+ round where most XI starters' teams are active
+  - `recCSShield`: R32+ round where most GK/DEF face FDR ≥ 4
+  - `recWildcard`: immediate flag if ≥2 eliminated players in squad
+- **Multi-round projection fetch** — `useQueries` for all 8 rounds (React Query caches; warm hits from Captain/Squad pages).
+- **Card layout** — recommendation block leads (gold accent border), effect 1 line, strategy tip collapsed by default.
+- **Loading skeleton** while projections fetch.
+- **R32-only chips** (Qual Booster, CS Shield) locked + no rec block until `currentRoundId > 3`.
+
 ## Session 30 — What was shipped
 
 - **C/VC auto-assign fix** — `Squad.tsx` useEffect + `OnboardingModal.tsx`: captain now picked from `getXI()` result (XI only), with `captain === null` guard to preserve existing picks on re-sync.
 - **`activeCaptain` fallback** — now sorts `xi` not `displaySquad`, so bench GK can't steal the badge on reload.
 - **Pitch card-to-card swap** — `SwapDrawer` component deleted. Tap pitch card → profile modal. Tap Sub In/Out in modal → swap mode activates (`swapSource` state). Gold ring = selected, green glow = eligible, 40% dim = ineligible. Cancel chip below pitch. `handleSwap(source, replacement)` takes explicit args. `eligibleElements` is an IIFE (not `useMemo`) — must stay below early returns or Rules of Hooks fires.
-- **Boosters page** (`/boosters`, RequireSquad) — 5 chip cards: Wildcard, Maximum Captain, 12th Man, Qualification Booster, Clean Sheet Shield. Each has effect, availability, strategy tip, Available → Active → Used state. R32+ chips locked until round > 8.
+- **Boosters page** (`/boosters`, RequireSquad) — 5 chip cards: Wildcard, Maximum Captain, 12th Man, Qualification Booster, Clean Sheet Shield. Each has effect, availability, strategy tip, Available → Active → Used state. R32+ chips locked until `currentRoundId > 3`.
 - **`squadStore.ts`** — added `boosterStates: Record<string, BoosterState>` + `setBoosterState`. Auto-persisted.
 - **Sidebar** — Boosters nav item (lightning bolt icon) between Captain and Live.
 - **Squad page** — active booster gold banner below budget bar.
@@ -49,21 +62,23 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 
 ## Next Session Priorities
 
-1. **Tournament operations** — mark eliminated teams as the tournament progresses:
+1. **Tournament starts June 12** — tournament is live. Priorities shift to operations.
+
+2. **Tournament operations** — mark eliminated teams as the tournament progresses:
    ```sql
    UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
    ```
    Engine cron auto-refreshes projections at 04:00 + 18:00 UTC.
 
-2. **Manual engine trigger** if projections go stale:
+3. **Manual engine trigger** if projections go stale:
    ```bash
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
    ```
 
-3. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA screenshot.
+4. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA screenshot.
 
-4. **Phase 2 (post-tournament)** — StatsBomb tackles + key passes → xP model.
+5. **Phase 2 (post-tournament)** — StatsBomb tackles + key passes → xP model.
 
 ---
 
@@ -225,7 +240,7 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **C/VC auto-assign picks from XI only** — `Squad.tsx` useEffect + `OnboardingModal.tsx` both call `getXI(sorted, {GK:1,DEF:4,MID:4,FWD:2})` and only set captain when `captain === null`. `activeCaptain` fallback also uses `xi`, not `displaySquad`.
 - **Pitch swap flow** — tap card → profile modal. Sub In/Sub Out in modal → `setSwapSource(p)`. During swap: tap eligible → execute, tap source → deselect, tap ineligible → re-select source. Cancel chip below pitch.
 - **`eligibleElements` is an IIFE, not `useMemo`** — it's computed after early returns in Squad.tsx; using `useMemo` there violates Rules of Hooks.
-- **Boosters state in squadStore** — `boosterStates: Record<string, 'available'|'active'|'used'>`, setter `setBoosterState(id, state)`. Auto-persisted. IDs: `wildcard | max_captain | 12th_man | qual_booster | cs_shield`. R32+ chips locked when `currentRound?.id <= 8`.
+- **Boosters state in squadStore** — `boosterStates: Record<string, 'available'|'active'|'used'>`, setter `setBoosterState(id, state)`. Auto-persisted. IDs: `wildcard | max_captain | 12th_man | qual_booster | cs_shield`. R32+ chips locked when `currentRoundId <= 3` (rounds 1–3 = group stage).
 
 ---
 
