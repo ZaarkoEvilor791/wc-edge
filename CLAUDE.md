@@ -12,7 +12,7 @@
 
 ---
 
-## Current State (Session 35 complete)
+## Current State (Session 36 complete)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
@@ -45,6 +45,11 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - **Screenshot upload in chat** — Camera icon button in chat input bar. File picker → base64 → `/api/squad/from-screenshot` → `setSquad(matched)`. Success/failure injected as assistant message. Unmatched names wired to `setUnmatchedNames`. Respects existing 2/min + 5/day rate limit.
 - **Chat persistence** — `chatMessages` + `chatChipsUsed` moved to `appStore` (non-persisted slice); survive navigation, clear on reload.
 - **Token efficiency** — Action prompt addition (~80 tokens) is part of cached system message; marginal cost after first call ~8 tokens. Estimated $0.0003/day at 25 calls/day.
+
+## Session 36 — What was shipped
+
+- **Edge actions fixed** — Model was counting action JSON against the "≤120 tokens" text budget and silently dropping the block. Fixed by explicitly excluding the actions block from the token limit instruction. Also expanded `actions_guide` with exact JSON examples for all 5 action types (`navigate`, `set_captain`, `set_vice_captain`, `suggest_transfers`, `optimise_xi`) — previously only `navigate` had an example.
+- **Chat messages persisted** — `chatMessages` + `chatChipsUsed` added to `appStore` `partialize`; chat history now survives page reloads (was clearing on reload).
 
 ## Session 34 — What was shipped
 
@@ -331,13 +336,13 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **Transfers squad list is primary UI** — tap player → OUT→IN via `BrowseAllModal(initialOut)`. Smart suggest is secondary. Browse All is tertiary link.
 - **Server up to 6 transfer suggestions** — `freeTransfers` is badge/hit threshold only, not loop limit.
 - **LLM rate limits in-memory** — resets on dyno restart. `/api/chat`: 5/min + 25/day. `/api/screenshot`: 2/min + 5/day.
-- **Edge agentic actions** — `/api/chat` system prompt instructs Claude to append ````actions\n[...]\n``` ` at end of reply when user requests an action. Server regex-parses + strips it, returns `{content, actions}`. `executeActions()` in `Assistant.tsx` handles: `navigate`, `set_captain`, `set_vice_captain`, `suggest_transfers`, `optimise_xi`. Pure-text replies return `actions: []`. `max_tokens` is 400 (was 200) to fit action JSON.
+- **Edge agentic actions** — `/api/chat` system prompt instructs Claude to append ````actions\n[...]\n``` ` at end of reply when user requests an action. Server regex-parses + strips it, returns `{content, actions}`. `executeActions()` in `Assistant.tsx` handles: `navigate`, `set_captain`, `set_vice_captain`, `suggest_transfers`, `optimise_xi`. Pure-text replies return `actions: []`. `max_tokens` is 400. **Critical:** the "≤120 tokens" reply limit in the system prompt must say "text only — actions block excluded", otherwise the model counts action JSON against its token budget and drops the block. Each action type needs a concrete JSON example in `actions_guide`.
 - **Screenshot upload in chat** — camera icon in Assistant input bar. FileReader → base64 → `wcApi.squadFromScreenshot()`. Uses same `/api/squad/from-screenshot` endpoint with existing rate limit. Result injected as assistant bubble.
 - **blend_live_observations is zero-op pre-tournament** — only activates when rounds have `status='COMPLETE'`. Round status is now auto-synced from FIFA's `rounds.json` at the start of every `wc_run.py` invocation (`_sync_round_statuses()`).
 - **00:00 UTC cron closes post-match lag** — WC matches end ~23:00 UTC; the midnight cron blends within ~1h. 04:00 and 18:00 UTC crons also sync status now.
 - **Post-group cron hardcoded June 27** — simpler than status-checking.
 - **squadViewMode persisted in appStore** — both Squad and Transfers share it; no local useState.
-- **unmatchedNames in appStore is non-persisted** — excluded from `partialize`; clears on reload.
+- **unmatchedNames in appStore is non-persisted** — excluded from `partialize`; clears on reload. `chatMessages` + `chatChipsUsed` ARE persisted (added Session 36) — chat history survives reloads.
 - **API Football 100 req/day hard cap** — track in `engine/data/apif_budget.json`.
 - **unaccent extension** — already installed on `fpledge` DB. Required for `matchPlayersByName`.
 - **matchPlayersByName two-pass** — position-filtered first, falls back to position-agnostic. Position param is `$3` (parameterized — never interpolate).
