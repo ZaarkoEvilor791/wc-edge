@@ -11,6 +11,7 @@ SQUAD_SIZE = 15
 POS_COUNTS = {"GK": 2, "DEF": 5, "MID": 5, "FWD": 3}
 BUDGET_GROUP = 100.0
 MAX_PER_TEAM = 3
+VALUE_PRICE_PENALTY = 0.08  # differential: xp - penalty*price rewards value picks
 
 
 def _solve(players: list[dict], budget: float, max_per_team: int) -> list[int] | None:
@@ -110,8 +111,8 @@ def _greedy(players: list[dict], budget: float, max_per_team: int) -> list[int]:
     return selected
 
 
-def run_optimizer(conn: psycopg.Connection, budget: float = BUDGET_GROUP, round_id: int = 1) -> None:
-    print(f"[optimizer] Loading projections for round {round_id}...")
+def run_optimizer(conn: psycopg.Connection, budget: float = BUDGET_GROUP, round_id: int = 1, variant: str = "max_xp") -> None:
+    print(f"[optimizer] Loading projections for round {round_id} (variant={variant})...")
 
     with conn.cursor() as cur:
         cur.execute(
@@ -146,16 +147,27 @@ def run_optimizer(conn: psycopg.Connection, budget: float = BUDGET_GROUP, round_
 
     print(f"[optimizer] {len(players)} eligible players, budget £{budget}m")
 
-    selected_idx = _solve(players, budget, MAX_PER_TEAM)
+    # Variant: adjust objective scores and team cap before solving
+    solve_players = players
+    team_cap = MAX_PER_TEAM
+    if variant == "value":
+        # Penalise expensive picks — same xP at lower price wins
+        solve_players = [{**p, "xp": (p["xp"] or 0.0) - VALUE_PRICE_PENALTY * (p["price"] or 0.0)} for p in players]
+    elif variant == "differential":
+        # Tighter nation cap forces squad spread — fewer template picks
+        team_cap = 2
+
+    selected_idx = _solve(solve_players, budget, team_cap)
 
     if selected_idx is None:
-        print("[optimizer] Infeasible at £100m — retrying at £90m")
-        selected_idx = _solve(players, 90.0, MAX_PER_TEAM)
+        print(f"[optimizer] Infeasible at £{budget}m — retrying at £90m")
+        selected_idx = _solve(solve_players, 90.0, team_cap)
 
     if selected_idx is None:
         print("[optimizer] ERROR: infeasible even at £90m — using greedy fallback")
-        selected_idx = _greedy(players, budget, MAX_PER_TEAM)
+        selected_idx = _greedy(solve_players, budget, team_cap)
 
+    # Always index into original players (unmodified xp/price for storage)
     squad = [players[i] for i in selected_idx]
     total_xp = sum(p["xp"] for p in squad)
     total_cost = sum(p["price"] for p in squad)
@@ -182,16 +194,16 @@ def run_optimizer(conn: psycopg.Connection, budget: float = BUDGET_GROUP, round_
     ]
 
     with conn.cursor() as cur:
-        cur.execute("DELETE FROM wc.suggested_squad WHERE round = %s", [round_id])
+        cur.execute("DELETE FROM wc.suggested_squad WHERE round = %s AND variant = %s", [round_id, variant])
         cur.execute(
             """
-            INSERT INTO wc.suggested_squad (round, squad_json, total_xp, total_cost, computed_at)
-            VALUES (%s, %s, %s, %s, NOW())
+            INSERT INTO wc.suggested_squad (round, variant, squad_json, total_xp, total_cost, computed_at)
+            VALUES (%s, %s, %s, %s, %s, NOW())
             """,
-            [round_id, json.dumps(squad_json), total_xp, total_cost],
+            [round_id, variant, json.dumps(squad_json), total_xp, total_cost],
         )
     conn.commit()
-    print(f"[optimizer] Suggested squad written for round {round_id}")
+    print(f"[optimizer] Suggested squad written for round {round_id} (variant={variant})")
 
 
 if __name__ == "__main__":

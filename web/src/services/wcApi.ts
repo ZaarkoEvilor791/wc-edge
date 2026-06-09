@@ -23,6 +23,7 @@ export const wcApi = {
   rounds: () => get<Round[]>(ROUTES.rounds),
   projections: (round: number) => get<Projection[]>(`${ROUTES.projections}?round=${round}`),
   suggestedSquad: () => get<SuggestedSquad>(ROUTES.suggestSquad),
+  suggestedSquadVariant: (variant: string) => get<SuggestedSquad>(`${ROUTES.suggestSquad}?variant=${encodeURIComponent(variant)}`),
   optimizeSquad: (body: { round?: number }) => post<SuggestedSquad>(ROUTES.optimizeSquad, body),
   transferSuggest: (body: { squad: number[]; round: number; freeTransfers: number; budget?: number }) =>
     post<TransferSuggestResponse>(ROUTES.suggestTransfers, body),

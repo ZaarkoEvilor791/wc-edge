@@ -154,9 +154,13 @@ app.get(ROUTES.projections, async (req, res) => {
   }
 })
 
-app.get(ROUTES.suggestSquad, async (_, res) => {
+const VALID_VARIANTS = new Set(['max_xp', 'value', 'differential'])
+
+app.get(ROUTES.suggestSquad, async (req, res) => {
+  const raw = req.query.variant as string | undefined
+  const variant = raw && VALID_VARIANTS.has(raw) ? raw : 'max_xp'
   try {
-    const squad = await getSuggestedSquad()
+    const squad = await getSuggestedSquad(variant)
     if (!squad) return res.status(404).json({ error: 'No suggested squad yet' })
     res.json(squad)
   } catch (err) {
@@ -164,10 +168,11 @@ app.get(ROUTES.suggestSquad, async (_, res) => {
   }
 })
 
-app.post(ROUTES.optimizeSquad, async (_, res) => {
-  // Placeholder: trigger Python optimizer via shell or return current suggestion
+app.post(ROUTES.optimizeSquad, async (req, res) => {
+  const raw = req.query.variant as string | undefined
+  const variant = raw && VALID_VARIANTS.has(raw) ? raw : 'max_xp'
   try {
-    const squad = await getSuggestedSquad()
+    const squad = await getSuggestedSquad(variant)
     if (!squad) return res.status(404).json({ error: 'No suggested squad yet' })
     res.json(squad)
   } catch (err) {

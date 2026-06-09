@@ -55,11 +55,22 @@ export async function getProjections(round: number) {
   )
 }
 
-export async function getSuggestedSquad() {
-  const rows = await q<{ id: number; round: number; squad_json: unknown; total_xp: number; total_cost: number; computed_at: string }>(
-    'SELECT id, round, squad_json, total_xp, total_cost, computed_at FROM suggested_squad ORDER BY computed_at DESC LIMIT 1'
+export async function getSuggestedSquad(variant = 'max_xp') {
+  const rows = await q<{ id: number; round: number; variant: string; squad_json: unknown; total_xp: number; total_cost: number; computed_at: string }>(
+    `SELECT id, round, variant, squad_json, total_xp, total_cost, computed_at
+     FROM suggested_squad
+     WHERE variant = $1
+     ORDER BY computed_at DESC LIMIT 1`,
+    [variant]
   )
-  return rows[0] ?? null
+  // Fall back to any variant if requested one doesn't exist yet
+  if (!rows[0]) {
+    const fallback = await q<{ id: number; round: number; variant: string; squad_json: unknown; total_xp: number; total_cost: number; computed_at: string }>(
+      'SELECT id, round, variant, squad_json, total_xp, total_cost, computed_at FROM suggested_squad ORDER BY computed_at DESC LIMIT 1'
+    )
+    return fallback[0] ?? null
+  }
+  return rows[0]
 }
 
 export type PlayerMatchResult = {

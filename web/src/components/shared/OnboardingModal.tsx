@@ -5,9 +5,24 @@ import { useSquadFromScreenshot } from '../../hooks/useWC'
 import { useSquadStore } from '../../store/squadStore'
 import { getXI } from '../../utils/squad'
 import { useAppStore } from '../../store/appStore'
+import { wcApi } from '../../services/wcApi'
 import type { SquadPlayer } from '../../types/wc'
 
-type Step = 'idle' | 'upload' | 'processing' | 'success' | 'error'
+type Step = 'idle' | 'wizard_style' | 'wizard_budget' | 'wizard_risk' | 'building' | 'upload' | 'processing' | 'success' | 'error'
+
+type WizardVariant = 'max_xp' | 'value' | 'differential'
+
+export function pickVariant(budget: string, risk: string): WizardVariant {
+  if (risk === 'differential') return 'differential'
+  if (budget === 'value') return 'value'
+  return 'max_xp'
+}
+
+const VARIANT_LABELS: Record<WizardVariant, string> = {
+  max_xp: 'top xP',
+  value: 'value',
+  differential: 'differential',
+}
 
 interface Props {
   open: boolean
@@ -44,11 +59,36 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
   const [errorMsg, setErrorMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // Wizard state
+  const [wizardBudget, setWizardBudget] = useState('')
+  const [wizardRisk, setWizardRisk] = useState('')
+
   const handleNewTeam = () => {
-    localStorage.setItem('wc-onboarded', '1')
-    onClose()
-    navigate('/squad')
+    setStep('wizard_style')
   }
+
+  const handleBuildWithVariant = useCallback(async (budget: string, risk: string) => {
+    setWizardRisk(risk)
+    const variant = pickVariant(budget, risk)
+    setStep('building')
+    try {
+      const result = await wcApi.suggestedSquadVariant(variant)
+      const players: SquadPlayer[] = result.squad_json ?? []
+      setSquad(players)
+      const { xi } = getXI(players, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+      const xiElements = new Set(xi.map((p) => p.element))
+      if (captain === null || !xiElements.has(captain)) {
+        const top = [...xi].sort((a, b) => b.xp - a.xp)[0]
+        if (top) setCaptain(top.element)
+      }
+      localStorage.setItem('wc-onboarded', '1')
+      onClose()
+      navigate('/squad')
+    } catch {
+      setErrorMsg('Could not load squad. Please try again.')
+      setStep('error')
+    }
+  }, [captain, navigate, onClose, setCaptain, setSquad])
 
   const processFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -144,7 +184,7 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
                 <span className="text-xl">🏆</span>
                 <div>
                   <p className="text-sm font-semibold text-accent-fg">Build a new team</p>
-                  <p className="text-xs text-accent-fg/70">We'll recommend the best squad</p>
+                  <p className="text-xs text-accent-fg/70">Personalise your squad in 3 steps</p>
                 </div>
               </button>
               <button
@@ -157,6 +197,124 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
                   <p className="text-xs text-slate-500">Upload a screenshot to sync it</p>
                 </div>
               </button>
+            </div>
+          )}
+
+          {/* ── WIZARD: STYLE ── */}
+          {step === 'wizard_style' && (
+            <div className="space-y-4">
+              <button
+                onClick={() => setStep('idle')}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M8 2L4 6l4 4" />
+                </svg>
+                Back
+              </button>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Step 1 of 3</p>
+                <p className="text-sm font-semibold text-slate-100">What's your playing style?</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'attacking', label: 'Attacking', icon: '⚡' },
+                  { id: 'balanced', label: 'Balanced', icon: '⚖️' },
+                  { id: 'defensive', label: 'Defensive', icon: '🛡️' },
+                ].map(({ id, label, icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setStep('wizard_budget')}
+                    className="flex flex-col items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2 py-3 text-center transition hover:border-accent hover:bg-slate-700"
+                  >
+                    <span className="text-lg">{icon}</span>
+                    <span className="text-xs font-medium text-slate-200">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── WIZARD: BUDGET ── */}
+          {step === 'wizard_budget' && (
+            <div className="space-y-4">
+              <button
+                onClick={() => setStep('wizard_style')}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M8 2L4 6l4 4" />
+                </svg>
+                Back
+              </button>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Step 2 of 3</p>
+                <p className="text-sm font-semibold text-slate-100">How do you want to spend?</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'premium', label: 'Premium', icon: '💎' },
+                  { id: 'balanced', label: 'Balanced', icon: '⚖️' },
+                  { id: 'value', label: 'Value', icon: '💡' },
+                ].map(({ id, label, icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => { setWizardBudget(id); setStep('wizard_risk') }}
+                    className="flex flex-col items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2 py-3 text-center transition hover:border-accent hover:bg-slate-700"
+                  >
+                    <span className="text-lg">{icon}</span>
+                    <span className="text-xs font-medium text-slate-200">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── WIZARD: RISK ── */}
+          {step === 'wizard_risk' && (
+            <div className="space-y-4">
+              <button
+                onClick={() => setStep('wizard_budget')}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M8 2L4 6l4 4" />
+                </svg>
+                Back
+              </button>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Step 3 of 3</p>
+                <p className="text-sm font-semibold text-slate-100">Risk appetite?</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'safe', label: 'Safe', icon: '🔒' },
+                  { id: 'balanced', label: 'Balanced', icon: '⚖️' },
+                  { id: 'differential', label: 'Differential', icon: '🎲' },
+                ].map(({ id, label, icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => handleBuildWithVariant(wizardBudget, id)}
+                    className="flex flex-col items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2 py-3 text-center transition hover:border-accent hover:bg-slate-700"
+                  >
+                    <span className="text-lg">{icon}</span>
+                    <span className="text-xs font-medium text-slate-200">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── BUILDING ── */}
+          {step === 'building' && (
+            <div className="flex flex-col items-center gap-4 py-6">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-accent" />
+              <div className="text-center">
+                <p className="text-sm font-medium text-slate-100">Building your squad…</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Finding {VARIANT_LABELS[pickVariant(wizardBudget, wizardRisk)]} picks…
+                </p>
+              </div>
             </div>
           )}
 

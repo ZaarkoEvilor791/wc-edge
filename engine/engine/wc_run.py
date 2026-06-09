@@ -112,7 +112,8 @@ def main() -> None:
         blend_live_observations(conn)
 
     if args.phase in ("optimizer", "all"):
-        run_optimizer(conn, budget=budget, round_id=round_id)
+        for variant in ("max_xp", "value", "differential"):
+            run_optimizer(conn, budget=budget, round_id=round_id, variant=variant)
 
     conn.close()
     print("[run] Pipeline complete.")

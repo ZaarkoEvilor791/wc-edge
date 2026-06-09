@@ -57,6 +57,7 @@ export interface SquadPlayer {
 export interface SuggestedSquad {
   id: number
   round: number
+  variant?: string
   squad_json: SquadPlayer[]
   total_xp: number
   total_cost: number
