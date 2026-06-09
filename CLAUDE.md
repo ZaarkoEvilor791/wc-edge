@@ -12,7 +12,7 @@
 
 ---
 
-## Current State (Session 32 complete)
+## Current State (Session 33 complete)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
@@ -29,10 +29,16 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 **Render env vars:** `AI_ENABLED=true` confirmed set.
 
 **GitHub Actions:** `.github/workflows/engine.yml` live.
-- Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · June 27 06:00 UTC (post-group Bayesian FDR update, passes `--post-group`)
+- Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · **00:00 UTC (model + blend, post-match)** · June 27 06:00 UTC (post-group Bayesian FDR update)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
 ---
+
+## Session 33 — What was shipped
+
+- **`_sync_round_statuses()` in `wc_run.py`** — every engine run now fetches FIFA Fantasy `rounds.json` and UPSERTs round status changes to DB before running the model. Non-fatal: warns and proceeds if FIFA API unreachable. Fixes: `blend_live_observations` now activates correctly on manual `--skip_apif` triggers and when 04:00 apif run fails.
+- **00:00 UTC cron** added to `engine.yml` — closes the post-match blending gap. WC matches end ~23:00 UTC; previously the next blend was at 04:00 UTC (+5h lag). Now blending happens within ~1h of match completion.
+- **Captain resync fix** — `OnboardingModal.tsx` + `Squad.tsx`: captain reassigns to highest-xP XI player when existing captain is not in the new squad's XI (not just when `captain === null`). Fixes captain showing on bench after a squad resync.
 
 ## Session 32 — What was shipped
 
@@ -81,9 +87,10 @@ This is the most important section during the tournament (June 12 – July 19, 2
 |---|---|---|---|
 | Daily engine | 04:00 UTC | `wc_ingest` (apif) + `wc_model` + `blend_live_observations` | Fetches overnight match stats, rebuilds projections |
 | Evening refresh | 18:00 UTC | `wc_model` + `blend_live_observations` only | No apif call (saves budget) |
+| Post-match blend | 00:00 UTC | `wc_model` + `blend_live_observations` only | Catches rounds completing ~23:00 UTC; reduces lag to <1h |
 | Post-group FDR | June 27 06:00 UTC | `wc_run --post-group` | Bayesian FDR recalibration after group stage ends |
 
-**`blend_live_observations` is a zero-op until rounds have `status='COMPLETE'`** — it only activates once a round finishes. No action needed; it triggers automatically.
+**Round status is now auto-synced on every engine run** — `_sync_round_statuses()` in `wc_run.py` fetches FIFA's `rounds.json` and updates `wc.rounds.status` before running the model. `blend_live_observations` activates automatically once FIFA marks a round `COMPLETE`. No manual DB update needed.
 
 ### Manual Tasks — You Must Do These
 
@@ -121,16 +128,7 @@ gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
 
 Check GitHub Actions status: `gh run list --repo ZaarkoEvilor791/wc-edge --workflow engine.yml`
 
-**3. Update round status in DB when rounds complete**
-
-`blend_live_observations` only blends when a round has `status='COMPLETE'`. If the engine detects this automatically via FIFA Fantasy rounds.json, no action needed. If not, update manually:
-
-```sql
-UPDATE wc.rounds SET status = 'COMPLETE' WHERE id = N;
--- Then trigger engine refresh to blend observations
-```
-
-**4. Monitor API Football budget**
+**3. Monitor API Football budget**
 
 Hard cap: 100 requests/day. Check `engine/data/apif_budget.json` before triggering manual runs with apif enabled. The 04:00 UTC cron uses apif; 18:00 UTC does not.
 
@@ -147,7 +145,8 @@ If budget is near 100, always pass `-f skip_apif=true` on manual triggers.
 |---|---|---|
 | Projections look stale (xP not updating after games) | `/api/projections?round=N` — check `computed_at` on suggested_squad | Trigger manual engine run |
 | Eliminated team still showing in Transfers pool | `/api/teams` — check `is_active` | Run `UPDATE wc.teams SET is_active = FALSE WHERE abbr = '...'` |
-| `low_sample` badges on screenshot players | `/api/squad/from-screenshot` response — check `low_sample` field | Fixed in Session 32; should work. If not, check round param in `matchPlayersByName` call |
+| `low_sample` badges on screenshot players | `/api/squad/from-screenshot` response — check `low_sample` field | Fixed in Session 32; reads from DB via COALESCE. If broken, check round param in `matchPlayersByName` |
+| blend not activating after round completes | `SELECT id, status FROM wc.rounds ORDER BY id` — check status | Now auto-synced by `_sync_round_statuses()` on every run. If still wrong, check FIFA API reachability from GH Actions |
 | Boosters rec blocks wrong round | Boosters page "Best round" card | Check `recMaxCaptain` etc. — pulls from `useProjections` React Query cache |
 | Engine cron failed | GitHub Actions tab or `gh run list` | Check logs, re-trigger |
 | Render dyno sleeping (cold start) | First load slow | Normal on free tier; no action unless >30s |
@@ -160,7 +159,7 @@ When a new knockout phase starts, the budget increases to £105m. This is auto-d
 
 ## Next Session Priorities
 
-1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons.
+1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons. Round status now auto-syncs; no manual DB update needed.
 
 2. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA screenshot. The `low_sample` field now reads from DB correctly (Session 32 fix).
 
@@ -312,7 +311,8 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **Transfers squad list is primary UI** — tap player → OUT→IN via `BrowseAllModal(initialOut)`. Smart suggest is secondary. Browse All is tertiary link.
 - **Server up to 6 transfer suggestions** — `freeTransfers` is badge/hit threshold only, not loop limit.
 - **LLM rate limits in-memory** — resets on dyno restart. `/api/chat`: 5/min + 25/day. `/api/screenshot`: 2/min + 5/day.
-- **blend_live_observations is zero-op pre-tournament** — only activates when rounds have `status='COMPLETE'`.
+- **blend_live_observations is zero-op pre-tournament** — only activates when rounds have `status='COMPLETE'`. Round status is now auto-synced from FIFA's `rounds.json` at the start of every `wc_run.py` invocation (`_sync_round_statuses()`).
+- **00:00 UTC cron closes post-match lag** — WC matches end ~23:00 UTC; the midnight cron blends within ~1h. 04:00 and 18:00 UTC crons also sync status now.
 - **Post-group cron hardcoded June 27** — simpler than status-checking.
 - **squadViewMode persisted in appStore** — both Squad and Transfers share it; no local useState.
 - **unmatchedNames in appStore is non-persisted** — excluded from `partialize`; clears on reload.
