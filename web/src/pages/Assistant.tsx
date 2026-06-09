@@ -81,14 +81,18 @@ export default function Assistant() {
   }, [projections, squad])
 
   const executeActions = useCallback((actions: ChatAction[]) => {
+    const matchPlayer = (stored: string, action: string) => {
+      const s = stored.toLowerCase(); const a = action.toLowerCase()
+      return s === a || s.includes(a) || a.includes(s)
+    }
     for (const action of actions) {
       if (action.type === 'navigate') {
         navigate(action.path)
       } else if (action.type === 'set_captain') {
-        const p = squad.find((pl) => pl.name.toLowerCase() === action.name.toLowerCase())
+        const p = squad.find((pl) => matchPlayer(pl.name, action.name))
         if (p) setCaptain(p.element)
       } else if (action.type === 'set_vice_captain') {
-        const p = squad.find((pl) => pl.name.toLowerCase() === action.name.toLowerCase())
+        const p = squad.find((pl) => matchPlayer(pl.name, action.name))
         if (p) setViceCaptain(p.element)
       } else if (action.type === 'suggest_transfers') {
         navigate('/transfers')

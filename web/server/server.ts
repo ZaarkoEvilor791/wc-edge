@@ -342,6 +342,8 @@ All action types with exact JSON format:
 - Suggest transfers: {"type":"suggest_transfers"}
 - Optimise XI lineup: {"type":"optimise_xi"}
 Multiple actions allowed: [{"type":"set_captain","name":"Ronaldo"},{"type":"navigate","path":"/squad"}]
+For set_captain and set_vice_captain, use the player's name exactly as it appears in the <squad> list above.
+Edge cannot load or change the squad from chat. Do NOT claim to "lock" or "set" a squad — only C/VC and navigation actions are available.
 </actions_guide>`
 
   try {
