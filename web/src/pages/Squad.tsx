@@ -166,7 +166,7 @@ export default function Squad() {
 
   function onPitchPlayerClick(p: SquadPlayer) {
     if (!swapSource) {
-      setSwapSource(p)
+      setSelectedPlayer(p)
       return
     }
     if (p.element === swapSource.element) {
@@ -386,7 +386,7 @@ export default function Squad() {
       <PlayerProfileModal
         player={selectedPlayer}
         onClose={() => setSelectedPlayer(null)}
-        onSubOut={() => setSelectedPlayer(null)}
+        onSubOut={(p) => { setSelectedPlayer(null); setSwapSource(p) }}
         isBench={selectedIsBench}
       />
 
