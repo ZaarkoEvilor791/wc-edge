@@ -2,10 +2,46 @@
 
 import argparse
 
+import httpx
+
 from .config import BUDGET_GROUP, BUDGET_R32
 from .db import connect, init_schema
 from .wc_model import blend_live_observations, run_model
 from .wc_optimizer import run_optimizer
+
+_FIFA_ROUNDS_URL = "https://play.fifa.com/json/fantasy/rounds.json"
+
+
+def _sync_round_statuses(conn) -> None:
+    """Fetch FIFA Fantasy rounds.json and update DB status for any changed rounds.
+
+    Non-fatal — if the fetch fails, logs a warning and proceeds with DB as-is.
+    Runs on every engine invocation so blend_live_observations activates without
+    needing a full wc_ingest run.
+    """
+    try:
+        resp = httpx.get(_FIFA_ROUNDS_URL, timeout=10)
+        resp.raise_for_status()
+        rounds = resp.json()
+    except Exception as e:
+        print(f"[sync_rounds] WARNING: could not fetch rounds.json: {e}")
+        return
+
+    updated = 0
+    with conn.cursor() as cur:
+        for r in rounds:
+            rid = r.get("id")
+            status = r.get("status")
+            if rid is None or status is None:
+                continue
+            cur.execute(
+                "UPDATE wc.rounds SET status = %s, updated_at = NOW() "
+                "WHERE id = %s AND status IS DISTINCT FROM %s",
+                (status, rid, status),
+            )
+            updated += cur.rowcount
+    conn.commit()
+    print(f"[sync_rounds] Synced {len(rounds)} rounds, {updated} status update(s)")
 
 
 def _detect_round_and_budget(conn) -> tuple[int, float]:
@@ -57,6 +93,7 @@ def main() -> None:
 
     conn = connect()
     init_schema(conn)
+    _sync_round_statuses(conn)
 
     round_id, budget = _detect_round_and_budget(conn)
     if args.round is not None:
