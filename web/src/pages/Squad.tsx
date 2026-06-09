@@ -109,8 +109,8 @@ export default function Squad() {
   }
 
   const displaySquad = squad.length > 0 ? squad : data.squad_json
-  const activeCaptain = captain ?? [...displaySquad].sort((a, b) => b.xp - a.xp)[0]?.element
   const { xi, bench } = getXI(displaySquad, { GK: 1, ...formationCounts })
+  const activeCaptain = captain ?? [...xi].sort((a, b) => b.xp - a.xp)[0]?.element
   const selectedIsBench = bench.some((p) => p.element === selectedPlayer?.element)
 
   const eligibleElements = (() => {
