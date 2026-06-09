@@ -8,21 +8,23 @@
 
 **Local dev:** frontend `http://localhost:5173`, Express API `http://localhost:3001`
 
-**Database:** Shared fpl-edge Postgres (`fpledge` DB), `wc` schema. External URL in `engine/.env`, internal URL in Render env.
+**Database:** Neon Postgres (`neondb`), `wc` schema. Free tier, no expiry. External URL in `engine/.env` and `web/.env`. Render web service env var `DATABASE_URL` must also point to Neon.
 
 ---
 
-## Current State (Session 33 complete)
+## Current State (Session 34 complete)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
-**Tests:** 112 vitest (5 files) + 33 pytest — all green.
+**Tests:** 118 vitest (6 files) + 42 pytest — all green.
 
-**DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 79.91 xP)
+**DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 3 suggested_squad rows (round 1: max_xp £98.0m 79.91xP · value £98.0m 79.91xP · differential £95.6m 79.70xP)
 
 **apif budget:** `day1_used: 80, day2_used: 16` — both runs complete.
 
-**DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). `is_active BOOLEAN DEFAULT TRUE` column live.
+**DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). `is_active BOOLEAN DEFAULT TRUE` column live. `wc.suggested_squad` PK is now `(round, variant)`.
+
+**DB migrated to Neon:** Free Render Postgres expired July 3. Migrated to Neon free tier (no expiry) in Session 34. All 6 tables + 3 suggested_squad variants confirmed. Update `DATABASE_URL` in Render web service env vars to the Neon URL.
 
 **Render deploy:** `startCommand` = `cd web && node node_modules/.bin/tsx server/server.ts`
 
@@ -33,6 +35,14 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
 ---
+
+## Session 34 — What was shipped
+
+- **Squad variant presets** — optimizer now produces 3 variants per round: `max_xp` (raw xP, current default), `value` (price-penalised objective: `xp - 0.08 * price`), `differential` (nation cap=2, forces squad spread). `wc_run.py` calls optimizer 3×. DB `wc.suggested_squad` PK changed to `(round, variant)`.
+- **`/api/squad/suggest?variant=`** — server + db.ts wired to accept `max_xp | value | differential`; unknown values fall back to `max_xp`.
+- **3-step onboarding wizard** — "Build a new team" in `OnboardingModal.tsx` now opens a chip wizard: Style (Attacking/Balanced/Defensive) → Budget (Premium/Balanced/Value) → Risk (Safe/Balanced/Differential). Maps answers to a variant via `pickVariant(budget, risk)`, fetches pre-computed squad, zero LLM calls.
+- **DB migration** — migrated from expiring free Render Postgres to new free instance. Updated `DATABASE_URL` in `engine/.env`, `web/.env`, and Render env vars.
+- **Tests** — `engine/tests/test_optimizer.py` (9 pytest) + `web/src/__tests__/onboardingWizard.test.ts` (6 vitest).
 
 ## Session 33 — What was shipped
 
