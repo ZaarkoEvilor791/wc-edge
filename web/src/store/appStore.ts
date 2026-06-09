@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { ChatMessage } from '../types/wc'
 
 interface AppStore {
   sidebarCollapsed: boolean
@@ -14,6 +15,11 @@ interface AppStore {
   unmatchedNames: string[] | null
   setUnmatchedNames: (names: string[]) => void
   clearUnmatchedNames: () => void
+  // Non-persisted: chat session state (clears on page reload)
+  chatMessages: ChatMessage[]
+  setChatMessages: (msgs: ChatMessage[]) => void
+  chatChipsUsed: boolean
+  setChatChipsUsed: (v: boolean) => void
 }
 
 export const useAppStore = create<AppStore>()(
@@ -30,6 +36,10 @@ export const useAppStore = create<AppStore>()(
       unmatchedNames: null,
       setUnmatchedNames: (names) => set({ unmatchedNames: names.length > 0 ? names : null }),
       clearUnmatchedNames: () => set({ unmatchedNames: null }),
+      chatMessages: [],
+      setChatMessages: (msgs) => set({ chatMessages: msgs }),
+      chatChipsUsed: false,
+      setChatChipsUsed: (v) => set({ chatChipsUsed: v }),
     }),
     {
       name: 'wc-edge-storage',

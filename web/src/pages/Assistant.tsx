@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSquadStore } from '../store/squadStore'
+import { useAppStore } from '../store/appStore'
 import { useProjections, useCurrentRound } from '../hooks/useWC'
 import { wcApi } from '../services/wcApi'
 import type { ChatMessage } from '../types/wc'
@@ -38,11 +39,14 @@ export default function Assistant() {
   const currentRound = useCurrentRound()
   const { data: projections } = useProjections(currentRound?.id ?? 1)
 
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const messages = useAppStore((s) => s.chatMessages)
+  const setMessages = useAppStore((s) => s.setChatMessages)
+  const chipsUsed = useAppStore((s) => s.chatChipsUsed)
+  const setChipsUsed = useAppStore((s) => s.setChatChipsUsed)
+
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [chipsUsed, setChipsUsed] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
