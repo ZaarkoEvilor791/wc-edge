@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import clsx from 'clsx'
 import { useSuggestedSquad, useProjections, useCurrentRound, useTeams } from '../hooks/useWC'
 import { useSquadStore } from '../store/squadStore'
@@ -113,7 +113,7 @@ export default function Squad() {
   const { xi, bench } = getXI(displaySquad, { GK: 1, ...formationCounts })
   const selectedIsBench = bench.some((p) => p.element === selectedPlayer?.element)
 
-  const eligibleElements = useMemo(() => {
+  const eligibleElements = (() => {
     if (!swapSource) return new Set<number>()
     if (swapSource.position === 'GK') {
       return new Set([...xi, ...bench].filter(p => p.position === 'GK' && p.element !== swapSource.element).map(p => p.element))
@@ -134,7 +134,7 @@ export default function Squad() {
       if (newDEF >= 3 && newMID >= 2 && newFWD >= 1) result.push(p.element)
     }
     return new Set(result)
-  }, [swapSource, xi, bench])
+  })()
 
   const totalCost = displaySquad.reduce((s, p) => s + p.price, 0)
   const budgetPct = Math.min(100, (totalCost / 100) * 100)
