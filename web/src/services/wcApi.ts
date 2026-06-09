@@ -1,4 +1,4 @@
-import type { Player, Round, Team, Projection, SuggestedSquad, TransferSuggestResponse, Fixture, TeamFdr } from '../types/wc'
+import type { Player, Round, Team, Projection, SuggestedSquad, TransferSuggestResponse, Fixture, TeamFdr, ChatAction } from '../types/wc'
 import { ROUTES } from '../config/routes'
 
 async function get<T>(path: string): Promise<T> {
@@ -29,7 +29,7 @@ export const wcApi = {
     post<TransferSuggestResponse>(ROUTES.suggestTransfers, body),
   live: (round: number) => get<unknown>(`${ROUTES.live}?round=${round}`),
   chat: (body: { messages: { role: string; content: string }[]; squad?: number[]; squadNames?: string[] }) =>
-    post<{ content: string }>(ROUTES.chat, body),
+    post<{ content: string; actions: ChatAction[] }>(ROUTES.chat, body),
   squadFromScreenshot: (imageBase64: string, mimeType: string) =>
     post<{ matched: import('../types/wc').SquadPlayer[]; unmatched: string[]; total: number }>(
       ROUTES.fromScreenshot,

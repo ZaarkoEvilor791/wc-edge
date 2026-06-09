@@ -69,6 +69,13 @@ export interface ChatMessage {
   content: string
 }
 
+export type ChatAction =
+  | { type: 'navigate'; path: '/squad' | '/transfers' | '/captain' | '/boosters' | '/live' }
+  | { type: 'set_captain'; name: string }
+  | { type: 'set_vice_captain'; name: string }
+  | { type: 'suggest_transfers' }
+  | { type: 'optimise_xi' }
+
 export interface Fixture {
   round: number
   stage: string

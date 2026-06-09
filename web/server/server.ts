@@ -328,17 +328,38 @@ Chips: Wildcard (free full reset, not usable in R32), 12th Man (pick one bench p
 Budget: £100m group stage, £105m from R32. Country limit: 3 group+R32 / 4 R16 / 5 QF / 6 SF / 8 Final. Extra transfers: −3pts each.
 </rules>
 
-<squad>${squadNames?.length ? squadNames.join(', ') : 'not set'}</squad>`
+<squad>${squadNames?.length ? squadNames.join(', ') : 'not set'}</squad>
+
+<actions_guide>
+When the user asks you to perform an action in the app, append ONLY this block at the very end of your reply (after your text). Do NOT include it for informational replies.
+\`\`\`actions
+[{"type":"navigate","path":"/transfers"}]
+\`\`\`
+Available action types:
+- navigate — path: /squad | /transfers | /captain | /boosters | /live
+- set_captain — name: player name from squad
+- set_vice_captain — name: player name from squad
+- suggest_transfers — no args
+- optimise_xi — no args
+Multiple actions allowed in the array. Example: set captain then navigate to squad page.
+</actions_guide>`
 
   try {
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 200,
+      max_tokens: 400,
       system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
       messages,
     })
-    const text = response.content.find((b) => b.type === 'text')?.text ?? ''
-    res.json({ content: text })
+    const raw = response.content.find((b) => b.type === 'text')?.text ?? ''
+    const actionsMatch = raw.match(/```actions\n([\s\S]*?)\n```/)
+    let actions: unknown[] = []
+    let content = raw
+    if (actionsMatch) {
+      try { actions = JSON.parse(actionsMatch[1]) } catch { /* malformed — ignore */ }
+      content = raw.replace(/```actions\n[\s\S]*?\n```/, '').trim()
+    }
+    res.json({ content, actions })
   } catch (err) {
     res.status(502).json({ error: 'AI request failed', detail: String(err) })
   }

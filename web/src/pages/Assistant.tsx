@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import { useProjections, useCurrentRound } from '../hooks/useWC'
 import { wcApi } from '../services/wcApi'
-import type { ChatMessage } from '../types/wc'
+import { optimiseXI } from '../utils/squad'
+import type { ChatMessage, ChatAction } from '../types/wc'
 
 const SQUAD_CHIPS = [
   'Who should I captain this week?',
@@ -19,7 +21,6 @@ const GENERIC_CHIPS = [
 ]
 
 function renderContent(text: string) {
-  // Render **bold** and line breaks only — no dangerouslySetInnerHTML
   const parts = text.split(/(\*\*[^*]+\*\*)/g)
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
@@ -36,6 +37,10 @@ function renderContent(text: string) {
 
 export default function Assistant() {
   const squad = useSquadStore((s) => s.squad)
+  const setCaptain = useSquadStore((s) => s.setCaptain)
+  const setViceCaptain = useSquadStore((s) => s.setViceCaptain)
+  const setSquad = useSquadStore((s) => s.setSquad)
+  const setFormationCounts = useSquadStore((s) => s.setFormationCounts)
   const currentRound = useCurrentRound()
   const { data: projections } = useProjections(currentRound?.id ?? 1)
 
@@ -43,13 +48,18 @@ export default function Assistant() {
   const setMessages = useAppStore((s) => s.setChatMessages)
   const chipsUsed = useAppStore((s) => s.chatChipsUsed)
   const setChipsUsed = useAppStore((s) => s.setChatChipsUsed)
+  const setUnmatchedNames = useAppStore((s) => s.setUnmatchedNames)
+
+  const navigate = useNavigate()
 
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [screenshotLoading, setScreenshotLoading] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -70,6 +80,27 @@ export default function Assistant() {
     return `[Context: top projected players this round: ${names.join(', ')}]\n\n`
   }, [projections, squad])
 
+  const executeActions = useCallback((actions: ChatAction[]) => {
+    for (const action of actions) {
+      if (action.type === 'navigate') {
+        navigate(action.path)
+      } else if (action.type === 'set_captain') {
+        const p = squad.find((pl) => pl.name.toLowerCase() === action.name.toLowerCase())
+        if (p) setCaptain(p.element)
+      } else if (action.type === 'set_vice_captain') {
+        const p = squad.find((pl) => pl.name.toLowerCase() === action.name.toLowerCase())
+        if (p) setViceCaptain(p.element)
+      } else if (action.type === 'suggest_transfers') {
+        navigate('/transfers')
+      } else if (action.type === 'optimise_xi') {
+        const { squad: reordered, formation } = optimiseXI(squad)
+        setSquad(reordered)
+        setFormationCounts(formation)
+        navigate('/squad')
+      }
+    }
+  }, [squad, navigate, setCaptain, setViceCaptain, setSquad, setFormationCounts])
+
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || loading) return
@@ -89,20 +120,63 @@ export default function Assistant() {
     setLoading(true)
 
     try {
-      const { content: reply } = await wcApi.chat({
+      const { content: reply, actions } = await wcApi.chat({
         messages: [...messages, apiMsg],
         squad: squad.map((p) => p.element),
         squadNames,
       })
 
-      setMessages([...nextMessages, { role: 'assistant', content: reply }])
+      const withReply = [...nextMessages, { role: 'assistant' as const, content: reply }]
+      setMessages(withReply)
+      if (actions?.length) executeActions(actions)
     } catch (err) {
       setError('Edge is unavailable right now. Please try again.')
     } finally {
       setLoading(false)
       setTimeout(() => inputRef.current?.focus(), 50)
     }
-  }, [messages, loading, buildContextPrefix, squad, squadNames])
+  }, [messages, loading, buildContextPrefix, squad, squadNames, setChipsUsed, setMessages, executeActions])
+
+  const handleScreenshot = useCallback(async (file: File) => {
+    if (!file) return
+    setScreenshotLoading(true)
+    setChipsUsed(true)
+
+    const userMsg: ChatMessage = { role: 'user', content: '📷 Squad screenshot uploaded' }
+    const withUser = [...messages, userMsg]
+    setMessages(withUser)
+
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const result = reader.result as string
+          resolve(result.split(',')[1])
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      const { matched, unmatched, total } = await wcApi.squadFromScreenshot(base64, file.type)
+      setSquad(matched)
+      if (unmatched.length) setUnmatchedNames(unmatched)
+
+      const summary =
+        unmatched.length
+          ? `Loaded ${matched.length}/${total} players. Could not match: ${unmatched.join(', ')}.`
+          : `Loaded all ${matched.length} players from your screenshot.`
+      setMessages([...withUser, { role: 'assistant', content: summary }])
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error && err.message.includes('429')
+          ? 'Screenshot limit reached. Try again in a minute.'
+          : 'Could not process screenshot. Please try again.'
+      setMessages([...withUser, { role: 'assistant', content: msg }])
+    } finally {
+      setScreenshotLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }, [messages, setMessages, setSquad, setUnmatchedNames, setChipsUsed])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -140,8 +214,8 @@ export default function Assistant() {
             <div className="mb-2 text-4xl">⚽</div>
             <p className="text-slate-400 text-sm">
               {hasSquad
-                ? 'Ask Edge about your squad, captaincy, or transfers.'
-                : 'Ask Edge anything about WC 2026 Fantasy.'}
+                ? 'Ask Edge about your squad, captaincy, or transfers. Edge can also take actions — try "optimise my XI" or "set Salah as captain".'
+                : 'Ask Edge anything about WC 2026 Fantasy, or upload a squad screenshot to get started.'}
             </p>
           </div>
         )}
@@ -169,13 +243,13 @@ export default function Assistant() {
             </div>
           ))}
 
-          {loading && (
+          {(loading || screenshotLoading) && (
             <div className="flex justify-start">
               <div className="mr-2 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg">
                 E
               </div>
               <div className="rounded-2xl rounded-tl-sm bg-slate-800 px-4 py-3">
-                <ThinkingDots />
+                <ThinkingDots label={screenshotLoading ? 'Processing screenshot' : 'Edge is thinking'} />
               </div>
             </div>
           )}
@@ -206,15 +280,38 @@ export default function Assistant() {
 
       {/* Input bar */}
       <div className="shrink-0 border-t border-slate-800 px-6 py-3">
-        <div className="flex items-end gap-3">
+        <div className="flex items-end gap-2">
+          {/* Screenshot upload */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleScreenshot(file)
+            }}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading || screenshotLoading}
+            title="Upload squad screenshot"
+            className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-400 transition hover:bg-slate-700 hover:text-slate-200 disabled:opacity-40"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+            </svg>
+          </button>
+
           <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={loading}
+            disabled={loading || screenshotLoading}
             rows={1}
-            placeholder="Ask Edge anything about WC 2026…"
+            placeholder="Ask Edge anything, or give a command…"
             className="flex-1 resize-none rounded-xl bg-slate-800 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
             style={{ maxHeight: '120px', overflowY: 'auto' }}
             onInput={(e) => {
@@ -225,22 +322,22 @@ export default function Assistant() {
           />
           <button
             onClick={() => send(input)}
-            disabled={loading || !input.trim()}
+            disabled={loading || screenshotLoading || !input.trim()}
             className="mb-0.5 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg transition hover:opacity-90 disabled:opacity-40"
           >
             Send
           </button>
         </div>
-        <p className="mt-1.5 text-xs text-slate-600">Enter to send · Shift+Enter for new line</p>
+        <p className="mt-1.5 text-xs text-slate-600">Enter to send · Shift+Enter for new line · 📷 to upload squad screenshot</p>
       </div>
     </div>
   )
 }
 
-function ThinkingDots() {
+function ThinkingDots({ label }: { label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span className="text-xs text-slate-400">Edge is thinking</span>
+      <span className="text-xs text-slate-400">{label}</span>
       {[0, 1, 2].map((i) => (
         <span
           key={i}
