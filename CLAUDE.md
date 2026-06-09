@@ -329,11 +329,18 @@ Latest commit: Session 28
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
    ```
 
-3. **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle, Optimise XI button, VC button on Captain page, empty slot card tap → add mode.
+3. **Cross-position outfield swaps (SwapDrawer)** — any outfield player can swap with any other outfield player (DEF↔MID, DEF↔FWD, MID↔FWD) as long as the resulting XI has ≥3 DEF, ≥2 MID, ≥1 FWD. GK swaps remain position-locked. Allowed formations: 5-4-1, 5-3-2, 5-2-3, 4-5-1, 4-4-2, 4-3-3, 3-5-2, 3-4-3 (8 total).
+   - `squad.ts` FORMATIONS: add `{ DEF:5, MID:2, FWD:3 }` (5-2-3) → 8 entries.
+   - `squadStore.ts` `isValidFormation`: change `MID >= 3` → `MID >= 2`.
+   - `Squad.tsx` `SwapDrawer`: add `xi: SquadPlayer[]` prop; replace `eligible` filter — GK position-locked, outfield = any outfield where `newDEF>=3 && newMID>=2 && newFWD>=1` after the swap.
+   - `Squad.tsx` `handleSwap`: call `setFormationCounts` when positions differ (movingIn/movingOut logic).
+   - `squad.test.ts` `ALL_FORMATIONS`: add 5-2-3 entry (8 entries); update test description from "7" to "8".
 
-4. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA Fantasy screenshot; verify partial match shows empty slot cards on pitch, unmatched banner shows unrecognised players.
+4. **Mobile UI check** — manually verify on mobile: tap squad player → BrowseAllModal OUT→IN, SwapDrawer, pitch view toggle, Optimise XI button, VC button on Captain page, empty slot card tap → add mode.
 
-5. **Phase 2 (post-tournament)** — extend StatsBomb extraction for tackles + key passes; add to xP model.
+5. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA Fantasy screenshot; verify partial match shows empty slot cards on pitch, unmatched banner shows unrecognised players.
+
+6. **Phase 2 (post-tournament)** — extend StatsBomb extraction for tackles + key passes; add to xP model.
 
 ---
 
