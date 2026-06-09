@@ -12,11 +12,11 @@
 
 ---
 
-## Current State (Session 28 complete)
+## Current State (Session 29 complete)
 
 All 5 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
-**Tests:** 79 vitest (4 files) + 33 pytest — all green.
+**Tests:** 80 vitest (4 files) + 33 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 79.91 xP)
 
@@ -34,39 +34,47 @@ All 5 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 
 ---
 
-## Session 28 — What was shipped
+## Session 29 — What was shipped
 
-- `Captain.tsx`: `viceCaptain` + `setViceCaptain` wired. VC button per row (suppressed for captain). Active = `bg-slate-300`.
-- `Squad.tsx` `handleOptimiseXI`: sets VC = 2nd-highest xP XI player (`sorted[1].element`).
-- `Squad.tsx` header: `flex-wrap justify-end` + `hidden sm:inline` on formation label — Optimise XI always visible on mobile.
-- `Transfers.tsx`: removed `|| suggestions !== null` from squad display ternary — `viewMode` always respected.
-- `Pitch.tsx` bench strip: `isCaptain`/`isViceCaptain` props passed to bench `PitchPlayerCard`.
-- `Transfers.tsx` `SwapCard`: hit verdict strip — green "Worth the hit ✓" / rose "Not worth the hit" when `isCostly`, showing net xP after −3 penalty.
+- `squad.ts` FORMATIONS: added `{ DEF:5, MID:2, FWD:3 }` → 8 formations total. Comment updated to "Tries 8 formations".
+- `squadStore.ts` `isValidFormation`: `MID >= 3` → `MID >= 2`.
+- `Squad.tsx` `SwapDrawer`: added `xi: SquadPlayer[]` prop; replaced `eligible` filter — GK position-locked, outfield = any outfield where `newDEF>=3 && newMID>=2 && newFWD>=1` (formation-validity check).
+- `Squad.tsx` `handleSwap`: calls `setFormationCounts` when positions differ (`movingIn`/`movingOut` delta logic).
+- `squad.test.ts` `ALL_FORMATIONS`: 5-2-3 added → 8 entries. Test count: 80.
+- Mobile UI check passed: Optimise XI, pitch/list toggle, SwapDrawer, VC button, all green.
 
 ---
 
 ## Next Session Priorities
 
-1. **Tournament operations** — mark eliminated teams as the tournament progresses:
+1. **C/VC bench fix** — auto-assign on squad sync/upload picks from full squad, not XI. Fix in two places:
+   - `Squad.tsx` useEffect (~L178–183): after `setSquad(sorted)`, call `getXI(sorted, {GK:1,...DEFAULT_FORMATION})` and pick captain from `xi`, not full squad.
+   - `OnboardingModal.tsx` (~L95–96): same pattern. Add guard: only call `setCaptain` if `captain === null`.
+   - VC is never auto-set on sync/upload — only `handleOptimiseXI` sets VC. Keep it that way.
+   - User's existing captain/VC must be preserved on re-sync (existing guards already handle Squad.tsx; OnboardingModal needs `captain === null` check).
+
+2. **Pitch card-to-card swap UX** — replace the 3-tap SwapDrawer flow with direct pitch taps:
+   - Tap 1: player card gets **gold ring** (selected). Eligible swap targets **glow green**. Ineligible cards **dim to 40% opacity**.
+   - Tap 2: tap eligible → swap executes. Tap selected again → deselect. Tap ineligible → re-select as new source.
+   - Cancel chip below pitch when in selection mode.
+   - `PitchPlayerCard`: add `isSelected?: boolean`, `isEligible?: boolean` props + styling.
+   - `Pitch.tsx`: accept `swapSourceElement?: number`, `eligibleElements?: Set<number>`, pass down to cards.
+   - `Squad.tsx`: new `swapSource` state; `onPitchPlayerClick` handler; extract eligible logic (same formation-validity as former SwapDrawer); delete `SwapDrawer` component.
+   - Profile modal stays for **list view only** — pitch tap no longer opens it.
+   - `handleSwap` updated to accept explicit `(source, replacement)` args.
+   - Files: `PitchPlayerCard.tsx`, `Pitch.tsx`, `Squad.tsx`, delete `SwapDrawer.tsx`.
+
+3. **Tournament operations** — mark eliminated teams as the tournament progresses:
    ```sql
    UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
    ```
    Engine cron auto-refreshes projections at 04:00 + 18:00 UTC.
 
-2. **Manual engine trigger** if projections go stale:
+4. **Manual engine trigger** if projections go stale:
    ```bash
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
    gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
    ```
-
-3. **Cross-position outfield swaps (SwapDrawer)** — any outfield player can swap with any other outfield player as long as resulting XI has ≥3 DEF, ≥2 MID, ≥1 FWD. Allowed formations: 5-4-1, 5-3-2, 5-2-3, 4-5-1, 4-4-2, 4-3-3, 3-5-2, 3-4-3 (8 total).
-   - `squad.ts` FORMATIONS: add `{ DEF:5, MID:2, FWD:3 }` → 8 entries.
-   - `squadStore.ts` `isValidFormation`: change `MID >= 3` → `MID >= 2`.
-   - `Squad.tsx` `SwapDrawer`: add `xi: SquadPlayer[]` prop; replace `eligible` filter — GK position-locked, outfield = any outfield where `newDEF>=3 && newMID>=2 && newFWD>=1`.
-   - `Squad.tsx` `handleSwap`: call `setFormationCounts` when positions differ (`movingIn`/`movingOut` delta logic).
-   - `squad.test.ts` `ALL_FORMATIONS`: add 5-2-3 (8 entries).
-
-4. **Mobile UI check** — SwapDrawer, pitch view toggle, Optimise XI, VC button on Captain, empty slot card tap.
 
 5. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA screenshot.
 
@@ -81,7 +89,7 @@ All 5 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 cd web && npm run dev    # Express :3001 + Vite :5173
 
 # Tests
-cd web && npm test                        # 79 vitest
+cd web && npm test                        # 80 vitest
 cd engine && py -m pytest tests/ -v       # 33 pytest
 
 # Engine (Windows PowerShell)
@@ -134,7 +142,7 @@ web/
 | Page | Route | Guard | Key feature |
 |---|---|---|---|
 | Assistant | / | none | Edge AI, starter chips, squad context |
-| Squad | /squad | none | Pitch + list view, swap drawer, Optimise XI, budget bar |
+| Squad | /squad | none | Pitch + list view, card-to-card swap, Optimise XI, budget bar |
 | Transfers | /transfers | RequireSquad | Greedy suggest, Accept/Pass/Undo, hit verdict, Browse All |
 | Captain | /captain | RequireSquad | Ranked list, VC button, FDR badge, deadline countdown |
 | Live | /live | none | Match cards, captain banner, stale fallback |
@@ -228,6 +236,8 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **EmptySlotCard only shown when `onEmptySlotClick` passed to Pitch** — Squad page passes it; Transfers doesn't.
 - **FREE_TRANSFERS_BY_PHASE** — `{group:2, r32:6, r16:4, qf:4, sf:5, final:6}`. Auto-set on mount from round stage.
 - **Hit verdict on SwapCard** — `net = xp_gain - 3`. Green if `net > 0`, rose if not. No backend change.
+- **C/VC auto-assign must pick from XI** — only `handleOptimiseXI` is currently correct. Sync/upload auto-assign bug (picks from full squad) is scheduled to be fixed next session.
+- **Pitch swap redesign (planned)** — card-to-card direct swap replacing SwapDrawer. Gold ring = selected, green glow = eligible, dim = ineligible. `SwapDrawer.tsx` will be deleted. Profile modal stays in list view only.
 
 ---
 
@@ -238,12 +248,13 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **highspy MILP** — use `highspy.HighsVarType.kInteger`, check `h.getModelStatus()`.
 - **Python on Windows** — use `py` launcher, `$env:PYTHONUTF8=1` for unicode.
 - **wc schema search_path** — psycopg3: `options="-c search_path=wc,public"`. Node pg: append to connection string.
-- **SwapDrawer sub-in vs sub-out** — bench player triggers sub-in (options = XI starters); starter triggers sub-out (options = bench).
+- **SwapDrawer sub-in vs sub-out** — bench player triggers sub-in (options = XI starters); starter triggers sub-out (options = bench). Will be replaced by card-to-card next session.
 - **FT stepper `−` button** — uses U+2212 minus sign. Use `.nth(0)` in tests.
 - **Re-sync modal skips idle step** — `startAtUpload=true` when `wcOnboardingOpen && squad.length > 0`.
 - **`setViceCaptain` must be destructured separately** — `const { ..., viceCaptain, setViceCaptain } = useSquadStore()`.
 - **Bench C/VC badges** — bench `PitchPlayerCard` gets `isCaptain`/`isViceCaptain` same as XI rows.
 - **Smart suggest pitch view** — `viewMode` always respected; `|| suggestions !== null` removed. SuggestionsPreview renders above squad regardless.
 - **BrowseAllModal add mode budget check** — `squadCost + price > budget + 0.001`. Pass `budget={100}` (total).
-- **isValidFormation MID threshold** — currently `MID >= 3`; will change to `MID >= 2` when cross-position swaps implemented.
+- **isValidFormation MID threshold** — `MID >= 2` (changed from 3 in Session 29 to support 5-2-3).
 - **Appearance formula** — `APPEARANCE_PART * min(1, mf+0.15) + APPEARANCE_PART * mf`. Starters ≈1.9 pts, rotation ≈1.15 pts.
+- **Cross-position swap eligible filter** — GK position-locked. Outfield: `newDEF>=3 && newMID>=2 && newFWD>=1`. movingOut/movingIn delta computed from swapSource vs replacement positions. `SwapDrawer` has `xi` prop for live formation counts.

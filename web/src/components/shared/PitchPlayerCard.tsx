@@ -10,6 +10,9 @@ interface Props {
   isCaptain?: boolean
   isViceCaptain?: boolean
   eliminated?: boolean
+  isSelected?: boolean
+  isEligible?: boolean
+  isDimmed?: boolean
   onClick: () => void
 }
 
@@ -18,18 +21,21 @@ function surname(name: string): string {
   return parts[parts.length - 1].slice(0, 10)
 }
 
-export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isViceCaptain, eliminated, onClick }: Props) {
+export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isViceCaptain, eliminated, isSelected, isEligible, isDimmed, onClick }: Props) {
   const kit = getKit(player.team_abbr)
 
   return (
     <button
       onClick={onClick}
       className={clsx(
-        'relative flex flex-col items-center rounded-lg border px-1 pt-1 pb-1 text-center transition-colors hover:bg-slate-800/60',
+        'relative flex flex-col items-center rounded-lg border px-1 pt-1 pb-1 text-center transition-all hover:bg-slate-800/60',
         'w-[72px] sm:w-[72px]',
         isBench
           ? 'border-slate-700 bg-slate-900/60'
           : 'border-slate-700/40 bg-slate-950',
+        isSelected && 'ring-2 ring-[#E8B84B] ring-offset-1 ring-offset-transparent border-[#E8B84B]/60',
+        isEligible && !isSelected && 'ring-2 ring-green-400 ring-offset-1 ring-offset-transparent border-green-400/60',
+        isDimmed && 'opacity-40',
       )}
     >
       {/* Captain / VC badge */}

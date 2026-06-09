@@ -12,6 +12,8 @@ interface Props {
   viceCaptain?: number | null
   posCount?: Record<string, number>
   eliminatedSquadIds?: Set<number>
+  swapSourceElement?: number
+  eligibleElements?: Set<number>
   onPlayerClick: (player: SquadPlayer) => void
   onEmptySlotClick?: (position: string) => void
 }
@@ -29,6 +31,8 @@ function FormationRow({
   captain,
   viceCaptain,
   eliminatedSquadIds,
+  swapSourceElement,
+  eligibleElements,
   onPlayerClick,
   onEmptySlotClick,
 }: {
@@ -40,9 +44,12 @@ function FormationRow({
   captain: number | null
   viceCaptain?: number | null
   eliminatedSquadIds?: Set<number>
+  swapSourceElement?: number
+  eligibleElements?: Set<number>
   onPlayerClick: (p: SquadPlayer) => void
   onEmptySlotClick?: (position: string) => void
 }) {
+  const inSwapMode = swapSourceElement !== undefined
   return (
     <div className="flex justify-center gap-2">
       {players.map((p) => (
@@ -53,6 +60,9 @@ function FormationRow({
           isCaptain={p.element === captain}
           isViceCaptain={p.element === viceCaptain}
           eliminated={eliminatedSquadIds?.has(p.squad_id)}
+          isSelected={p.element === swapSourceElement}
+          isEligible={inSwapMode && eligibleElements?.has(p.element)}
+          isDimmed={inSwapMode && p.element !== swapSourceElement && !eligibleElements?.has(p.element)}
           onClick={() => onPlayerClick(p)}
         />
       ))}
@@ -71,6 +81,8 @@ export default function Pitch({
   viceCaptain,
   posCount,
   eliminatedSquadIds,
+  swapSourceElement,
+  eligibleElements,
   onPlayerClick,
   onEmptySlotClick,
 }: Props) {
@@ -127,10 +139,10 @@ export default function Pitch({
 
         {/* Player rows */}
         <div className="relative flex flex-col gap-3 px-3 py-4">
-          <FormationRow players={fwd} emptySlots={emptyFWD} position="FWD" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
-          <FormationRow players={mid} emptySlots={emptyMID} position="MID" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
-          <FormationRow players={def} emptySlots={emptyDEF} position="DEF" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
-          <FormationRow players={gk} emptySlots={emptyGK} position="GK" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={fwd} emptySlots={emptyFWD} position="FWD" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={mid} emptySlots={emptyMID} position="MID" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={def} emptySlots={emptyDEF} position="DEF" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={gk} emptySlots={emptyGK} position="GK" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
         </div>
       </div>
 
@@ -145,18 +157,24 @@ export default function Pitch({
             const expected = Math.max(0, (POS_REQUIRED[pos] ?? 0) - (counts[pos] ?? 1))
             const missing = Math.max(0, expected - benchForPos.length)
             return [
-              ...benchForPos.map((p) => (
-                <PitchPlayerCard
-                  key={p.element}
-                  player={p}
-                  xp={xpFor(p, projections, round)}
-                  isBench
-                  isCaptain={p.element === captain}
-                  isViceCaptain={p.element === viceCaptain}
-                  eliminated={eliminatedSquadIds?.has(p.squad_id)}
-                  onClick={() => onPlayerClick(p)}
-                />
-              )),
+              ...benchForPos.map((p) => {
+                const inSwapMode = swapSourceElement !== undefined
+                return (
+                  <PitchPlayerCard
+                    key={p.element}
+                    player={p}
+                    xp={xpFor(p, projections, round)}
+                    isBench
+                    isCaptain={p.element === captain}
+                    isViceCaptain={p.element === viceCaptain}
+                    eliminated={eliminatedSquadIds?.has(p.squad_id)}
+                    isSelected={p.element === swapSourceElement}
+                    isEligible={inSwapMode && eligibleElements?.has(p.element)}
+                    isDimmed={inSwapMode && p.element !== swapSourceElement && !eligibleElements?.has(p.element)}
+                    onClick={() => onPlayerClick(p)}
+                  />
+                )
+              }),
               ...(onEmptySlotClick
                 ? Array.from({ length: missing }).map((_, i) => (
                     <EmptySlotCard

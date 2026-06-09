@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useEffect, useMemo } from 'react'
 import clsx from 'clsx'
 import { useSuggestedSquad, useProjections, useCurrentRound, useTeams } from '../hooks/useWC'
 import { useSquadStore } from '../store/squadStore'
@@ -66,115 +65,9 @@ function ListIcon({ active }: { active: boolean }) {
   )
 }
 
-function SwapDrawer({
-  target,
-  options,
-  xi,
-  subIn,
-  eliminatedSquadIds,
-  onSwap,
-  onCancel,
-}: {
-  target: SquadPlayer
-  options: SquadPlayer[]
-  xi: SquadPlayer[]
-  subIn: boolean
-  eliminatedSquadIds: Set<number>
-  onSwap: (replacement: SquadPlayer) => void
-  onCancel: () => void
-}) {
-  const eligible = (() => {
-    if (target.position === 'GK') {
-      return options.filter((p) => p.position === 'GK' && p.element !== target.element)
-    }
-    const currentDEF = xi.filter((p) => p.position === 'DEF').length
-    const currentMID = xi.filter((p) => p.position === 'MID').length
-    const currentFWD = xi.filter((p) => p.position === 'FWD').length
-    return options.filter((p) => {
-      if (p.position === 'GK' || p.element === target.element) return false
-      // subIn: target is bench (entering XI), p is XI candidate (leaving XI)
-      // !subIn: target is XI (leaving XI), p is bench candidate (entering XI)
-      const out = subIn ? p : target
-      const into = subIn ? target : p
-      const newDEF = currentDEF - (out.position === 'DEF' ? 1 : 0) + (into.position === 'DEF' ? 1 : 0)
-      const newMID = currentMID - (out.position === 'MID' ? 1 : 0) + (into.position === 'MID' ? 1 : 0)
-      const newFWD = currentFWD - (out.position === 'FWD' ? 1 : 0) + (into.position === 'FWD' ? 1 : 0)
-      return newDEF >= 3 && newMID >= 2 && newFWD >= 1
-    })
-  })()
-
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onCancel}>
-      <div className="absolute inset-0 bg-black/50" />
-      <div
-        className="relative flex max-h-[70vh] w-full max-w-sm flex-col rounded-t-2xl border-t border-slate-700 bg-slate-900 px-4 pb-6 pt-4 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Handle */}
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-700" />
-
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-slate-100">
-              {subIn ? 'Sub in' : 'Swap out'} <span className="text-accent">{target.name}</span>
-            </p>
-            <p className="text-xs text-slate-500">
-              {subIn ? 'Select a starter to move to bench' : 'Select a bench player to bring in'}
-            </p>
-          </div>
-          <button
-            onClick={onCancel}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-slate-100"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 1l10 10M11 1L1 11" />
-            </svg>
-          </button>
-        </div>
-
-        {eligible.length === 0 ? (
-          <p className="py-4 text-center text-sm text-slate-500">
-            No valid swap options
-          </p>
-        ) : (
-          <div className="flex-1 space-y-2 overflow-y-auto">
-            {eligible.map((p) => {
-              const isEliminated = eliminatedSquadIds.has(p.squad_id)
-              return (
-                <button
-                  key={p.element}
-                  onClick={() => onSwap(p)}
-                  className="flex w-full items-center justify-between rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-left transition-colors hover:border-accent/50 hover:bg-slate-700"
-                >
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <p className={clsx('text-sm font-medium', isEliminated ? 'text-slate-400' : 'text-slate-100')}>{p.name}</p>
-                      {isEliminated && (
-                        <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                          Eliminated
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-500">{p.team_abbr} · {p.position}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={clsx('text-sm font-semibold', isEliminated ? 'text-slate-500' : 'text-accent')}>{p.xp.toFixed(1)} xP</p>
-                    <p className="text-xs text-slate-500">£{p.price.toFixed(1)}m</p>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    </div>,
-    document.body,
-  )
-}
-
 export default function Squad() {
   const { data, isLoading, error } = useSuggestedSquad()
-  const { squad, captain, viceCaptain, formationCounts, setSquad, setCaptain, setViceCaptain, setFormationCounts } = useSquadStore()
+  const { squad, captain, viceCaptain, formationCounts, boosterStates, setSquad, setCaptain, setViceCaptain, setFormationCounts } = useSquadStore()
   const { squadViewMode: viewMode, setSquadViewMode: setViewMode, setWcOnboardingOpen } = useAppStore()
   const currentRound = useCurrentRound()
   const round = currentRound?.id ?? 1
@@ -182,7 +75,7 @@ export default function Squad() {
   const { data: teams } = useTeams()
 
   const [selectedPlayer, setSelectedPlayer] = useState<SquadPlayer | null>(null)
-  const [swapTarget, setSwapTarget] = useState<SquadPlayer | null>(null)
+  const [swapSource, setSwapSource] = useState<SquadPlayer | null>(null)
   const [addPosition, setAddPosition] = useState<string | null>(null)
 
   useEffect(() => {
@@ -197,10 +90,13 @@ export default function Squad() {
         (pos) => [...(byPos[pos] ?? [])].sort((a, b) => b.xp - a.xp)
       )
       setSquad(sorted)
-      const topPlayer = sorted[0] ? [...sorted].sort((a, b) => b.xp - a.xp)[0] : null
-      if (topPlayer) setCaptain(topPlayer.element)
+      if (captain === null) {
+        const { xi } = getXI(sorted, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+        const top = [...xi].sort((a, b) => b.xp - a.xp)[0]
+        if (top) setCaptain(top.element)
+      }
     }
-  }, [data, squad.length, squad, setSquad, setCaptain])
+  }, [data, squad.length, squad, setSquad, setCaptain, captain])
 
   if (isLoading) return <Spinner label="Loading squad…" />
 
@@ -216,7 +112,29 @@ export default function Squad() {
   const activeCaptain = captain ?? [...displaySquad].sort((a, b) => b.xp - a.xp)[0]?.element
   const { xi, bench } = getXI(displaySquad, { GK: 1, ...formationCounts })
   const selectedIsBench = bench.some((p) => p.element === selectedPlayer?.element)
-  const swapTargetIsBench = bench.some((p) => p.element === swapTarget?.element)
+
+  const eligibleElements = useMemo(() => {
+    if (!swapSource) return new Set<number>()
+    if (swapSource.position === 'GK') {
+      return new Set([...xi, ...bench].filter(p => p.position === 'GK' && p.element !== swapSource.element).map(p => p.element))
+    }
+    const currentDEF = xi.filter(p => p.position === 'DEF').length
+    const currentMID = xi.filter(p => p.position === 'MID').length
+    const currentFWD = xi.filter(p => p.position === 'FWD').length
+    const sourceIsXI = xi.some(p => p.element === swapSource.element)
+    const candidates = sourceIsXI ? bench : xi
+    const result: number[] = []
+    for (const p of candidates) {
+      if (p.position === 'GK' || p.element === swapSource.element) continue
+      const out = sourceIsXI ? swapSource : p
+      const into = sourceIsXI ? p : swapSource
+      const newDEF = currentDEF - (out.position === 'DEF' ? 1 : 0) + (into.position === 'DEF' ? 1 : 0)
+      const newMID = currentMID - (out.position === 'MID' ? 1 : 0) + (into.position === 'MID' ? 1 : 0)
+      const newFWD = currentFWD - (out.position === 'FWD' ? 1 : 0) + (into.position === 'FWD' ? 1 : 0)
+      if (newDEF >= 3 && newMID >= 2 && newFWD >= 1) result.push(p.element)
+    }
+    return new Set(result)
+  }, [swapSource, xi, bench])
 
   const totalCost = displaySquad.reduce((s, p) => s + p.price, 0)
   const budgetPct = Math.min(100, (totalCost / 100) * 100)
@@ -231,20 +149,36 @@ export default function Squad() {
   const phase = roundPhase(currentRound?.stage ?? '')
   const overLimit = Object.entries(countByTeam).filter(([, n]) => n > COUNTRY_LIMIT[phase])
 
-  function handleSwap(replacement: SquadPlayer) {
-    if (!swapTarget) return
-    setSquad(swapInSquad(displaySquad, swapTarget.element, replacement.element))
-    if (swapTarget.position !== replacement.position && swapTarget.position !== 'GK' && replacement.position !== 'GK') {
-      // swapTargetIsBench: swapTarget enters XI, replacement leaves XI
-      const movingOut = swapTargetIsBench ? replacement : swapTarget
-      const movingIn = swapTargetIsBench ? swapTarget : replacement
+  function handleSwap(source: SquadPlayer, replacement: SquadPlayer) {
+    setSquad(swapInSquad(displaySquad, source.element, replacement.element))
+    if (source.position !== replacement.position && source.position !== 'GK' && replacement.position !== 'GK') {
+      const sourceIsXI = xi.some(p => p.element === source.element)
+      const movingOut = sourceIsXI ? source : replacement
+      const movingIn = sourceIsXI ? replacement : source
       setFormationCounts({
         DEF: formationCounts.DEF - (movingOut.position === 'DEF' ? 1 : 0) + (movingIn.position === 'DEF' ? 1 : 0),
         MID: formationCounts.MID - (movingOut.position === 'MID' ? 1 : 0) + (movingIn.position === 'MID' ? 1 : 0),
         FWD: formationCounts.FWD - (movingOut.position === 'FWD' ? 1 : 0) + (movingIn.position === 'FWD' ? 1 : 0),
       })
     }
-    setSwapTarget(null)
+    setSwapSource(null)
+  }
+
+  function onPitchPlayerClick(p: SquadPlayer) {
+    if (!swapSource) {
+      setSwapSource(p)
+      return
+    }
+    if (p.element === swapSource.element) {
+      setSwapSource(null)
+      return
+    }
+    if (eligibleElements.has(p.element)) {
+      handleSwap(swapSource, p)
+      return
+    }
+    // Ineligible — re-select as new source
+    setSwapSource(p)
   }
 
   function handleOptimiseXI() {
@@ -345,6 +279,24 @@ export default function Squad() {
         </div>
       </div>
 
+      {/* Active booster indicator */}
+      {(() => {
+        const BOOSTER_NAMES: Record<string, string> = {
+          wildcard: 'Wildcard', max_captain: 'Maximum Captain',
+          '12th_man': '12th Man', qual_booster: 'Qualification Booster', cs_shield: 'Clean Sheet Shield',
+        }
+        const active = Object.entries(boosterStates ?? {}).find(([, s]) => s === 'active')
+        if (!active) return null
+        return (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2 text-xs text-accent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 shrink-0" aria-hidden>
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+            Active booster: <span className="font-semibold">{BOOSTER_NAMES[active[0]] ?? active[0]}</span>
+          </div>
+        )
+      })()}
+
       {/* Country limit warnings */}
       {overLimit.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-yellow-800/30 bg-yellow-900/10 px-3 py-2">
@@ -360,17 +312,34 @@ export default function Squad() {
 
       {/* Pitch view */}
       {viewMode === 'pitch' && (
-        <Pitch
-          players={displaySquad}
-          projections={projections ?? []}
-          round={round}
-          captain={activeCaptain ?? null}
-          viceCaptain={viceCaptain ?? null}
-          posCount={{ GK: 1, ...formationCounts }}
-          eliminatedSquadIds={eliminatedSquadIds}
-          onPlayerClick={setSelectedPlayer}
-          onEmptySlotClick={(pos) => setAddPosition(pos)}
-        />
+        <>
+          <Pitch
+            players={displaySquad}
+            projections={projections ?? []}
+            round={round}
+            captain={activeCaptain ?? null}
+            viceCaptain={viceCaptain ?? null}
+            posCount={{ GK: 1, ...formationCounts }}
+            eliminatedSquadIds={eliminatedSquadIds}
+            swapSourceElement={swapSource?.element}
+            eligibleElements={eligibleElements}
+            onPlayerClick={onPitchPlayerClick}
+            onEmptySlotClick={(pos) => setAddPosition(pos)}
+          />
+          {swapSource && (
+            <div className="mt-3 flex justify-center">
+              <button
+                onClick={() => setSwapSource(null)}
+                className="flex items-center gap-1.5 rounded-full border border-slate-600 bg-slate-800 px-4 py-1.5 text-xs text-slate-300 hover:border-slate-500 hover:text-slate-100 transition-colors"
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M1 1l8 8M9 1L1 9" />
+                </svg>
+                Cancel swap
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* List view */}
@@ -417,21 +386,9 @@ export default function Squad() {
       <PlayerProfileModal
         player={selectedPlayer}
         onClose={() => setSelectedPlayer(null)}
-        onSubOut={(p) => { setSelectedPlayer(null); setSwapTarget(p) }}
+        onSubOut={() => setSelectedPlayer(null)}
         isBench={selectedIsBench}
       />
-
-      {swapTarget && (
-        <SwapDrawer
-          target={swapTarget}
-          options={swapTargetIsBench ? xi : bench}
-          xi={xi}
-          subIn={swapTargetIsBench}
-          eliminatedSquadIds={eliminatedSquadIds}
-          onSwap={handleSwap}
-          onCancel={() => setSwapTarget(null)}
-        />
-      )}
 
       {addPosition && (
         <BrowseAllModal

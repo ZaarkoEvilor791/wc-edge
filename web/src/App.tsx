@@ -5,6 +5,7 @@ import Assistant from './pages/Assistant'
 import Squad from './pages/Squad'
 import Transfers from './pages/Transfers'
 import Captain from './pages/Captain'
+import Boosters from './pages/Boosters'
 import Live from './pages/Live'
 import OnboardingModal from './components/shared/OnboardingModal'
 import { useSquadStore } from './store/squadStore'
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/squad" element={<Squad />} />
         <Route path="/transfers" element={<RequireSquad><Transfers /></RequireSquad>} />
         <Route path="/captain" element={<RequireSquad><Captain /></RequireSquad>} />
+        <Route path="/boosters" element={<RequireSquad><Boosters /></RequireSquad>} />
         <Route path="/live" element={<Live />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

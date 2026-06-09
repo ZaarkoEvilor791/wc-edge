@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSquadFromScreenshot } from '../../hooks/useWC'
 import { useSquadStore } from '../../store/squadStore'
+import { getXI } from '../../utils/squad'
 import { useAppStore } from '../../store/appStore'
 import type { SquadPlayer } from '../../types/wc'
 
@@ -32,7 +33,7 @@ function readFileAsBase64(file: File): Promise<{ base64: string; mimeType: strin
 function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAtUpload?: boolean }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { setSquad, setCaptain } = useSquadStore()
+  const { setSquad, setCaptain, captain } = useSquadStore()
   const setUnmatchedNames = useAppStore((s) => s.setUnmatchedNames)
   const { mutateAsync: processScreenshot } = useSquadFromScreenshot()
 
@@ -92,8 +93,11 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
 
   const handleConfirmSquad = () => {
     setSquad(matched)
-    const top = [...matched].sort((a, b) => b.xp - a.xp)[0]
-    if (top) setCaptain(top.element)
+    if (captain === null) {
+      const { xi } = getXI(matched, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+      const top = [...xi].sort((a, b) => b.xp - a.xp)[0]
+      if (top) setCaptain(top.element)
+    }
     setUnmatchedNames(unmatched)
     localStorage.setItem('wc-onboarded', '1')
     onClose()

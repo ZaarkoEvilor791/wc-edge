@@ -46,6 +46,11 @@ const Icons = {
       <path d="M12 2l2.09 6.26L20 9.27l-4.91 4.73L16.18 20 12 17.27 7.82 20l1.09-6-4.91-4.73 5.91-.01z" />
     </>} />
   ),
+  boosters: (
+    <Icon path={<>
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+    </>} />
+  ),
   live: (
     <Icon path={<>
       <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
@@ -62,6 +67,7 @@ const NAV: Array<{ to: string; label: string; icon: IconKey }> = [
   { to: '/squad',     label: 'Squad',     icon: 'squad'     },
   { to: '/transfers', label: 'Transfers', icon: 'transfers' },
   { to: '/captain',   label: 'Captain',   icon: 'captain'   },
+  { to: '/boosters',  label: 'Boosters',  icon: 'boosters'  },
   { to: '/live',      label: 'Live',      icon: 'live'      },
 ]
 
