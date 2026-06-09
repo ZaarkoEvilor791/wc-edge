@@ -90,9 +90,10 @@ export default function Squad() {
         (pos) => [...(byPos[pos] ?? [])].sort((a, b) => b.xp - a.xp)
       )
       setSquad(sorted)
-      if (captain === null) {
-        const { xi } = getXI(sorted, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
-        const top = [...xi].sort((a, b) => b.xp - a.xp)[0]
+      const { xi: xiSorted } = getXI(sorted, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+      const xiElements = new Set(xiSorted.map((p) => p.element))
+      if (captain === null || !xiElements.has(captain)) {
+        const top = [...xiSorted].sort((a, b) => b.xp - a.xp)[0]
         if (top) setCaptain(top.element)
       }
     }

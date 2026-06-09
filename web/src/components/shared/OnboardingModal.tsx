@@ -93,8 +93,9 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
 
   const handleConfirmSquad = () => {
     setSquad(matched)
-    if (captain === null) {
-      const { xi } = getXI(matched, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+    const { xi } = getXI(matched, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+    const xiElements = new Set(xi.map((p) => p.element))
+    if (captain === null || !xiElements.has(captain)) {
       const top = [...xi].sort((a, b) => b.xp - a.xp)[0]
       if (top) setCaptain(top.element)
     }

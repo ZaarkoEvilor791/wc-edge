@@ -12,11 +12,11 @@
 
 ---
 
-## Current State (Session 31 complete)
+## Current State (Session 32 complete)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
-**Tests:** 80 vitest (4 files) + 33 pytest — all green.
+**Tests:** 112 vitest (5 files) + 33 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 1 suggested_squad (round 1, £98.0m, 79.91 xP)
 
@@ -33,6 +33,17 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
 ---
+
+## Session 32 — What was shipped
+
+- **Architecture deepening** — 5 candidates implemented, 32 new vitest added.
+  - `getEligibleSwapTargets(xi, bench, source)` extracted from Squad.tsx IIFE into `utils/squad.ts` (pure, tested). IIFE wrapper preserved to avoid Rules of Hooks violation.
+  - `buildScoringContext()` rewritten as data-driven — reads all values from `SCORING` object programmatically. Exported as `_buildScoringContext` for tests.
+  - `web/src/config/routes.ts` — single `ROUTES` const shared by `wcApi.ts` and `server.ts`. No more string literals for API paths.
+  - `matchPlayersByName` now returns `PlayerMatchResult | null` with `method: 'positioned' | 'fallback'` discriminant. `low_sample` now reads from DB via COALESCE instead of hardcoded `false`. Round param dynamic (was hardcoded `round = 1`).
+  - `web/server/services/screenshotService.ts` extracted — `processSquadScreenshot()`, `isAllowedMime()`, `ScreenshotParseError`, `ScreenshotEmptyError`. Route handler reduced from 70 lines to ~10.
+  - ATROS token optimization: `/api/chat` `max_tokens: 1024 → 200`; `system` changed to array with `cache_control: { type: 'ephemeral' }` for Anthropic prompt caching.
+- **New test file:** `web/src/__tests__/screenshotService.test.ts` (9 tests).
 
 ## Session 31 — What was shipped
 
@@ -60,25 +71,100 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 
 ---
 
+## Tournament Operations Playbook
+
+This is the most important section during the tournament (June 12 – July 19, 2026). What's automated vs. manual, and what to watch.
+
+### Fully Automated (GitHub Actions cron)
+
+| Cron | UTC time | What runs | Notes |
+|---|---|---|---|
+| Daily engine | 04:00 UTC | `wc_ingest` (apif) + `wc_model` + `blend_live_observations` | Fetches overnight match stats, rebuilds projections |
+| Evening refresh | 18:00 UTC | `wc_model` + `blend_live_observations` only | No apif call (saves budget) |
+| Post-group FDR | June 27 06:00 UTC | `wc_run --post-group` | Bayesian FDR recalibration after group stage ends |
+
+**`blend_live_observations` is a zero-op until rounds have `status='COMPLETE'`** — it only activates once a round finishes. No action needed; it triggers automatically.
+
+### Manual Tasks — You Must Do These
+
+**1. Mark eliminated teams after each knockout round**
+
+After teams are eliminated, run this SQL directly against the DB (use Render dashboard → fpledge DB → query editor, or connect via `engine/.env` `DATABASE_URL`):
+
+```sql
+-- After each knockout round — replace abbrs with actual eliminated teams
+UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
+-- Verify:
+SELECT abbr, is_active FROM wc.teams ORDER BY is_active DESC, abbr;
+```
+
+Teams must be marked `is_active = FALSE` before the next engine cron runs, otherwise projections include them. Timeline:
+- R32 (round of 32): 24 teams eliminated
+- R16: 8 more eliminated  
+- QF: 4 more eliminated
+- SF: 2 more eliminated
+
+**2. Trigger engine manually if projections go stale**
+
+Projections can go stale if: match data arrives late, apif budget exhausted, cron fails silently.
+
+```bash
+# Standard refresh (model + blend, no apif call)
+gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f skip_apif=true
+
+# Full refresh including apif scrape
+gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
+
+# Post-group FDR recalibration (after group stage ends)
+gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
+```
+
+Check GitHub Actions status: `gh run list --repo ZaarkoEvilor791/wc-edge --workflow engine.yml`
+
+**3. Update round status in DB when rounds complete**
+
+`blend_live_observations` only blends when a round has `status='COMPLETE'`. If the engine detects this automatically via FIFA Fantasy rounds.json, no action needed. If not, update manually:
+
+```sql
+UPDATE wc.rounds SET status = 'COMPLETE' WHERE id = N;
+-- Then trigger engine refresh to blend observations
+```
+
+**4. Monitor API Football budget**
+
+Hard cap: 100 requests/day. Check `engine/data/apif_budget.json` before triggering manual runs with apif enabled. The 04:00 UTC cron uses apif; 18:00 UTC does not.
+
+```bash
+cat engine/data/apif_budget.json
+# {"day1_used": 80, "day2_used": 16, ...}
+```
+
+If budget is near 100, always pass `-f skip_apif=true` on manual triggers.
+
+### What to Watch
+
+| Signal | How to check | Action |
+|---|---|---|
+| Projections look stale (xP not updating after games) | `/api/projections?round=N` — check `computed_at` on suggested_squad | Trigger manual engine run |
+| Eliminated team still showing in Transfers pool | `/api/teams` — check `is_active` | Run `UPDATE wc.teams SET is_active = FALSE WHERE abbr = '...'` |
+| `low_sample` badges on screenshot players | `/api/squad/from-screenshot` response — check `low_sample` field | Fixed in Session 32; should work. If not, check round param in `matchPlayersByName` call |
+| Boosters rec blocks wrong round | Boosters page "Best round" card | Check `recMaxCaptain` etc. — pulls from `useProjections` React Query cache |
+| Engine cron failed | GitHub Actions tab or `gh run list` | Check logs, re-trigger |
+| Render dyno sleeping (cold start) | First load slow | Normal on free tier; no action unless >30s |
+
+### Budget / Phase changes
+
+When a new knockout phase starts, the budget increases to £105m. This is auto-detected by `wc_run.py` via the round stage. Country limits also loosen per phase — handled in `squadValidator.ts` via `roundPhase()`. No manual action needed.
+
+---
+
 ## Next Session Priorities
 
-1. **Tournament starts June 12** — tournament is live. Priorities shift to operations.
+1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons.
 
-2. **Tournament operations** — mark eliminated teams as the tournament progresses:
-   ```sql
-   UPDATE wc.teams SET is_active = FALSE WHERE abbr IN ('XXX', 'YYY');
-   ```
-   Engine cron auto-refreshes projections at 04:00 + 18:00 UTC.
+2. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA screenshot. The `low_sample` field now reads from DB correctly (Session 32 fix).
 
-3. **Manual engine trigger** if projections go stale:
-   ```bash
-   gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge
-   gh workflow run engine.yml --repo ZaarkoEvilor791/wc-edge -f post_group=true
-   ```
-
-4. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA screenshot.
-
-5. **Phase 2 (post-tournament)** — StatsBomb tackles + key passes → xP model.
+3. **Phase 2 (post-tournament)** — StatsBomb tackles + key passes → xP model.
 
 ---
 
