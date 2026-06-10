@@ -16,6 +16,7 @@ interface Props {
   eligibleElements?: Set<number>
   onPlayerClick: (player: SquadPlayer) => void
   onEmptySlotClick?: (position: string) => void
+  allOnPitch?: boolean
 }
 
 function xpFor(p: SquadPlayer, projections: Projection[], round: number): number {
@@ -85,19 +86,23 @@ export default function Pitch({
   eligibleElements,
   onPlayerClick,
   onEmptySlotClick,
+  allOnPitch = false,
 }: Props) {
   const counts = posCount ?? POS_COUNT
   const { xi, bench } = getXI(players, counts)
 
-  const gk = xi.filter((p) => p.position === 'GK')
-  const def = xi.filter((p) => p.position === 'DEF')
-  const mid = xi.filter((p) => p.position === 'MID')
-  const fwd = xi.filter((p) => p.position === 'FWD')
+  // When allOnPitch, show every player by position (no bench section)
+  const pitchGK = allOnPitch ? players.filter((p) => p.position === 'GK') : xi.filter((p) => p.position === 'GK')
+  const pitchDEF = allOnPitch ? players.filter((p) => p.position === 'DEF') : xi.filter((p) => p.position === 'DEF')
+  const pitchMID = allOnPitch ? players.filter((p) => p.position === 'MID') : xi.filter((p) => p.position === 'MID')
+  const pitchFWD = allOnPitch ? players.filter((p) => p.position === 'FWD') : xi.filter((p) => p.position === 'FWD')
 
-  const emptyGK = Math.max(0, (counts.GK ?? 1) - gk.length)
-  const emptyDEF = Math.max(0, (counts.DEF ?? 4) - def.length)
-  const emptyMID = Math.max(0, (counts.MID ?? 4) - mid.length)
-  const emptyFWD = Math.max(0, (counts.FWD ?? 2) - fwd.length)
+  // Empty slot counts: for allOnPitch use POS_REQUIRED totals, otherwise formation counts
+  const slotCounts = allOnPitch ? POS_REQUIRED : counts
+  const emptyGK = Math.max(0, (slotCounts.GK ?? 1) - pitchGK.length)
+  const emptyDEF = Math.max(0, (slotCounts.DEF ?? 4) - pitchDEF.length)
+  const emptyMID = Math.max(0, (slotCounts.MID ?? 4) - pitchMID.length)
+  const emptyFWD = Math.max(0, (slotCounts.FWD ?? 2) - pitchFWD.length)
 
   return (
     <div className="w-full">
@@ -139,55 +144,57 @@ export default function Pitch({
 
         {/* Player rows */}
         <div className="relative flex flex-col gap-3 px-3 py-4">
-          <FormationRow players={fwd} emptySlots={emptyFWD} position="FWD" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
-          <FormationRow players={mid} emptySlots={emptyMID} position="MID" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
-          <FormationRow players={def} emptySlots={emptyDEF} position="DEF" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
-          <FormationRow players={gk} emptySlots={emptyGK} position="GK" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={pitchFWD} emptySlots={emptyFWD} position="FWD" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={pitchMID} emptySlots={emptyMID} position="MID" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={pitchDEF} emptySlots={emptyDEF} position="DEF" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
+          <FormationRow players={pitchGK} emptySlots={emptyGK} position="GK" projections={projections} round={round} captain={captain} viceCaptain={viceCaptain} eliminatedSquadIds={eliminatedSquadIds} swapSourceElement={swapSourceElement} eligibleElements={eligibleElements} onPlayerClick={onPlayerClick} onEmptySlotClick={onEmptySlotClick} />
         </div>
       </div>
 
-      {/* Bench strip */}
-      <div className="mt-3">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-          Bench
-        </p>
-        <div className="flex gap-2">
-          {(['GK', 'DEF', 'MID', 'FWD'] as const).flatMap((pos) => {
-            const benchForPos = bench.filter((p) => p.position === pos)
-            const expected = Math.max(0, (POS_REQUIRED[pos] ?? 0) - (counts[pos] ?? 1))
-            const missing = Math.max(0, expected - benchForPos.length)
-            return [
-              ...benchForPos.map((p) => {
-                const inSwapMode = swapSourceElement !== undefined
-                return (
-                  <PitchPlayerCard
-                    key={p.element}
-                    player={p}
-                    xp={xpFor(p, projections, round)}
-                    isBench
-                    isCaptain={p.element === captain}
-                    isViceCaptain={p.element === viceCaptain}
-                    eliminated={eliminatedSquadIds?.has(p.squad_id)}
-                    isSelected={p.element === swapSourceElement}
-                    isEligible={inSwapMode && eligibleElements?.has(p.element)}
-                    isDimmed={inSwapMode && p.element !== swapSourceElement && !eligibleElements?.has(p.element)}
-                    onClick={() => onPlayerClick(p)}
-                  />
-                )
-              }),
-              ...(onEmptySlotClick
-                ? Array.from({ length: missing }).map((_, i) => (
-                    <EmptySlotCard
-                      key={`bench-empty-${pos}-${i}`}
-                      position={pos}
-                      onClick={() => onEmptySlotClick(pos)}
+      {/* Bench strip — hidden when allOnPitch */}
+      {!allOnPitch && (
+        <div className="mt-3">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            Bench
+          </p>
+          <div className="flex gap-2">
+            {(['GK', 'DEF', 'MID', 'FWD'] as const).flatMap((pos) => {
+              const benchForPos = bench.filter((p) => p.position === pos)
+              const expected = Math.max(0, (POS_REQUIRED[pos] ?? 0) - (counts[pos] ?? 1))
+              const missing = Math.max(0, expected - benchForPos.length)
+              return [
+                ...benchForPos.map((p) => {
+                  const inSwapMode = swapSourceElement !== undefined
+                  return (
+                    <PitchPlayerCard
+                      key={p.element}
+                      player={p}
+                      xp={xpFor(p, projections, round)}
+                      isBench
+                      isCaptain={p.element === captain}
+                      isViceCaptain={p.element === viceCaptain}
+                      eliminated={eliminatedSquadIds?.has(p.squad_id)}
+                      isSelected={p.element === swapSourceElement}
+                      isEligible={inSwapMode && eligibleElements?.has(p.element)}
+                      isDimmed={inSwapMode && p.element !== swapSourceElement && !eligibleElements?.has(p.element)}
+                      onClick={() => onPlayerClick(p)}
                     />
-                  ))
-                : []),
-            ]
-          })}
+                  )
+                }),
+                ...(onEmptySlotClick
+                  ? Array.from({ length: missing }).map((_, i) => (
+                      <EmptySlotCard
+                        key={`bench-empty-${pos}-${i}`}
+                        position={pos}
+                        onClick={() => onEmptySlotClick(pos)}
+                      />
+                    ))
+                  : []),
+              ]
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

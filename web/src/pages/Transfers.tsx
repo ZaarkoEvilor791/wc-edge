@@ -496,6 +496,7 @@ export default function Transfers() {
               captain={captain ?? null}
               eliminatedSquadIds={eliminatedSquadIds}
               onPlayerClick={(p) => setManualOut(p)}
+              allOnPitch
             />
           )}
 
