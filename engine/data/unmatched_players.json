@@ -12,18 +12,6 @@
     "price": 9.5
   },
   {
-    "element": 1366,
-    "name": "Raphinha",
-    "normalized": "raphinha",
-    "price": 8.2
-  },
-  {
-    "element": 1106,
-    "name": "Pedri",
-    "normalized": "pedri",
-    "price": 8.1
-  },
-  {
     "element": 516,
     "name": "Rayan Cherki",
     "normalized": "rayan cherki",
@@ -48,12 +36,6 @@
     "price": 7.8
   },
   {
-    "element": 1105,
-    "name": "Dani Olmo",
-    "normalized": "dani olmo",
-    "price": 7.7
-  },
-  {
     "element": 1684,
     "name": "Martin Ødegaard",
     "normalized": "martin degaard",
@@ -63,12 +45,6 @@
     "element": 505,
     "name": "Désiré Doué",
     "normalized": "desire doue",
-    "price": 7.5
-  },
-  {
-    "element": 1104,
-    "name": "Rodri",
-    "normalized": "rodri",
     "price": 7.5
   },
   {
@@ -138,12 +114,6 @@
     "price": 6.5
   },
   {
-    "element": 190,
-    "name": "Lucas Paquetá",
-    "normalized": "lucas paqueta",
-    "price": 6.5
-  },
-  {
     "element": 348,
     "name": "Martin Baturina",
     "normalized": "martin baturina",
@@ -189,12 +159,6 @@
     "element": 1683,
     "name": "Fredrik Aursnes",
     "normalized": "fredrik aursnes",
-    "price": 6.5
-  },
-  {
-    "element": 1999,
-    "name": "Gavi",
-    "normalized": "gavi",
     "price": 6.5
   },
   {
@@ -2757,6 +2721,12 @@
     "element": 2063,
     "name": "Joaquín Piquerez",
     "normalized": "joaquin piquerez",
+    "price": 4.5
+  },
+  {
+    "element": 2072,
+    "name": "Assan Ouédraogo",
+    "normalized": "assan ouedraogo",
     "price": 4.5
   },
   {
@@ -5341,8 +5311,8 @@
   },
   {
     "element": 696,
-    "name": "Mohammad Taha",
-    "normalized": "mohammad taha",
+    "name": "Mohammad Abu Ghoush",
+    "normalized": "mohammad abu ghoush",
     "price": 3.5
   },
   {

@@ -10,11 +10,18 @@ import psycopg
 from .config import (
     APPEARANCE_FULL,
     APPEARANCE_PART,
+    CHANCES_PRIOR,
+    CHANCES_PER_PT,
     CS_PTS,
     FIFA_BASE,
     GOAL_PTS,
+    PENALTY_XG_PER90,
     PRIOR_WEIGHT,
     SAVES_PER_PT,
+    SOT_PRIOR,
+    SHOTS_PER_PT,
+    TACKLES_PRIOR,
+    TACKLES_PER_PT,
     XA_PRIOR,
     XG_PRIOR,
 )
@@ -27,11 +34,13 @@ from .db import connect
 POS_INT = {"GK": 1, "DEF": 2, "MID": 3, "FWD": 4}
 
 # Minutes factor: mf = min(1, INTERCEPT + SLOPE * club_start_rate)
-MF_INTERCEPT = {"GK": 0.85, "DEF": 0.20, "MID": 0.18, "FWD": 0.15}
-MF_SLOPE = {"GK": 0.12, "DEF": 0.72, "MID": 0.68, "FWD": 0.64}
+# WC context: starters play 90min most games; intercepts raised vs club-football defaults
+MF_INTERCEPT = {"GK": 0.85, "DEF": 0.42, "MID": 0.40, "FWD": 0.38}
+MF_SLOPE = {"GK": 0.12, "DEF": 0.53, "MID": 0.55, "FWD": 0.56}
 
-# Default club_start_rate when NULL (no API-Football data)
-DEFAULT_START_RATE = {"GK": 0.90, "DEF": 0.55, "MID": 0.55, "FWD": 0.50}
+# Fallback start-rate when no API-Football data; used for players with price data only
+# Price-scaled logic below overrides this when price + median are available
+DEFAULT_START_RATE = {"GK": 0.90, "DEF": 0.67, "MID": 0.67, "FWD": 0.65}
 
 # Group-stage opponent difficulty by seed
 SEED_LAMBDA = {1: 0.75, 2: 1.00, 3: 1.30, 4: 1.65}
@@ -51,9 +60,19 @@ TOURNAMENT_DISCOUNT = 0.75
 # Private helpers
 # ---------------------------------------------------------------------------
 
-def _mf(pos: str, start_rate: float | None) -> float:
-    sr = start_rate if start_rate is not None else DEFAULT_START_RATE.get(pos, 0.5)
-    return min(1.0, MF_INTERCEPT.get(pos, 0.18) + MF_SLOPE.get(pos, 0.65) * sr)
+def _mf(pos: str, start_rate: float | None, price: float = 0.0, med_price: float = 0.0) -> float:
+    if start_rate is not None:
+        sr = start_rate
+    elif pos == "GK":
+        sr = 0.90
+    elif price > 0 and med_price > 0:
+        # Premium players start nearly every WC game; use price as proxy for role certainty
+        # ratio=1 (median) → sr≈0.67; ratio=2+ (double median, e.g. Haaland) → sr≈0.89
+        ratio = min(2.5, price / med_price)
+        sr = min(0.90, 0.45 + 0.22 * ratio)
+    else:
+        sr = DEFAULT_START_RATE.get(pos, 0.65)
+    return min(1.0, MF_INTERCEPT.get(pos, 0.40) + MF_SLOPE.get(pos, 0.55) * sr)
 
 
 def _posterior(prior_val: float, prior_wt: float, sources: list[dict]) -> float:
@@ -126,6 +145,7 @@ def compute_player_rates(
     price: float,
     stats: dict,
     median_price: dict,
+    is_penalty_taker: bool = False,
 ) -> dict:
     """Bayesian posterior xG90/xA90 and minutes factor for one player.
 
@@ -134,8 +154,9 @@ def compute_player_rates(
         price: FIFA Fantasy price in £m
         stats: row from player_stats (may be empty dict for players with no stats)
         median_price: {pos: median_price_float} for prior scaling
+        is_penalty_taker: adds expected penalty xG to posterior
 
-    Returns dict with keys: xg90, xa90, saves90, mf, low_sample
+    Returns dict with keys: xg90, xa90, saves90, chances90, tackles90, sot90, mf, low_sample
     """
     pos_int = POS_INT.get(pos, 3)
     med_p = median_price.get(pos) or 6.0
@@ -146,7 +167,7 @@ def compute_player_rates(
     sources_xg: list[dict] = []
     sources_xa: list[dict] = []
 
-    mf = _mf(pos, stats.get("club_start_rate"))
+    mf = _mf(pos, stats.get("club_start_rate"), price, median_price.get(pos) or 0.0)
     low_sample = (stats.get("club_minutes") or 0) < 180 and (stats.get("tourn_minutes") or 0) < 90
 
     # Club stats (recency=1, context=1)
@@ -157,22 +178,55 @@ def compute_player_rates(
             sources_xa.append({"rate": stats["club_assists90"], "weight": w})
 
     # Tournament stats
+    tourn_weight = 0.0
     if stats.get("tourn_minutes") and (stats.get("tourn_xg90") is not None):
         age = stats.get("tourn_age_years") or 1.0
-        w = stats["tourn_minutes"] * (DECAY_PER_YEAR ** age) * TOURNAMENT_DISCOUNT
-        sources_xg.append({"rate": stats["tourn_xg90"], "weight": w})
+        tourn_weight = stats["tourn_minutes"] * (DECAY_PER_YEAR ** age) * TOURNAMENT_DISCOUNT
+        sources_xg.append({"rate": stats["tourn_xg90"], "weight": tourn_weight})
         if stats.get("tourn_xa90") is not None:
-            sources_xa.append({"rate": stats["tourn_xa90"], "weight": w})
+            sources_xa.append({"rate": stats["tourn_xa90"], "weight": tourn_weight})
 
     xg90 = _posterior(xg_prior, PRIOR_WEIGHT * 300, sources_xg)
     xa90 = _posterior(xa_prior, PRIOR_WEIGHT * 300, sources_xa)
+
+    # GK goals/assists are too rare at tournament level to model meaningfully
+    if pos == "GK":
+        xg90 = 0.0
+        xa90 = 0.0
+
+    # Penalty taker boost: ~0.35 penalties/game × 0.76 conversion ÷ 90 min
+    if is_penalty_taker:
+        xg90 += PENALTY_XG_PER90
 
     saves90: float | None = None
     if pos == "GK":
         raw = stats.get("tourn_saves90") or stats.get("club_saves90")
         saves90 = float(raw) if raw else DEFAULT_SAVES90
 
-    return {"xg90": xg90, "xa90": xa90, "saves90": saves90, "mf": mf, "low_sample": low_sample}
+    # Bonus-action rates (MID: chances/tackles; FWD: shots on target)
+    chances90 = 0.0
+    tackles90 = 0.0
+    sot90 = 0.0
+    if pos == "MID":
+        ch_prior = CHANCES_PRIOR.get(pos_int, 0.0) * max(0.3, price / med_p)
+        tk_prior = TACKLES_PRIOR.get(pos_int, 0.0)
+        src_ch = ([{"rate": stats["tourn_chances90"], "weight": tourn_weight}]
+                  if tourn_weight > 0 and stats.get("tourn_chances90") is not None else [])
+        src_tk = ([{"rate": stats["tourn_tackles90"], "weight": tourn_weight}]
+                  if tourn_weight > 0 and stats.get("tourn_tackles90") is not None else [])
+        chances90 = _posterior(ch_prior, PRIOR_WEIGHT * 300, src_ch)
+        tackles90 = _posterior(tk_prior, PRIOR_WEIGHT * 300, src_tk)
+    elif pos == "FWD":
+        sot_prior = SOT_PRIOR.get(pos_int, 0.0) * max(0.3, price / med_p)
+        src_sot = ([{"rate": stats["tourn_sot90"], "weight": tourn_weight}]
+                   if tourn_weight > 0 and stats.get("tourn_sot90") is not None else [])
+        sot90 = _posterior(sot_prior, PRIOR_WEIGHT * 300, src_sot)
+
+    return {
+        "xg90": xg90, "xa90": xa90, "saves90": saves90,
+        "chances90": chances90, "tackles90": tackles90, "sot90": sot90,
+        "mf": mf, "low_sample": low_sample,
+    }
 
 
 def compute_round_projection(
@@ -183,6 +237,9 @@ def compute_round_projection(
     saves90: float | None,
     mf: float,
     fdr: dict,
+    chances90: float = 0.0,
+    tackles90: float = 0.0,
+    sot90: float = 0.0,
 ) -> dict:
     """Expected points for one player in one round given fixture difficulty.
 
@@ -193,6 +250,9 @@ def compute_round_projection(
         saves90: saves per 90 for GKs, None for outfielders
         mf: minutes factor from compute_player_rates
         fdr: {attack_lambda, concede_lambda, def_multiplier}
+        chances90: MID key passes per 90 (+1 per CHANCES_PER_PT)
+        tackles90: MID tackles per 90 (+1 per TACKLES_PER_PT)
+        sot90: FWD shots on target per 90 (+1 per SHOTS_PER_PT)
 
     Returns dict with keys: xp, variance, p_goal, p_cs, p_play,
                             pcs, xg90_adj, attack_lambda, concede_lambda, def_mult
@@ -214,6 +274,9 @@ def compute_round_projection(
         + APPEARANCE_PART * min(1.0, mf + 0.15) + APPEARANCE_PART * mf
         + saves_ev
         + xgc_deduct * mf
+        + mf * chances90 / CHANCES_PER_PT
+        + mf * tackles90 / TACKLES_PER_PT
+        + mf * sot90 / SHOTS_PER_PT
     )
 
     return {
@@ -240,10 +303,11 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
     # ---- players ----
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT element, position, price, squad_id FROM wc.players"
+            "SELECT element, position, price, squad_id, is_penalty_taker FROM wc.players"
         )
         players = [
-            {"element": r[0], "position": r[1], "price": r[2], "squad_id": r[3]}
+            {"element": r[0], "position": r[1], "price": r[2], "squad_id": r[3],
+             "is_penalty_taker": bool(r[4])}
             for r in cur.fetchall()
         ]
 
@@ -254,7 +318,8 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
             SELECT element, club_goals90, club_assists90, club_minutes,
                    club_start_rate, club_saves90,
                    tourn_xg90, tourn_xa90, tourn_minutes, tourn_age_years,
-                   tourn_saves90, tourn_source
+                   tourn_saves90, tourn_source,
+                   tourn_chances90, tourn_tackles90, tourn_sot90
             FROM wc.player_stats
             """
         )
@@ -262,7 +327,8 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
             ["element", "club_goals90", "club_assists90", "club_minutes",
              "club_start_rate", "club_saves90",
              "tourn_xg90", "tourn_xa90", "tourn_minutes", "tourn_age_years",
-             "tourn_saves90", "tourn_source"],
+             "tourn_saves90", "tourn_source",
+             "tourn_chances90", "tourn_tackles90", "tourn_sot90"],
             r
         )) for r in cur.fetchall()}
 
@@ -368,7 +434,10 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
         squad_id = p["squad_id"]
         element = p["element"]
 
-        rates = compute_player_rates(pos, price, stats_map.get(element, {}), median_price)
+        rates = compute_player_rates(
+            pos, price, stats_map.get(element, {}), median_price,
+            p["is_penalty_taker"],
+        )
 
         for rnd in rounds:
             fdr = team_fdr.get(squad_id, {}).get(rnd["id"], {
@@ -380,6 +449,7 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
                 pos, pos_int,
                 rates["xg90"], rates["xa90"], rates["saves90"],
                 rates["mf"], fdr,
+                rates["chances90"], rates["tackles90"], rates["sot90"],
             )
 
             proj_rows.append((

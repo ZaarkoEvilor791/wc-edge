@@ -122,7 +122,7 @@ def _sb_minutes(events: list[dict]) -> dict[int, int]:
 
 
 def _process_sb_match(events: list[dict]) -> dict[str, dict]:
-    """Extract {normalized_name: {xg, xa, minutes, saves, name}} from one match."""
+    """Extract {normalized_name: {xg, xa, minutes, saves, chances, tackles, sot, name}} from one match."""
     # Shot map: {event_id: xg} — non-penalty, non-own-goal shots only
     shot_map: dict[str, float] = {
         e["id"]: (e.get("shot") or {}).get("statsbomb_xg") or 0.0
@@ -140,7 +140,8 @@ def _process_sb_match(events: list[dict]) -> dict[str, dict]:
 
     def _entry(pid: int) -> dict:
         if pid not in stats:
-            stats[pid] = {"xg": 0.0, "xa": 0.0, "minutes": 0, "saves": 0}
+            stats[pid] = {"xg": 0.0, "xa": 0.0, "minutes": 0, "saves": 0,
+                          "chances": 0, "tackles": 0, "sot": 0}
         return stats[pid]
 
     for e in events:
@@ -151,13 +152,22 @@ def _process_sb_match(events: list[dict]) -> dict[str, dict]:
 
         if etype == "Shot" and e["id"] in shot_map:
             _entry(pid)["xg"] += shot_map[e["id"]]
+            outcome = (e.get("shot") or {}).get("outcome", {}).get("name", "")
+            if outcome in ("Goal", "Saved", "Saved Off Post", "Saved to Post"):
+                _entry(pid)["sot"] += 1
 
         elif etype == "Pass":
             pass_data = e.get("pass") or {}
             if pass_data.get("shot_assist"):
+                _entry(pid)["chances"] += 1  # pass directly creating a shot = chance created
                 aided_id = pass_data.get("assisted_shot_id")
                 if aided_id and aided_id in shot_map:
                     _entry(pid)["xa"] += shot_map[aided_id]
+
+        elif etype == "Duel":
+            duel_data = e.get("duel") or {}
+            if duel_data.get("type", {}).get("name") == "Tackle":
+                _entry(pid)["tackles"] += 1
 
         elif etype == "Goal Keeper":
             outcome = (e.get("goalkeeper") or {}).get("outcome", {}).get("name", "")
@@ -202,7 +212,8 @@ async def run_statsbomb(dry_run: bool = False) -> None:
             age_years = _years_since(tourn_end)
 
             tourn: dict[str, dict] = defaultdict(
-                lambda: {"xg": 0.0, "xa": 0.0, "minutes": 0, "saves": 0, "name": ""}
+                lambda: {"xg": 0.0, "xa": 0.0, "minutes": 0, "saves": 0,
+                         "chances": 0, "tackles": 0, "sot": 0, "name": ""}
             )
 
             for i, match in enumerate(matches):
@@ -221,6 +232,9 @@ async def run_statsbomb(dry_run: bool = False) -> None:
                     tourn[key]["xa"] += s["xa"]
                     tourn[key]["minutes"] += s["minutes"]
                     tourn[key]["saves"] += s["saves"]
+                    tourn[key]["chances"] += s["chances"]
+                    tourn[key]["tackles"] += s["tackles"]
+                    tourn[key]["sot"] += s["sot"]
                     tourn[key]["name"] = s["name"]
 
                 if (i + 1) % 20 == 0:
@@ -239,6 +253,9 @@ async def run_statsbomb(dry_run: bool = False) -> None:
                         "xa": s["xa"],
                         "minutes": s["minutes"],
                         "saves": s["saves"],
+                        "chances": s["chances"],
+                        "tackles": s["tackles"],
+                        "sot": s["sot"],
                         "tourn_end": tourn_end,
                         "age_years": age_years,
                         "name": s["name"],
@@ -451,10 +468,14 @@ def run_fifa(conn: psycopg.Connection, dry_run: bool = False) -> None:
         if sb_key:
             s = sb_cache[sb_key]
             mins = s["minutes"]
-            xg90 = s["xg"] / mins * 90 if mins >= 45 else None
-            xa90 = s["xa"] / mins * 90 if mins >= 45 else None
-            sv90 = s["saves"] / mins * 90 if mins >= 45 else None
-            stats_rows.append((p["id"], s["source"], xg90, xa90, mins, s["age_years"], sv90))
+            xg90      = s["xg"]     / mins * 90 if mins >= 45 else None
+            xa90      = s["xa"]     / mins * 90 if mins >= 45 else None
+            sv90      = s["saves"]  / mins * 90 if mins >= 45 else None
+            chances90 = s.get("chances", 0) / mins * 90 if mins >= 45 else None
+            tackles90 = s.get("tackles", 0) / mins * 90 if mins >= 45 else None
+            sot90     = s.get("sot",     0) / mins * 90 if mins >= 45 else None
+            stats_rows.append((p["id"], s["source"], xg90, xa90, mins, s["age_years"], sv90,
+                               chances90, tackles90, sot90))
             continue
 
         sofa_key = _fuzzy_match(norm, sofa_keys, overrides)
@@ -463,7 +484,8 @@ def run_fifa(conn: psycopg.Connection, dry_run: bool = False) -> None:
             mins = s["minutes"]
             g90 = s["goals"] / mins * 90 if mins >= 45 else None
             a90 = s["assists"] / mins * 90 if mins >= 45 else None
-            stats_rows.append((p["id"], "sofa", g90, a90, mins, s["age_years"], None))
+            stats_rows.append((p["id"], "sofa", g90, a90, mins, s["age_years"], None,
+                               None, None, None))
             continue
 
         unmatched.append({"element": p["id"], "name": display, "normalized": norm,
@@ -475,8 +497,9 @@ def run_fifa(conn: psycopg.Connection, dry_run: bool = False) -> None:
                 """
                 INSERT INTO wc.player_stats
                     (element, tourn_source, tourn_xg90, tourn_xa90,
-                     tourn_minutes, tourn_age_years, tourn_saves90, scraped_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+                     tourn_minutes, tourn_age_years, tourn_saves90,
+                     tourn_chances90, tourn_tackles90, tourn_sot90, scraped_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
                 ON CONFLICT (element) DO UPDATE SET
                     tourn_source = EXCLUDED.tourn_source,
                     tourn_xg90 = EXCLUDED.tourn_xg90,
@@ -484,6 +507,9 @@ def run_fifa(conn: psycopg.Connection, dry_run: bool = False) -> None:
                     tourn_minutes = EXCLUDED.tourn_minutes,
                     tourn_age_years = EXCLUDED.tourn_age_years,
                     tourn_saves90 = EXCLUDED.tourn_saves90,
+                    tourn_chances90 = EXCLUDED.tourn_chances90,
+                    tourn_tackles90 = EXCLUDED.tourn_tackles90,
+                    tourn_sot90 = EXCLUDED.tourn_sot90,
                     scraped_at = NOW()
                 """,
                 stats_rows,

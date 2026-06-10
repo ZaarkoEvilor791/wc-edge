@@ -81,6 +81,15 @@ XG_PRIOR = {1: 0.02, 2: 0.06, 3: 0.12, 4: 0.20}
 XA_PRIOR = {1: 0.01, 2: 0.05, 3: 0.10, 4: 0.08}
 PRIOR_WEIGHT = 5.0    # equivalent matches of prior
 
+# Bayesian priors for bonus-scoring actions (per 90 min) by position index
+# MID: +1 per 2 chances created, +1 per 3 tackles  |  FWD: +1 per 2 shots on target
+CHANCES_PRIOR = {1: 0.0, 2: 0.5, 3: 1.2, 4: 0.7}   # key passes per 90
+TACKLES_PRIOR = {1: 0.0, 2: 1.5, 3: 2.5, 4: 0.8}   # tackles per 90
+SOT_PRIOR     = {1: 0.0, 2: 0.3, 3: 0.8, 4: 2.2}   # shots on target per 90
+
+# Penalty taker xG boost: ~0.35 penalties/game × 0.76 conversion ÷ 90 min
+PENALTY_XG_PER90 = 0.003
+
 
 def require_database_url() -> str:
     if not DATABASE_URL:

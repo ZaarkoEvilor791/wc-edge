@@ -27,7 +27,7 @@ AVG_FDR  = {"attack_lambda": KO_AVG_LAMBDA, "concede_lambda": KO_AVG_LAMBDA, "de
 class TestComputePlayerRates:
     def test_returns_all_expected_keys(self):
         rates = compute_player_rates("MID", 7.0, {}, MEDIAN_PRICE)
-        assert set(rates) >= {"xg90", "xa90", "saves90", "mf", "low_sample"}
+        assert set(rates) >= {"xg90", "xa90", "saves90", "chances90", "tackles90", "sot90", "mf", "low_sample"}
 
     def test_no_stats_uses_prior(self):
         rates = compute_player_rates("MID", 7.0, {}, MEDIAN_PRICE)
@@ -152,6 +152,56 @@ class TestComputeRoundProjection:
         mf = 0.9
         appearance_ev = 1.0 * min(1.0, mf + 0.15) + 1.0 * mf
         assert appearance_ev == pytest.approx(1.9)
+
+    def test_mid_bonus_actions_increase_xp(self):
+        base = compute_round_projection("MID", 3, 0.1, 0.1, None, 0.8, AVG_FDR)
+        with_actions = compute_round_projection("MID", 3, 0.1, 0.1, None, 0.8, AVG_FDR,
+                                                chances90=2.0, tackles90=3.0)
+        # 2 chances/90 → 0.8 * 2/2 = 0.8 pts; 3 tackles/90 → 0.8 * 3/3 = 0.8 pts
+        assert with_actions["xp"] > base["xp"]
+        assert with_actions["xp"] == pytest.approx(base["xp"] + 0.8 + 0.8)
+
+    def test_fwd_sot_increases_xp(self):
+        base = compute_round_projection("FWD", 4, 0.3, 0.1, None, 0.8, AVG_FDR)
+        with_sot = compute_round_projection("FWD", 4, 0.3, 0.1, None, 0.8, AVG_FDR, sot90=4.0)
+        # 4 SOT/90 → 0.8 * 4/2 = 1.6 pts
+        assert with_sot["xp"] == pytest.approx(base["xp"] + 1.6)
+
+
+# ---------------------------------------------------------------------------
+# compute_player_rates — bonus action and penalty taker tests
+# ---------------------------------------------------------------------------
+
+class TestBonusRates:
+    def test_mid_with_chances_gets_nonzero_chances90(self):
+        rates = compute_player_rates("MID", 7.0, {
+            "tourn_chances90": 3.0, "tourn_minutes": 900, "tourn_age_years": 1.0,
+            "tourn_xg90": 0.1, "tourn_xa90": 0.1,
+        }, MEDIAN_PRICE)
+        assert rates["chances90"] > 0
+
+    def test_fwd_with_sot_gets_nonzero_sot90(self):
+        rates = compute_player_rates("FWD", 9.0, {
+            "tourn_sot90": 4.0, "tourn_minutes": 900, "tourn_age_years": 1.0,
+            "tourn_xg90": 0.4, "tourn_xa90": 0.05,
+        }, MEDIAN_PRICE)
+        assert rates["sot90"] > 0
+
+    def test_penalty_taker_has_higher_xg90(self):
+        base = compute_player_rates("FWD", 9.0, {}, MEDIAN_PRICE)
+        taker = compute_player_rates("FWD", 9.0, {}, MEDIAN_PRICE, is_penalty_taker=True)
+        assert taker["xg90"] > base["xg90"]
+        assert taker["xg90"] == pytest.approx(base["xg90"] + 0.003)
+
+    def test_mid_no_chances_in_stats_uses_prior(self):
+        rates = compute_player_rates("MID", 7.0, {}, MEDIAN_PRICE)
+        assert rates["chances90"] > 0  # prior kicks in
+
+    def test_non_mid_fwd_get_zero_tackles_chances(self):
+        for pos in ("GK", "DEF", "FWD"):
+            rates = compute_player_rates(pos, 6.0, {}, MEDIAN_PRICE)
+            assert rates["tackles90"] == 0.0
+            assert rates["chances90"] == 0.0
 
 
 # ---------------------------------------------------------------------------
