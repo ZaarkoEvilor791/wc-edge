@@ -75,6 +75,7 @@ export type ChatAction =
   | { type: 'set_vice_captain'; name: string }
   | { type: 'suggest_transfers' }
   | { type: 'optimise_xi' }
+  | { type: 'show_tip'; page: 'squad' | 'transfers' | 'captain' | 'boosters' | 'live' }
 
 export interface Fixture {
   round: number

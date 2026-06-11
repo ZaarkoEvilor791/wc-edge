@@ -103,8 +103,24 @@ export default function Squad() {
 
   if (error || !data) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
-        <p className="text-slate-400">Squad is being computed. Check back soon.</p>
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <div className="text-5xl">⚽</div>
+        <p className="font-medium text-slate-300">Your squad is empty</p>
+        <p className="max-w-xs text-sm text-slate-500">Build your 15-player squad for WC 2026 Fantasy</p>
+        <div className="flex w-full max-w-xs flex-col gap-2">
+          <a
+            href="/"
+            className="rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-fg text-center"
+          >
+            Ask Edge to build a squad →
+          </a>
+          <button
+            onClick={() => setWcOnboardingOpen(true)}
+            className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-500"
+          >
+            Use the squad builder
+          </button>
+        </div>
       </div>
     )
   }
@@ -187,7 +203,10 @@ export default function Squad() {
     <div className="mx-auto max-w-2xl">
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-100">My Squad</h1>
+        <div>
+          <h1 className="text-xl font-semibold text-slate-100">My Squad</h1>
+          <p className="mt-0.5 text-sm text-slate-400">Tap a player to swap positions, or use Optimise XI</p>
+        </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="flex items-center gap-1 rounded-lg border border-slate-700 p-0.5">
             <button
@@ -217,6 +236,20 @@ export default function Squad() {
           </button>
         </div>
       </div>
+
+      {/* First-visit: squad auto-loaded from suggestion — orient the user */}
+      {squad.length === 0 && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2.5">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="mt-0.5 shrink-0 text-accent">
+            <circle cx="7" cy="7" r="6" />
+            <path d="M7 5v4M7 3.5v.01" strokeLinecap="round" />
+          </svg>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-200">Showing the recommended squad</p>
+            <p className="mt-0.5 text-xs text-slate-500">Tap any player to swap positions. Use Optimise XI to auto-select the best starting 11.</p>
+          </div>
+        </div>
+      )}
 
       {/* Eliminated players notification */}
       {eliminatedInSquad.length > 0 && (

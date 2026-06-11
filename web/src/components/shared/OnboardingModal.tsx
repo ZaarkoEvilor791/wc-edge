@@ -218,10 +218,10 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'attacking', label: 'Attacking', icon: '⚡' },
-                  { id: 'balanced', label: 'Balanced', icon: '⚖️' },
-                  { id: 'defensive', label: 'Defensive', icon: '🛡️' },
-                ].map(({ id, label, icon }) => (
+                  { id: 'attacking', label: 'Attacking', icon: '⚡', desc: 'Goal-scorers & attackers from top teams' },
+                  { id: 'balanced', label: 'Balanced', icon: '⚖️', desc: 'Mix of attackers and solid defenders' },
+                  { id: 'defensive', label: 'Defensive', icon: '🛡️', desc: 'Clean sheets — keepers & defenders' },
+                ].map(({ id, label, icon, desc }) => (
                   <button
                     key={id}
                     onClick={() => setStep('wizard_budget')}
@@ -229,6 +229,7 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
                   >
                     <span className="text-lg">{icon}</span>
                     <span className="text-xs font-medium text-slate-200">{label}</span>
+                    <span className="text-[10px] leading-tight text-slate-500">{desc}</span>
                   </button>
                 ))}
               </div>
@@ -253,10 +254,10 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'premium', label: 'Premium', icon: '💎' },
-                  { id: 'balanced', label: 'Balanced', icon: '⚖️' },
-                  { id: 'value', label: 'Value', icon: '💡' },
-                ].map(({ id, label, icon }) => (
+                  { id: 'premium', label: 'Premium', icon: '💎', desc: 'Spend big on Haaland, Mbappé & Co.' },
+                  { id: 'balanced', label: 'Balanced', icon: '⚖️', desc: 'Stars mixed with smart budget picks' },
+                  { id: 'value', label: 'Value', icon: '💡', desc: 'Maximise squad depth on a budget' },
+                ].map(({ id, label, icon, desc }) => (
                   <button
                     key={id}
                     onClick={() => { setWizardBudget(id); setStep('wizard_risk') }}
@@ -264,6 +265,7 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
                   >
                     <span className="text-lg">{icon}</span>
                     <span className="text-xs font-medium text-slate-200">{label}</span>
+                    <span className="text-[10px] leading-tight text-slate-500">{desc}</span>
                   </button>
                 ))}
               </div>
@@ -288,10 +290,10 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'safe', label: 'Safe', icon: '🔒' },
-                  { id: 'balanced', label: 'Balanced', icon: '⚖️' },
-                  { id: 'differential', label: 'Differential', icon: '🎲' },
-                ].map(({ id, label, icon }) => (
+                  { id: 'safe', label: 'Safe', icon: '🔒', desc: 'Reliable starters, consistent points' },
+                  { id: 'balanced', label: 'Balanced', icon: '⚖️', desc: 'Mix of safe and high-upside picks' },
+                  { id: 'differential', label: 'Differential', icon: '🎲', desc: 'Unique picks most managers miss' },
+                ].map(({ id, label, icon, desc }) => (
                   <button
                     key={id}
                     onClick={() => handleBuildWithVariant(wizardBudget, id)}
@@ -299,6 +301,7 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
                   >
                     <span className="text-lg">{icon}</span>
                     <span className="text-xs font-medium text-slate-200">{label}</span>
+                    <span className="text-[10px] leading-tight text-slate-500">{desc}</span>
                   </button>
                 ))}
               </div>

@@ -6,6 +6,7 @@ import { useProjections, useCurrentRound } from '../hooks/useWC'
 import { wcApi } from '../services/wcApi'
 import { optimiseXI } from '../utils/squad'
 import type { ChatMessage, ChatAction } from '../types/wc'
+import { PAGE_GUIDES, type GuidePage } from '../data/pageGuides'
 
 const SQUAD_CHIPS = [
   'Who should I captain this week?',
@@ -130,7 +131,13 @@ export default function Assistant() {
         squadNames,
       })
 
-      const withReply = [...nextMessages, { role: 'assistant' as const, content: reply }]
+      const tipAction = actions?.find(
+        (a): a is Extract<ChatAction, { type: 'show_tip' }> => a.type === 'show_tip'
+      )
+      const withTip = tipAction
+        ? [...nextMessages, { role: 'assistant' as const, content: `__TIP__:${tipAction.page}` }]
+        : nextMessages
+      const withReply = [...withTip, { role: 'assistant' as const, content: reply }]
       setMessages(withReply)
       if (actions?.length) executeActions(actions)
     } catch (err) {
@@ -225,27 +232,38 @@ export default function Assistant() {
         )}
 
         <div className="space-y-4">
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {msg.role === 'assistant' && (
-                <div className="mr-2 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg">
-                  E
+          {messages.map((msg, i) => {
+            if (msg.role === 'assistant' && msg.content.startsWith('__TIP__:')) {
+              return (
+                <div key={i} className="flex justify-start">
+                  <div className="flex-1">
+                    <PageGuideCard page={msg.content.slice(8) as GuidePage} />
+                  </div>
                 </div>
-              )}
+              )
+            }
+            return (
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'rounded-tr-sm bg-slate-700 text-slate-100'
-                    : 'rounded-tl-sm bg-slate-800 text-slate-100'
-                }`}
+                key={i}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {renderContent(msg.content)}
+                {msg.role === 'assistant' && (
+                  <div className="mr-2 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg">
+                    E
+                  </div>
+                )}
+                <div
+                  className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'rounded-tr-sm bg-slate-700 text-slate-100'
+                      : 'rounded-tl-sm bg-slate-800 text-slate-100'
+                  }`}
+                >
+                  {renderContent(msg.content)}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           {(loading || screenshotLoading) && (
             <div className="flex justify-start">
@@ -300,7 +318,7 @@ export default function Assistant() {
             onClick={() => fileInputRef.current?.click()}
             disabled={loading || screenshotLoading}
             title="Upload squad screenshot"
-            className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-400 transition hover:bg-slate-700 hover:text-slate-200 disabled:opacity-40"
+            className="mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-400 transition hover:bg-slate-700 hover:text-slate-200 disabled:opacity-40"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -334,6 +352,33 @@ export default function Assistant() {
         </div>
         <p className="mt-1.5 text-xs text-slate-600">Enter to send · Shift+Enter for new line · 📷 to upload squad screenshot</p>
       </div>
+    </div>
+  )
+}
+
+function PageGuideCard({ page }: { page: GuidePage }) {
+  const guide = PAGE_GUIDES[page]
+  const nav = useNavigate()
+  if (!guide) return null
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-sm">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-400/80">
+        Page guide · {guide.title}
+      </p>
+      <ul className="space-y-1">
+        {guide.actions.map((action, i) => (
+          <li key={i} className="flex items-start gap-2 text-slate-300">
+            <span className="mt-0.5 shrink-0 text-amber-500/60">·</span>
+            {action}
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={() => nav(guide.path)}
+        className="mt-3 rounded-lg border border-amber-500/20 px-3 py-1.5 text-xs text-amber-400 transition-colors hover:border-amber-500/40 hover:text-amber-300"
+      >
+        Go to {guide.title} →
+      </button>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import BottomTabBar from './BottomTabBar'
 import { useAppStore } from '../../store/appStore'
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -28,9 +29,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar />
-          <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+          <main className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-6">{children}</main>
         </div>
       </div>
+      <BottomTabBar />
     </div>
   )
 }

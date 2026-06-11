@@ -107,8 +107,13 @@ export default function Captain() {
             >
               <span className="w-6 shrink-0 text-sm tabular-nums text-slate-500">{i + 1}</span>
               <div className="ml-3 min-w-0 flex-1">
-                <div className={clsx('flex items-center gap-1.5 text-sm font-medium', isEliminated ? 'text-slate-400' : 'text-slate-100')}>
+                <div className={clsx('flex flex-wrap items-center gap-1.5 text-sm font-medium', isEliminated ? 'text-slate-400' : 'text-slate-100')}>
                   {p.name}
+                  {fdr !== undefined && (
+                    <span className={clsx('sm:hidden rounded px-1.5 py-0.5 text-[10px] font-bold', FDR_STYLE[fdr] ?? FDR_STYLE[3])}>
+                      FDR {fdr}
+                    </span>
+                  )}
                   {i === 0 && captain !== p.element && !isEliminated && (
                     <span className="text-xs text-accent">TOP PICK</span>
                   )}
@@ -139,7 +144,7 @@ export default function Captain() {
                   <button
                     onClick={(e) => { e.stopPropagation(); setViceCaptain(p.element) }}
                     className={clsx(
-                      'ml-1 flex h-6 w-8 shrink-0 items-center justify-center rounded text-[10px] font-black',
+                      'ml-1 flex h-8 w-10 shrink-0 items-center justify-center rounded text-xs font-bold',
                       p.element === viceCaptain
                         ? 'bg-slate-300 text-slate-800'
                         : 'border border-slate-700 text-slate-500 hover:border-slate-500',
