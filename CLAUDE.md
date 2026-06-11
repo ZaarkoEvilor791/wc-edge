@@ -12,17 +12,17 @@
 
 ---
 
-## Current State (Session 36 complete)
+## Current State (Session 38 complete)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
-**Tests:** 118 vitest (6 files) + 42 pytest — all green.
+**Tests:** 118 vitest (6 files) + 49 pytest — all green.
 
-**DB:** 1,481 players · 8 rounds · 11,848 projections · 384 team_fdr rows · 3 suggested_squad rows (round 1: max_xp £98.0m 79.91xP · value £98.0m 79.91xP · differential £95.6m 79.70xP)
+**DB:** 1,481 players · 8 rounds · projections re-run post-Session-37 model fixes · 384 team_fdr rows · 3 suggested_squad rows (round 1: max_xp £100.0m 74.5xP). `wc.players` has `is_penalty_taker BOOLEAN` column (32 takers seeded). `wc.player_stats` has `tourn_chances90`, `tourn_tackles90`, `tourn_sot90` columns.
 
 **apif budget:** `day1_used: 80, day2_used: 16` — both runs complete.
 
-**DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). `is_active BOOLEAN DEFAULT TRUE` column live. `wc.suggested_squad` PK is now `(round, variant)`.
+**DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). `is_active BOOLEAN DEFAULT TRUE` column live. `wc.suggested_squad` PK is now `(round, variant)`. **IMPORTANT: `migrate.py` must be run against any new DB instance** — adds `player_stats` table, bonus columns, and `is_penalty_taker` to players.
 
 **DB migrated to Neon:** Free Render Postgres expired July 3. Migrated to Neon free tier (no expiry) in Session 34. All 6 tables + 3 suggested_squad variants confirmed. Update `DATABASE_URL` in Render web service env vars to the Neon URL.
 
@@ -35,6 +35,30 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
 ---
+
+## Session 38 — What was shipped
+
+- **Mobile UX overhaul** — 5 fixes shipped before June 12 tournament start based on real user feedback ("UI is complete garbage").
+  - **Bottom tab bar** (`BottomTabBar.tsx`) — Edge / Squad / Transfers / Captain / More tabs on mobile (`md:hidden`). More opens bottom sheet with Boosters + Live. `pb-20 md:pb-0` on main content area prevents overlap.
+  - **FDR inline badge on Captain mobile** — `sm:hidden` span added to player name row so FDR rating is always visible on phones (column was `hidden sm:block` only).
+  - **Onboarding wizard descriptions** — all 9 wizard options now have description text; removes jargon ("Differential 🎯" is no longer unexplained).
+  - **Touch targets ≥44px** — hamburger, camera button (h-9→h-11), VC button all fixed.
+  - **Squad empty state** — CTAs ("Ask Edge to build a squad →" + "Use the squad builder") replace blank page when squad is empty.
+- **Edge post-action context** (`show_tip` action) — Edge can inject gold guide cards in chat after navigating user to a page. `__TIP__:<page>` sentinel in chat message content, rendered as `PageGuideCard` component. `pageGuides.ts` has per-page bullet guides for all 5 routes.
+- **System prompt updates** — Squad composition fact (2 GK/5 DEF/5 MID/3 FWD), orientation sentence rule, `show_tip` example, `<page_guides>` section.
+- **`is_penalty_taker` migrated to Neon** — `engine/migrate.py` run against production; 32 penalty takers seeded via `engine/seed_penalty_takers.py`. Engine was failing with `column "is_penalty_taker" does not exist` — now fixed.
+
+## Session 37 — What was shipped
+
+- **Model accuracy fixes** — 3 systematic bugs fixed; squad xP jumped 53.52 → 74.50.
+  - **Missing scoring events**: MID chances/tackles and FWD SOT were defined in config but never extracted from StatsBomb. Now uses `pass.shot_assist` (NOT `key_pass` — doesn't exist in open data) and `Duel/Tackle` events.
+  - **GK xG leak**: `XG_PRIOR[1]=0.02` gave GKs phantom xG. Fixed by zeroing after posterior.
+  - **Start rate fix**: `DEFAULT_START_RATE["FWD"]=0.50` was too low. Replaced with price-scaled default: top-priced ≈0.89, median ≈0.67. Updated `MF_INTERCEPT/SLOPE` to WC context.
+- **25 penalty takers seeded** — `is_penalty_taker=TRUE` on Haaland, Mbappé, Kane, Messi, Salah etc. Adds `PENALTY_XG_PER90=0.003` to xg90.
+- **`is_penalty_taker` column added** — `engine/migrate.py` adds `ALTER TABLE wc.players ADD COLUMN IF NOT EXISTS is_penalty_taker BOOLEAN DEFAULT FALSE`. Run this against any new DB.
+- **`wc.player_stats` bonus columns** — `tourn_chances90`, `tourn_tackles90`, `tourn_sot90` added; player_stats query fixed to fetch them.
+- **Result**: Haaland 6.16 / Mbappé 5.95 / Kane 5.78 / Yamal 5.71 xP (Round 1). GKs at 5.34 — below elite outfield tier.
+- **Tests**: 49 pytest green.
 
 ## Session 35 — What was shipped
 
@@ -186,9 +210,13 @@ When a new knockout phase starts, the budget increases to £105m. This is auto-d
 
 ## Next Session Priorities
 
-1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons. Round status now auto-syncs; no manual DB update needed.
+1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons. Run `migrate.py` on any new DB instance before engine runs.
 
-2. **Screenshot upload e2e** — test `/api/squad/from-screenshot` with a real FIFA screenshot. The `low_sample` field now reads from DB correctly (Session 32 fix).
+2. **Post-launch UX fixes** (deferred from Session 38):
+   - Player modal scroll: `PlayerProfileModal.tsx` — `overflow-hidden` → `overflow-y-auto` + fade gradient
+   - Transfers swap card: `Transfers.tsx` SwapCard — `flex-col` on mobile (`md:flex-row`)
+   - Boosters tips expanded by default: `Boosters.tsx` — strategy tips visible without tapping
+   - Live kickoff readability: `Live.tsx` — team name `flex-1 min-w-0 truncate`, kickoff on own line
 
 3. **Phase 2 (post-tournament)** — StatsBomb tackles + key passes → xP model.
 
@@ -356,6 +384,10 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **Pitch swap flow** — tap card → profile modal. Sub In/Sub Out in modal → `setSwapSource(p)`. During swap: tap eligible → execute, tap source → deselect, tap ineligible → re-select source. Cancel chip below pitch.
 - **`eligibleElements` is an IIFE, not `useMemo`** — it's computed after early returns in Squad.tsx; using `useMemo` there violates Rules of Hooks.
 - **Boosters state in squadStore** — `boosterStates: Record<string, 'available'|'active'|'used'>`, setter `setBoosterState(id, state)`. Auto-persisted. IDs: `wildcard | max_captain | 12th_man | qual_booster | cs_shield`. R32+ chips locked when `currentRoundId <= 3` (rounds 1–3 = group stage).
+- **Bottom tab bar** — `BottomTabBar.tsx` is `md:hidden`; visible only on mobile. Layout.tsx adds `pb-20 md:pb-0` to main content. Active route detected via `useLocation()`. More button opens a bottom sheet (`fixed bottom-16 z-50`) with Boosters + Live rows. Sheet state is local `useState` in BottomTabBar — no store involvement.
+- **`show_tip` action** — Edge can send `{type:'show_tip', page:'squad'|'transfers'|'captain'|'boosters'|'live'}` in the actions block. `executeActions()` in `Assistant.tsx` injects a `__TIP__:<page>` message into the chat array. Message renderer checks for this prefix and renders `PageGuideCard` instead of a speech bubble. Guide content lives in `web/src/data/pageGuides.ts`.
+- **StatsBomb field names** — `key_pass` doesn't exist in open data; use `pass.shot_assist` for chances created. Tackles: event `type.name === 'Duel'` with `duel.type.name === 'Tackle'`.
+- **`migrate.py` must run on new DB instances** — adds `player_stats` table + bonus columns + `is_penalty_taker` column. The engine crashes with `UndefinedColumn` if skipped.
 
 ---
 
