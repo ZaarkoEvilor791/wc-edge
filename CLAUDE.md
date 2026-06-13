@@ -12,7 +12,7 @@
 
 ---
 
-## Current State (Session 39 complete)
+## Current State (Session 40 starting)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
@@ -247,8 +247,8 @@ When a new knockout phase starts, the budget increases to £105m. This is auto-d
 cd web && npm run dev    # Express :3001 + Vite :5173
 
 # Tests
-cd web && npm test                        # 80 vitest
-cd engine && py -m pytest tests/ -v       # 33 pytest
+cd web && npm test                        # 118 vitest
+cd engine && py -m pytest tests/ -v       # 49 pytest
 
 # Engine (Windows PowerShell)
 cd engine && $env:PYTHONUTF8=1
