@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useSquadFromScreenshot } from '../../hooks/useWC'
+import { useSquadFromScreenshot, useSuggestedSquad } from '../../hooks/useWC'
 import { useSquadStore } from '../../store/squadStore'
-import { getXI, normalizeSquad } from '../../utils/squad'
+import { getXI, normalizeSquad, fillSquadFromSuggested } from '../../utils/squad'
 import { useAppStore } from '../../store/appStore'
 import { wcApi } from '../../services/wcApi'
 import type { SquadPlayer } from '../../types/wc'
@@ -51,6 +51,7 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
   const { setSquad, setCaptain, captain } = useSquadStore()
   const setUnmatchedNames = useAppStore((s) => s.setUnmatchedNames)
   const { mutateAsync: processScreenshot } = useSquadFromScreenshot()
+  const { data: suggestedData } = useSuggestedSquad()
 
   const [step, setStep] = useState<Step>(startAtUpload ? 'upload' : 'idle')
   const [matched, setMatched] = useState<SquadPlayer[]>([])
@@ -132,7 +133,8 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
   }
 
   const handleConfirmSquad = () => {
-    const sorted = normalizeSquad(matched)
+    const filled = fillSquadFromSuggested(matched, suggestedData?.squad_json ?? [])
+    const sorted = normalizeSquad(filled)
     setSquad(sorted)
     const { xi } = getXI(sorted, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
     const xiElements = new Set(xi.map((p) => p.element))
