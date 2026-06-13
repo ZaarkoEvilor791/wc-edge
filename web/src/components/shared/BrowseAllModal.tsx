@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { usePlayers, useProjections, useTeams } from '../../hooks/useWC'
 import type { SquadPlayer } from '../../types/wc'
-import { POS_REQUIRED } from '../../config/gameRules'
+import { canAddPlayer } from '../../domain/squadValidator'
+import type { RoundPhase } from '../../domain/squadValidator'
 
 const POS_COLOR: Record<string, string> = {
   GK: 'text-yellow-400',
@@ -16,6 +17,7 @@ interface Props {
   squad: SquadPlayer[]
   round: number
   budget: number
+  phase?: RoundPhase        // current tournament phase; used for country-limit check in add mode
   onSwap: (inPlayer: SquadPlayer, outPlayer: SquadPlayer) => void
   onClose: () => void
   initialOut?: SquadPlayer  // when set: OUT→IN mode (position locked, skip squad picker)
@@ -23,7 +25,7 @@ interface Props {
   onAdd?: (p: SquadPlayer) => void
 }
 
-export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, initialOut, addPosition, onAdd }: Props) {
+export default function BrowseAllModal({ squad, round, budget, phase = 'group', onSwap, onClose, initialOut, addPosition, onAdd }: Props) {
   const { data: players } = usePlayers()
   const { data: projections } = useProjections(round)
   const { data: teams } = useTeams()
@@ -38,11 +40,6 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
 
   const squadCost = squad.reduce((s, p) => s + p.price, 0)
   const squadElements = new Set(squad.map((p) => p.element))
-  const squadPosCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const p of squad) counts[p.position] = (counts[p.position] ?? 0) + 1
-    return counts
-  }, [squad])
 
   const projMap = useMemo(
     () => new Map((projections ?? []).map((p) => [p.element, p.xp])),
@@ -105,9 +102,8 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
 
   function handleCandidateTap(candidate: (typeof candidates)[number]) {
     if (isAddMode) {
-      // Add mode: no outgoing player, just add to squad
-      if (squadCost + candidate.price > budget + 0.001) return
-      if ((squadPosCounts[candidate.position] ?? 0) >= (POS_REQUIRED[candidate.position] ?? 99)) return
+      // Add mode: single validation gate covers position cap, budget, and country limit
+      if (!canAddPlayer(squad, candidate, phase, squadCost, budget).allowed) return
       onAdd?.({ element: candidate.element, name: candidate.name, position: candidate.position,
         price: candidate.price, xp: candidate.xp, team_abbr: candidate.team_abbr,
         squad_id: candidate.squad_id, low_sample: candidate.low_sample })
@@ -186,15 +182,15 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
                 <p className="p-4 text-center text-sm text-slate-500">No {addPosition} players found</p>
               ) : (
                 filtered.slice(0, 100).map((p) => {
-                  const overBudget = squadCost + p.price > budget + 0.001
                   const isEliminated = !p.is_active
-                  const posFull = (squadPosCounts[p.position] ?? 0) >= (POS_REQUIRED[p.position] ?? 99)
-                  const isDisabled = overBudget || isEliminated || posFull
+                  const addCheck = isEliminated
+                    ? { allowed: false, reason: 'Not eligible' }
+                    : canAddPlayer(squad, p, phase, squadCost, budget)
                   return (
                     <button
                       key={p.element}
                       onClick={() => handleCandidateTap(p)}
-                      disabled={isDisabled}
+                      disabled={!addCheck.allowed}
                       className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <div className="min-w-0">
@@ -204,10 +200,8 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
                       <div className="ml-3 text-right shrink-0 space-y-0.5">
                         <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
                         <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
-                        {isDisabled && (
-                          <p className="text-[10px] text-rose-400">
-                            {isEliminated ? 'Not eligible' : posFull ? 'Position full' : 'Over budget'}
-                          </p>
+                        {!addCheck.allowed && (
+                          <p className="text-[10px] text-rose-400">{addCheck.reason}</p>
                         )}
                       </div>
                     </button>

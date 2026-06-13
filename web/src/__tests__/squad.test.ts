@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getXI, swapInSquad, fillSquadFromSuggested, optimiseXI, getEligibleSwapTargets } from '../utils/squad'
+import { getXI, swapInSquad, fillSquadFromSuggested, optimiseXI, getEligibleSwapTargets, normalizeSquad } from '../utils/squad'
 import type { SquadPlayer } from '../types/wc'
 
 function p(element: number, position: SquadPlayer['position'], xp = 5): SquadPlayer {
@@ -338,5 +338,51 @@ describe('getEligibleSwapTargets', () => {
     const ghost = p(999, 'MID')
     const result = getEligibleSwapTargets(xi, bench, ghost)
     expect(result instanceof Set).toBe(true)
+  })
+})
+
+describe('normalizeSquad', () => {
+  it('sorts by position group order: GK → DEF → MID → FWD', () => {
+    const shuffled = [p(13, 'FWD'), p(1, 'GK'), p(8, 'MID'), p(3, 'DEF')]
+    const result = normalizeSquad(shuffled)
+    expect(result.map(p => p.position)).toEqual(['GK', 'DEF', 'MID', 'FWD'])
+  })
+
+  it('sorts by xP DESC within each position group', () => {
+    const squad = [p(5, 'DEF', 3), p(3, 'DEF', 9), p(4, 'DEF', 6)]
+    const result = normalizeSquad(squad)
+    expect(result.map(pl => pl.xp)).toEqual([9, 6, 3])
+  })
+
+  it('highest-xP player per position comes first (= starter for getXI)', () => {
+    const mixed = [
+      p(2, 'GK', 4), p(1, 'GK', 8),
+      p(5, 'DEF', 3), p(3, 'DEF', 9),
+    ]
+    const result = normalizeSquad(mixed)
+    const gks = result.filter(pl => pl.position === 'GK')
+    const defs = result.filter(pl => pl.position === 'DEF')
+    expect(gks[0].element).toBe(1)   // xp=8 first
+    expect(defs[0].element).toBe(3)  // xp=9 first
+  })
+
+  it('does not mutate the input array', () => {
+    const input = [p(13, 'FWD'), p(1, 'GK')]
+    normalizeSquad(input)
+    expect(input[0].position).toBe('FWD')
+  })
+
+  it('full squad: getXI after normalizeSquad always puts best XI first', () => {
+    const squadWithVariedXP = [
+      p(1, 'GK', 5), p(2, 'GK', 8),    // element 2 has higher xP — should start
+      p(3, 'DEF', 4), p(4, 'DEF', 7), p(5, 'DEF', 9), p(6, 'DEF', 2), p(7, 'DEF', 6),
+      p(8, 'MID', 3), p(9, 'MID', 10), p(10, 'MID', 8), p(11, 'MID', 1), p(12, 'MID', 7),
+      p(13, 'FWD', 6), p(14, 'FWD', 5), p(15, 'FWD', 4),
+    ]
+    const normalized = normalizeSquad(squadWithVariedXP)
+    const { xi } = getXI(normalized, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+    expect(xi.find(pl => pl.position === 'GK')?.element).toBe(2)    // xp=8
+    const defXPs = xi.filter(pl => pl.position === 'DEF').map(pl => pl.xp).sort((a, b) => b - a)
+    expect(defXPs).toEqual([9, 7, 6, 4])  // top 4 DEF by xP
   })
 })

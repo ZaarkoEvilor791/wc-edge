@@ -2,11 +2,12 @@
 
 ## Session 41 — Architecture deepening
 
-- **`normalizeSquad()`** extracted to `utils/squad.ts` — named utility for sorting squad by (position, xP DESC). Replaces inline sort in Squad.tsx init + `handleAdd`. Callers use it on fresh loads; swaps bypass it to preserve user intent. See ADR 001.
-- **`canAddPlayer()`** added to `squadValidator.ts` — single gate for position-cap + budget + country-limit check. Replaces inline checks in Squad.tsx `handleAdd` and BrowseAllModal. See ADR 002.
+- **`normalizeSquad()`** extracted to `utils/squad.ts` — named utility for sorting squad by (position, xP DESC). Used in Squad.tsx init + `handleAdd`, and OnboardingModal `handleBuildWithVariant` + `handleConfirmSquad`. Callers use it on fresh loads; swaps bypass it to preserve user intent. See ADR 001.
+- **`canAddPlayer()`** added to `squadValidator.ts` — single gate for position-cap + budget + country-limit. Replaces inline checks in Squad.tsx `handleAdd` and BrowseAllModal add-mode. BrowseAllModal now also enforces country limits (was missing before). `squadPosCounts` useMemo removed from BrowseAllModal (no longer needed). See ADR 002.
 - **`FREE_TRANSFERS_BY_PHASE`** moved from `Transfers.tsx` to `config/gameRules.ts`. See ADR 004.
-- **`CONTEXT.md`** + **`docs/adr/`** created — domain glossary and 5 ADRs documenting architectural decisions.
+- **`CONTEXT.md`** + **`docs/adr/`** created — domain glossary and 5 ADRs.
 - **`CLAUDE.md`** split into CLAUDE.md + `docs/ops.md` + `docs/sessions.md` + `docs/key-decisions.md`.
+- **Tests:** 129 vitest (up from 118) — 5 new `normalizeSquad` tests, 6 new `canAddPlayer` tests.
 
 ## Session 40
 

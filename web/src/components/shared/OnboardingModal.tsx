@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSquadFromScreenshot } from '../../hooks/useWC'
 import { useSquadStore } from '../../store/squadStore'
-import { getXI } from '../../utils/squad'
+import { getXI, normalizeSquad } from '../../utils/squad'
 import { useAppStore } from '../../store/appStore'
 import { wcApi } from '../../services/wcApi'
 import type { SquadPlayer } from '../../types/wc'
@@ -73,7 +73,7 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
     setStep('building')
     try {
       const result = await wcApi.suggestedSquadVariant(variant)
-      const players: SquadPlayer[] = result.squad_json ?? []
+      const players = normalizeSquad(result.squad_json ?? [])
       setSquad(players)
       const { xi } = getXI(players, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
       const xiElements = new Set(xi.map((p) => p.element))
@@ -132,8 +132,9 @@ function ModalContent({ onClose, startAtUpload }: { onClose: () => void; startAt
   }
 
   const handleConfirmSquad = () => {
-    setSquad(matched)
-    const { xi } = getXI(matched, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
+    const sorted = normalizeSquad(matched)
+    setSquad(sorted)
+    const { xi } = getXI(sorted, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
     const xiElements = new Set(xi.map((p) => p.element))
     if (captain === null || !xiElements.has(captain)) {
       const top = [...xi].sort((a, b) => b.xp - a.xp)[0]

@@ -403,6 +403,7 @@ export default function Squad() {
           squad={displaySquad}
           round={round}
           budget={100}
+          phase={phase}
           onSwap={() => {}}
           onClose={() => setAddPosition(null)}
           addPosition={addPosition}

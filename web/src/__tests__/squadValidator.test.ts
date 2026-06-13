@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateSquad, roundPhase, COUNTRY_LIMIT } from '../domain/squadValidator'
+import { validateSquad, roundPhase, COUNTRY_LIMIT, canAddPlayer } from '../domain/squadValidator'
 import type { SquadPlayer } from '../types/wc'
 
 function player(overrides: Partial<SquadPlayer> & Pick<SquadPlayer, 'element' | 'position' | 'team_abbr'>): SquadPlayer {
@@ -152,5 +152,91 @@ describe('COUNTRY_LIMIT', () => {
     expect(COUNTRY_LIMIT.qf).toBe(5)
     expect(COUNTRY_LIMIT.sf).toBe(6)
     expect(COUNTRY_LIMIT.final).toBe(8)
+  })
+})
+
+describe('canAddPlayer', () => {
+  // 14-player squad — one FWD slot open
+  const SQUAD_14 = VALID_SQUAD.slice(0, 14)
+  const squadCost = SQUAD_14.reduce((s, p) => s + p.price, 0)  // 14 × £5m = £70m
+
+  it('allows a valid add when position, budget, and country are all fine', () => {
+    const candidate = { position: 'FWD', price: 5, team_abbr: 'ITA' }
+    const result = canAddPlayer(SQUAD_14, candidate, 'group', squadCost, 100)
+    expect(result.allowed).toBe(true)
+    expect(result.reason).toBeUndefined()
+  })
+
+  it('blocks when the position is full', () => {
+    // All 5 MID slots already filled; try to add another MID
+    const candidate = { position: 'MID', price: 5, team_abbr: 'ITA' }
+    const result = canAddPlayer(VALID_SQUAD, candidate, 'group', VALID_SQUAD.reduce((s, p) => s + p.price, 0), 100)
+    expect(result.allowed).toBe(false)
+    expect(result.reason).toMatch(/Position full/)
+  })
+
+  it('blocks when over budget', () => {
+    const candidate = { position: 'FWD', price: 40, team_abbr: 'ITA' }
+    // squadCost=70, candidate=40 → total 110 > 100
+    const result = canAddPlayer(SQUAD_14, candidate, 'group', squadCost, 100)
+    expect(result.allowed).toBe(false)
+    expect(result.reason).toMatch(/budget/)
+  })
+
+  it('blocks when country limit exceeded (group = 3)', () => {
+    // SQUAD_14 has 2× ENG (element 1 GK + element 10 MID); adding a 3rd ENG is at the limit (allowed)
+    // but adding a 4th ENG triggers the block
+    // Build squad that already has 3 ENG
+    const base = makeSquad([
+      { element: 1,  position: 'GK',  team_abbr: 'ENG' },
+      { element: 2,  position: 'GK',  team_abbr: 'FRA' },
+      { element: 3,  position: 'DEF', team_abbr: 'ENG' },
+      { element: 4,  position: 'DEF', team_abbr: 'ENG' },   // 3 ENG so far
+      { element: 5,  position: 'DEF', team_abbr: 'GER' },
+      { element: 6,  position: 'DEF', team_abbr: 'ESP' },
+      { element: 7,  position: 'DEF', team_abbr: 'BRA' },
+      { element: 8,  position: 'MID', team_abbr: 'ARG' },
+      { element: 9,  position: 'MID', team_abbr: 'POR' },
+      { element: 10, position: 'MID', team_abbr: 'NED' },
+      { element: 11, position: 'MID', team_abbr: 'BEL' },
+      { element: 12, position: 'MID', team_abbr: 'ITA' },
+      { element: 13, position: 'FWD', team_abbr: 'URU' },
+      { element: 14, position: 'FWD', team_abbr: 'MEX' },
+    ])
+    const baseCost = base.reduce((s, p) => s + p.price, 0)
+    const fourthENG = { position: 'FWD', price: 5, team_abbr: 'ENG' }
+    const result = canAddPlayer(base, fourthENG, 'group', baseCost, 100)
+    expect(result.allowed).toBe(false)
+    expect(result.reason).toMatch(/Country limit/)
+  })
+
+  it('allows a 4th player from same country in r16 (limit=4)', () => {
+    const base = makeSquad([
+      { element: 1,  position: 'GK',  team_abbr: 'ENG' },
+      { element: 2,  position: 'GK',  team_abbr: 'FRA' },
+      { element: 3,  position: 'DEF', team_abbr: 'ENG' },
+      { element: 4,  position: 'DEF', team_abbr: 'ENG' },
+      { element: 5,  position: 'DEF', team_abbr: 'GER' },
+      { element: 6,  position: 'DEF', team_abbr: 'ESP' },
+      { element: 7,  position: 'DEF', team_abbr: 'BRA' },
+      { element: 8,  position: 'MID', team_abbr: 'ARG' },
+      { element: 9,  position: 'MID', team_abbr: 'POR' },
+      { element: 10, position: 'MID', team_abbr: 'NED' },
+      { element: 11, position: 'MID', team_abbr: 'BEL' },
+      { element: 12, position: 'MID', team_abbr: 'ITA' },
+      { element: 13, position: 'FWD', team_abbr: 'URU' },
+      { element: 14, position: 'FWD', team_abbr: 'MEX' },
+    ])
+    const baseCost = base.reduce((s, p) => s + p.price, 0)
+    const fourthENG = { position: 'FWD', price: 5, team_abbr: 'ENG' }
+    const result = canAddPlayer(base, fourthENG, 'r16', baseCost, 100)
+    expect(result.allowed).toBe(true)
+  })
+
+  it('exactly-at-budget still allowed (floating point boundary)', () => {
+    // squadCost = 70, budget = 100, candidate price = 30 → total exactly 100
+    const candidate = { position: 'FWD', price: 30, team_abbr: 'ITA' }
+    const result = canAddPlayer(SQUAD_14, candidate, 'group', squadCost, 100)
+    expect(result.allowed).toBe(true)
   })
 })

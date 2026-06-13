@@ -37,7 +37,7 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · 00:00 UTC (post-match blend) · June 27 06:00 UTC (post-group Bayesian FDR)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
-**Session 41 changes:** `normalizeSquad()` extracted to `utils/squad.ts`; `canAddPlayer()` added to `squadValidator.ts`; `FREE_TRANSFERS_BY_PHASE` moved to `gameRules.ts`; CONTEXT.md + ADRs + docs split created.
+**Session 41 changes:** `normalizeSquad()` extracted to `utils/squad.ts` — used in Squad.tsx, OnboardingModal; `canAddPlayer()` added to `squadValidator.ts` — used in Squad.tsx `handleAdd` and BrowseAllModal add-mode (replaces inline checks + adds country-limit enforcement); `FREE_TRANSFERS_BY_PHASE` moved to `gameRules.ts`; CONTEXT.md + ADRs + docs split created. Tests: 129 vitest.
 
 ---
 
