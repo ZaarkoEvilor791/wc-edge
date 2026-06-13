@@ -2,6 +2,13 @@ import clsx from 'clsx'
 import type { SquadPlayer } from '../../types/wc'
 import JerseyIcon from './JerseyIcon'
 import { getKit } from '../../data/teamColors'
+import { playerStarRating } from '../../utils/squad'
+
+const STAR_STYLE: Record<number, string> = {
+  5: 'bg-yellow-400/15 text-yellow-400',
+  4: 'bg-cyan-400/15 text-cyan-400',
+  3: 'bg-slate-600/60 text-slate-300',
+}
 
 interface Props {
   player: SquadPlayer
@@ -24,6 +31,7 @@ function surname(name: string): string {
 
 export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isViceCaptain, eliminated, isSelected, isEligible, isDimmed, isLocked, onClick }: Props) {
   const kit = getKit(player.team_abbr)
+  const starRating = playerStarRating(xp, player.low_sample)
 
   return (
     <button
@@ -41,6 +49,16 @@ export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isVice
         isLocked && 'cursor-not-allowed',
       )}
     >
+      {/* Star rating badge — top-left, 3★+ only */}
+      {starRating > 0 && !isLocked && (
+        <span className={clsx(
+          'absolute -top-1.5 -left-1.5 z-10 flex h-[16px] items-center justify-center rounded-full px-1 text-[8px] font-black leading-none',
+          STAR_STYLE[starRating],
+        )}>
+          ★{starRating}
+        </span>
+      )}
+
       {/* Captain / VC badge */}
       {isCaptain && (
         <span className="absolute -top-1.5 -right-1.5 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-accent text-[9px] font-black text-slate-900 leading-none shadow-[0_0_8px_rgba(232,184,75,0.6)]">

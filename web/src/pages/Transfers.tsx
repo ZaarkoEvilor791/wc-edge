@@ -6,6 +6,7 @@ import { useTransferSuggest, useCurrentRound, useRounds, useTeams, useProjection
 import { roundPhase } from '../domain/squadValidator'
 import type { TransferSuggestion, SquadPlayer, TransferCard } from '../types/wc'
 import { POS_ORDER, FREE_TRANSFERS_BY_PHASE } from '../config/gameRules'
+import { playerStarRating } from '../utils/squad'
 import BrowseAllModal from '../components/shared/BrowseAllModal'
 import JerseyIcon from '../components/shared/JerseyIcon'
 import { getKit } from '../data/teamColors'
@@ -62,6 +63,7 @@ function SquadList({
                 </div>
                 <div className="ml-3 flex items-center gap-3 shrink-0">
                   <div className="text-right">
+                    {(() => { const sr = playerStarRating(p.xp, p.low_sample); const c = sr === 5 ? 'text-yellow-400' : sr === 4 ? 'text-cyan-400' : 'text-slate-400'; return sr > 0 ? <p className={`text-[10px] font-bold ${c}`}>{'★'.repeat(sr)}</p> : null })()}
                     <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
                     <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
                   </div>

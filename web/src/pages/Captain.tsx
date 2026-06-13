@@ -3,6 +3,7 @@ import clsx from 'clsx'
 import { useSquadStore } from '../store/squadStore'
 import { useProjections, useTeamFdr, useCurrentRound, useRounds, useTeams, useLive } from '../hooks/useWC'
 import Pitch from '../components/shared/Pitch'
+import { playerStarRating } from '../utils/squad'
 
 const FDR_STYLE: Record<number, string> = {
   1: 'bg-emerald-500/20 text-emerald-400',
@@ -61,38 +62,72 @@ export default function Captain() {
 
   const isPlaying = currentRound?.status === 'playing'
 
-  // Detect which squad players have already played today (for mid-round swap mode)
-  const playedElements = useMemo(() => {
-    if (!isPlaying || !liveData) return new Set<number>()
+  // Tick every 30s so kickoff locks update without waiting for a live data refetch
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Extract matches array from live data (handles both array and wrapped response shapes)
+  const matches = useMemo((): LiveMatch[] => {
+    if (!liveData) return []
     const raw = liveData as Record<string, unknown> | LiveMatch[]
-    const matches: LiveMatch[] = Array.isArray(raw)
+    return Array.isArray(raw)
       ? (raw as LiveMatch[])
       : Array.isArray((raw as Record<string, unknown>)?.matches)
         ? ((raw as Record<string, unknown>).matches as LiveMatch[])
         : []
+  }, [liveData])
 
-    const today = new Date().toDateString()
-    const finishedTeamNames = new Set<string>()
+  // Map squad_id → { kickoff: Date, status: string } for each match in live data
+  const matchKickoffs = useMemo(() => {
+    const map = new Map<number, { kickoff: Date; status: string }>()
+    for (const m of matches) {
+      if (!m.kickoff) continue
+      const kickoff = new Date(m.kickoff)
+      for (const team of teams ?? []) {
+        const tName = team.name.toLowerCase().trim()
+        if (tName === m.home_team.toLowerCase().trim() ||
+            tName === m.away_team.toLowerCase().trim()) {
+          map.set(team.squad_id, { kickoff, status: m.status })
+        }
+      }
+    }
+    return map
+  }, [matches, teams])
+
+  // Players whose match has finished (for "Played" badge display)
+  const playedElements = useMemo(() => {
+    if (!isPlaying) return new Set<number>()
+    const today = now.toDateString()
+    const finishedSquadIds = new Set<number>()
     for (const m of matches) {
       if (m.status !== 'finished') continue
       const matchDate = m.kickoff ? new Date(m.kickoff).toDateString() : today
       if (matchDate === today) {
-        finishedTeamNames.add(m.home_team.toLowerCase())
-        finishedTeamNames.add(m.away_team.toLowerCase())
+        for (const team of teams ?? []) {
+          const tName = team.name.toLowerCase().trim()
+          if (tName === m.home_team.toLowerCase().trim() ||
+              tName === m.away_team.toLowerCase().trim()) {
+            finishedSquadIds.add(team.squad_id)
+          }
+        }
       }
     }
+    return new Set(squad.filter(p => finishedSquadIds.has(p.squad_id)).map(p => p.element))
+  }, [isPlaying, matches, teams, squad, now])
 
-    // Map team names → squad_ids using teams data
-    const teamNameToSquadId = new Map(
-      (teams ?? []).map(t => [t.name.toLowerCase(), t.squad_id])
-    )
-    const playedSquadIds = new Set<number>()
-    for (const [name, squadId] of teamNameToSquadId) {
-      if (finishedTeamNames.has(name)) playedSquadIds.add(squadId)
-    }
-
-    return new Set(squad.filter(p => playedSquadIds.has(p.squad_id)).map(p => p.element))
-  }, [isPlaying, liveData, teams, squad])
+  // Players who are locked for captain: kickoff has passed OR match is live/finished
+  // Falls back to playedElements when matchKickoffs has no data for a player's team
+  const lockedElements = useMemo(() => {
+    if (!isPlaying) return new Set<number>()
+    return new Set(squad.filter(p => {
+      const info = matchKickoffs.get(p.squad_id)
+      if (info) return info.kickoff <= now || info.status === 'live' || info.status === 'finished'
+      return playedElements.has(p.element)
+    }).map(p => p.element))
+  }, [isPlaying, squad, matchKickoffs, playedElements, now])
 
   const sorted = [...squad].sort((a, b) => b.xp - a.xp)
   const projMap = new Map(projections?.map((p) => [p.element, p]) ?? [])
@@ -104,7 +139,7 @@ export default function Captain() {
   const deadlineFormatted = formatDeadlineDate(deadlineDate)
 
   function handlePitchClick(player: { element: number }) {
-    if (playedElements.has(player.element)) return
+    if (lockedElements.has(player.element)) return
     setCaptain(player.element)
   }
 
@@ -164,7 +199,7 @@ export default function Captain() {
                 viceCaptain={viceCaptain}
                 posCount={{ GK: 1, ...formationCounts }}
                 eliminatedSquadIds={eliminatedSquadIds}
-                lockedElements={playedElements}
+                lockedElements={lockedElements}
                 onPlayerClick={handlePitchClick}
               />
               <p className="mt-2 text-center text-[11px] text-slate-600">
@@ -191,15 +226,37 @@ export default function Captain() {
               const variance = proj?.variance
               const isEliminated = eliminatedSquadIds.has(p.squad_id)
               const hasPlayed = playedElements.has(p.element)
+              const isLocked = lockedElements.has(p.element)
+              const starRating = playerStarRating(p.xp, proj?.low_sample ?? false)
+
+              // Build kickoff chip for unplayed players with match data
+              let kickoffChip: { text: string; color: string } | null = null
+              if (isPlaying && !hasPlayed) {
+                const info = matchKickoffs.get(p.squad_id)
+                if (info) {
+                  if (info.status === 'live') {
+                    kickoffChip = { text: 'LIVE', color: 'text-green-400' }
+                  } else if (info.status !== 'finished') {
+                    const diff = info.kickoff.getTime() - now.getTime()
+                    if (diff > 0) {
+                      const h = Math.floor(diff / 3_600_000)
+                      const m = Math.floor((diff % 3_600_000) / 60_000)
+                      kickoffChip = diff < 6 * 3_600_000
+                        ? { text: h > 0 ? `kicks off in ${h}h ${m}m` : `kicks off in ${m}m`, color: 'text-amber-400' }
+                        : { text: `kicks off ${info.kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`, color: 'text-slate-400' }
+                    }
+                  }
+                }
+              }
 
               return (
                 <button
                   key={p.element}
-                  onClick={() => { if (!hasPlayed) setCaptain(p.element) }}
-                  disabled={hasPlayed}
+                  onClick={() => { if (!isLocked) setCaptain(p.element) }}
+                  disabled={isLocked}
                   className={clsx(
                     'flex w-full items-center rounded-xl border px-4 py-2.5 text-left transition-all duration-150',
-                    hasPlayed
+                    isLocked
                       ? 'border-white/[0.04] bg-slate-900/30 opacity-50 cursor-not-allowed'
                       : captain === p.element
                         ? 'border-accent/50 bg-accent/10 shadow-glow-gold'
@@ -211,6 +268,11 @@ export default function Captain() {
                   <span className="w-6 shrink-0 text-sm tabular-nums text-slate-500">{i + 1}</span>
                   <div className="ml-3 min-w-0 flex-1">
                     <div className={clsx('flex flex-wrap items-center gap-1.5 text-sm font-medium', isEliminated ? 'text-slate-400' : 'text-slate-100')}>
+                      {starRating > 0 && (
+                        <span className={clsx('text-[10px] font-bold', starRating === 5 ? 'text-yellow-400' : starRating === 4 ? 'text-cyan-400' : 'text-slate-400')}>
+                          {'★'.repeat(starRating)}
+                        </span>
+                      )}
                       {p.name}
                       {fdr !== undefined && (
                         <span className={clsx('sm:hidden rounded px-1.5 py-0.5 text-[10px] font-bold', FDR_STYLE[fdr] ?? FDR_STYLE[3])}>
@@ -222,13 +284,23 @@ export default function Captain() {
                           Played
                         </span>
                       )}
+                      {isLocked && !hasPlayed && isPlaying && (
+                        <span className="rounded bg-green-900/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-400">
+                          Live
+                        </span>
+                      )}
                       {isEliminated && (
                         <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                           Eliminated
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500">{p.position} · {p.team_abbr}</div>
+                    <div className="text-xs text-slate-500">
+                      {p.position} · {p.team_abbr}
+                      {kickoffChip && (
+                        <span className={clsx('ml-2 font-medium', kickoffChip.color)}>{kickoffChip.text}</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {fdr !== undefined && (
@@ -245,7 +317,7 @@ export default function Captain() {
                       <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accent">C</span>
                     )}
                     <span className={clsx('w-16 text-right text-sm font-semibold', isEliminated ? 'text-slate-500' : 'text-accent')}>{p.xp.toFixed(1)} xP</span>
-                    {p.element !== captain && !hasPlayed && (
+                    {p.element !== captain && !isLocked && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setViceCaptain(p.element) }}
                         className={clsx(

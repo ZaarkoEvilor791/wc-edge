@@ -4,7 +4,7 @@ import { useSuggestedSquad, useProjections, useCurrentRound, useTeams } from '..
 import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
-import { getXI, swapInSquad, optimiseXI, getEligibleSwapTargets, normalizeSquad } from '../utils/squad'
+import { getXI, swapInSquad, optimiseXI, getEligibleSwapTargets, normalizeSquad, playerStarRating } from '../utils/squad'
 import { roundPhase, COUNTRY_LIMIT, canAddPlayer } from '../domain/squadValidator'
 import { POS_ORDER } from '../config/gameRules'
 import Spinner from '../components/shared/Spinner'
@@ -36,6 +36,7 @@ function PlayerCard({ player, isCaptain, eliminated, onClick }: { player: SquadP
         </div>
       </div>
       <div className="text-right">
+        {(() => { const sr = playerStarRating(player.xp, player.low_sample); const c = sr === 5 ? 'text-yellow-400' : sr === 4 ? 'text-cyan-400' : 'text-slate-400'; return sr > 0 ? <div className={`text-[10px] font-bold ${c}`}>{'★'.repeat(sr)}</div> : null })()}
         <div className={clsx('text-sm font-semibold', eliminated ? 'text-slate-500' : 'text-accent')}>{player.xp.toFixed(1)} xP</div>
         <div className="text-xs text-slate-500">£{player.price.toFixed(1)}m</div>
       </div>

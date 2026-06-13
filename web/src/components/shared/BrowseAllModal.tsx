@@ -3,6 +3,13 @@ import { usePlayers, useProjections, useTeams } from '../../hooks/useWC'
 import type { SquadPlayer } from '../../types/wc'
 import { canAddPlayer } from '../../domain/squadValidator'
 import type { RoundPhase } from '../../domain/squadValidator'
+import { playerStarRating } from '../../utils/squad'
+
+const STAR_COLOR: Record<number, string> = {
+  5: 'text-yellow-400',
+  4: 'text-cyan-400',
+  3: 'text-slate-400',
+}
 
 const POS_COLOR: Record<string, string> = {
   GK: 'text-yellow-400',
@@ -198,6 +205,7 @@ export default function BrowseAllModal({ squad, round, budget, phase = 'group', 
                         <p className="text-xs text-slate-400">{p.team_abbr}</p>
                       </div>
                       <div className="ml-3 text-right shrink-0 space-y-0.5">
+                        {(() => { const sr = playerStarRating(p.xp, false); return sr > 0 ? <p className={`text-[10px] font-bold ${STAR_COLOR[sr]}`}>{'★'.repeat(sr)}</p> : null })()}
                         <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
                         <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
                         {!addCheck.allowed && (
@@ -278,6 +286,7 @@ export default function BrowseAllModal({ squad, round, budget, phase = 'group', 
                           </p>
                         </div>
                         <div className="ml-3 text-right shrink-0 space-y-0.5">
+                          {(() => { const sr = playerStarRating(p.xp, false); return sr > 0 ? <p className={`text-[10px] font-bold ${STAR_COLOR[sr]}`}>{'★'.repeat(sr)}</p> : null })()}
                           <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
                           <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
                           <p className={`text-xs font-semibold ${isEliminated ? 'text-slate-500' : overBudget ? 'text-rose-400' : xpDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -408,7 +417,8 @@ export default function BrowseAllModal({ squad, round, budget, phase = 'group', 
                                 )}
                               </p>
                             </div>
-                            <div className="ml-3 text-right shrink-0">
+                            <div className="ml-3 text-right shrink-0 space-y-0.5">
+                              {(() => { const sr = playerStarRating(p.xp, false); return sr > 0 ? <p className={`text-[10px] font-bold ${STAR_COLOR[sr]}`}>{'★'.repeat(sr)}</p> : null })()}
                               <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
                               <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
                               {isEliminated && (

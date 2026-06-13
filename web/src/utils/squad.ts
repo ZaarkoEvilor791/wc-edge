@@ -157,6 +157,16 @@ export function getEligibleSwapTargets(
   return new Set(result)
 }
 
+// Returns 0 (no badge), 3, 4, or 5 based on xP tier for a player.
+// low_sample players are capped at 3★ — their xP is unreliable.
+export function playerStarRating(xp: number, lowSample: boolean): 0 | 3 | 4 | 5 {
+  if (lowSample) return xp >= 5.0 ? 3 : 0
+  if (xp >= 6.0) return 5
+  if (xp >= 4.5) return 4
+  if (xp >= 3.0) return 3
+  return 0
+}
+
 // Swap two players by element ID, preserving array order for all other players.
 // This is the only safe way to mutate squad order — direct array manipulation
 // would break getXI's array-order invariant for non-swapped positions.
