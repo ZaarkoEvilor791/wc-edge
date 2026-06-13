@@ -57,6 +57,7 @@ app.set('trust proxy', 1)
 
 // ---- FIFA Fantasy proxies (5-min TTL cached) ----
 const FIFA_BASE = 'https://play.fifa.com/json/fantasy'
+const ESPN_SCOREBOARD = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard'
 const proxyCache = new Map<string, { data: unknown; ts: number }>()
 
 async function fifaFetch(url: string, ttlMs: number): Promise<unknown> {
@@ -75,6 +76,50 @@ async function fifaProxy(url: string, ttlMs: number, res: express.Response) {
   } catch (err) {
     res.status(502).json({ error: 'FIFA proxy failed', detail: String(err) })
   }
+}
+
+interface LiveMatch {
+  id: number; home_team: string; away_team: string
+  home_score: number | null; away_score: number | null
+  status: string; minute: number | null; kickoff: string | null
+}
+
+function toYYYYMMDD(d: Date) {
+  return d.toISOString().slice(0, 10).replace(/-/g, '')
+}
+
+async function espnFetchDay(dateStr: string): Promise<LiveMatch[]> {
+  const url = `${ESPN_SCOREBOARD}?dates=${dateStr}`
+  const cached = proxyCache.get(url)
+  if (cached && Date.now() - cached.ts < 60_000) return cached.data as LiveMatch[]
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`ESPN ${r.status}`)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await r.json() as { events?: any[] }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const matches: LiveMatch[] = (data.events ?? []).map((ev: any, i: number) => {
+    const comp = ev.competitions?.[0]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const home = comp?.competitors?.find((c: any) => c.homeAway === 'home')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const away = comp?.competitors?.find((c: any) => c.homeAway === 'away')
+    const state: string = comp?.status?.type?.state ?? 'pre'
+    const clock: number = comp?.status?.clock ?? 0
+    const isLive = state === 'in'
+    const isFinished = state === 'post'
+    return {
+      id: i,
+      home_team: home?.team?.displayName ?? '?',
+      away_team: away?.team?.displayName ?? '?',
+      home_score: isLive || isFinished ? Number(home?.score ?? 0) : null,
+      away_score: isLive || isFinished ? Number(away?.score ?? 0) : null,
+      status: isLive ? 'live' : isFinished ? 'finished' : 'scheduled',
+      minute: isLive ? Math.floor(clock) : null,
+      kickoff: ev.date ?? null,
+    }
+  })
+  proxyCache.set(url, { data: matches, ts: Date.now() })
+  return matches
 }
 
 app.get(ROUTES.fifaPlayers, (_, res) => fifaProxy(`${FIFA_BASE}/players.json`, 5 * 60_000, res))
@@ -252,7 +297,24 @@ app.get('/api/live', async (req, res) => {
     if (!r.ok) throw new Error(`${r.status}`)
     res.json(await r.json())
   } catch {
-    // Community API unavailable — fall back to FIFA Fantasy schedule for this round
+    // Tier 1.5 — ESPN public scoreboard (no key, 60s cache): today + yesterday covers live + finished
+    try {
+      const today = new Date()
+      const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1)
+      const [todayMatches, yesterdayMatches] = await Promise.all([
+        espnFetchDay(toYYYYMMDD(today)),
+        espnFetchDay(toYYYYMMDD(yesterday)),
+      ])
+      const combined = [...yesterdayMatches, ...todayMatches]
+        .sort((a, b) => new Date(a.kickoff ?? 0).getTime() - new Date(b.kickoff ?? 0).getTime())
+      combined.forEach((m, i) => { m.id = i })
+      if (combined.length > 0) {
+        res.json(combined)
+        return
+      }
+    } catch { /* fall through */ }
+
+    // Tier 2 — FIFA Fantasy schedule (stale, no scores)
     try {
       const rounds = await fifaFetch(`${FIFA_BASE}/rounds.json`, 5 * 60_000) as Record<string, unknown>[]
       const rnd = rounds[round - 1] ?? rounds.find((r) => r.id === round)
