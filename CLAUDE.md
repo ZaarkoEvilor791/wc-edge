@@ -12,7 +12,7 @@
 
 ---
 
-## Current State (Session 40 starting)
+## Current State (Session 41 starting)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
@@ -35,6 +35,17 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
 ---
+
+## Session 40 — What was shipped
+
+- **Squad integrity hardened** — ghost players (null `element` from partial screenshot matches) can no longer corrupt squad composition. Game rules (2GK/5DEF/5MID/3FWD) are now structurally enforced at every mutation point.
+  - **`squadStore.ts` `setSquad`** — strips any entry where `p?.element == null` before storing, alongside existing dedup. Single gate covering all future paths.
+  - **`BrowseAllModal.tsx` add mode** — `handleCandidateTap` checks `squadPosCounts[pos] >= POS_REQUIRED[pos]` before allowing an add. Rendered list shows "Position full" badge and disables button when slot is full. `squadPosCounts` memoized.
+  - **`Squad.tsx` `handleAdd`** — same position count guard; silently returns if position already at `POS_REQUIRED` limit.
+  - **`Transfers.tsx`** — `safeSquad = squad.filter(p => p?.element != null)` derived at top of component; used for all swap/suggest operations, `handleAccept`, `handleManualSwap`, `BrowseAllModal` props. Prevents ghost players from surviving as swap targets.
+- **Edge `navigate` action removed** — `executeActions` in `Assistant.tsx` no longer has a `'navigate'` case. Edge gives text directions ("Head to Transfers") without teleporting the user. `suggest_transfers`/`optimise_xi` still navigate programmatically (that's intentional — user explicitly asked for those actions).
+- **JARVIS/FRIDAY system prompt** — Edge rewritten from corporate FAQ tone to tactical analyst persona. "Think JARVIS, not FAQ." Same facts, different delivery. ~80 tokens shorter (net): `navigate` removed from `actions_guide`, `<page_guides>` trimmed from 5 routes to 2, chips/rules tightened. Navigation instruction in `<role>`: "tell the user which page to visit in plain text. Never emit a navigate action."
+- **3 UX fixes from previous session** — Boosters strategy tips expanded by default; Transfers SwapCard stacks OUT/IN cards vertically on mobile (`flex-col sm:flex-row`, arrow rotates 90°); PlayerProfileModal scroll area gets `overflow-y-auto` inner div + bottom fade gradient.
 
 ## Session 39 — What was shipped
 
@@ -231,12 +242,7 @@ When a new knockout phase starts, the budget increases to £105m. This is auto-d
 
 1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons. Run `migrate.py` on any new DB instance before engine runs.
 
-2. **Remaining UX fixes**:
-   - Player modal scroll: `PlayerProfileModal.tsx` — `overflow-hidden` → `overflow-y-auto` + fade gradient
-   - Transfers swap card: `Transfers.tsx` SwapCard — `flex-col` on mobile (`md:flex-row`)
-   - Boosters tips expanded by default: `Boosters.tsx` — strategy tips visible without tapping
-
-3. **Phase 2 (post-tournament)** — StatsBomb tackles + key passes → xP model.
+2. **Phase 2 (post-tournament)** — StatsBomb tackles + key passes → xP model.
 
 ---
 
@@ -412,6 +418,9 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **`backdrop-blur` stacking context rule** — only works outside `overflow: hidden` containers. Pitch is unsafe (it has `overflow-hidden`). Safe: sidebar, topbar, bottom tab bar, chat bubbles, modals.
 - **Round status is `'playing'` not `'active'`** — FIFA Fantasy's `rounds.json` uses `status: 'playing'` for the active round. `useCurrentRound()` (`useWC.ts`) and `getCurrentRoundId()` (`db.ts`) accept `'active' OR 'playing'`. `_sync_round_statuses()` lowercases before writing to DB.
 - **Live page ESPN tier** — `espnFetchDay(dateStr, ttlMs)` + `datesInRange(startDate)` in `server.ts` fetch all days from the round's `start_date` to today. Past days: 1hr cache (scores immutable). Today: 60s cache. No API key, no budget. Falls through to FIFA schedule fallback if ESPN returns 0 events. Community API (`worldcup2026-api.vercel.app`) is dead for WC 2026 — Tier 1 always fails, Tier 1.5 (ESPN) handles everything.
+- **Ghost player defense** — `setSquad` in `squadStore.ts` filters `p?.element == null` before storing (in addition to dedup). `Transfers.tsx` derives `safeSquad = squad.filter(p => p?.element != null)` for all swap ops. `BrowseAllModal` add mode and `Squad.handleAdd` both check `squadPosCounts[pos] >= POS_REQUIRED[pos]` and block over-limit adds with "Position full" label. Ghost players enter via failed screenshot matches; this layered defense ensures they never corrupt squad composition.
+- **Edge `navigate` action removed** — `executeActions` in `Assistant.tsx` has no `'navigate'` case. Edge provides text directions only. `suggest_transfers` and `optimise_xi` still call `navigate()` programmatically (user explicitly triggered those). System prompt `<role>` says "Never emit a navigate action"; `navigate` removed from `actions_guide` entirely.
+- **Edge JARVIS persona** — system prompt tone: "Think JARVIS, not FAQ." Responses are direct tactical assessments, not FAQ answers. `<page_guides>` trimmed to 2 routes (only optimise_xi/suggest_transfers trigger orientation sentences). Net ~80 tokens shorter than prior prompt.
 
 ---
 

@@ -41,9 +41,9 @@ export const useSquadStore = create<SquadStore>()(
       boosterStates: DEFAULT_BOOSTER_STATES,
       setFormationCounts: (f) => set({ formationCounts: isValidFormation(f) ? f : DEFAULT_FORMATION }),
       setSquad: (squad) => {
-        // Deduplicate by element before storing
         const seen = new Set<number>()
         const deduped = squad.filter((p) => {
+          if (p?.element == null) return false
           if (seen.has(p.element)) return false
           seen.add(p.element)
           return true

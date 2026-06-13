@@ -144,7 +144,8 @@ function ModalContent({ player, onClose, onSubOut, isBench }: { player: SquadPla
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-y-auto bg-slate-950/95 px-4 pb-2 pt-3">
+        <div className="relative flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto bg-slate-950/95 px-4 pb-2 pt-3">
           {activeTab === 'overview' && (
             <div className="space-y-3">
               {/* Captain / Vice-captain */}
@@ -268,6 +269,8 @@ function ModalContent({ player, onClose, onSubOut, isBench }: { player: SquadPla
               )}
             </div>
           )}
+          </div>
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-950 to-transparent" />
         </div>
 
         {/* Bottom actions */}

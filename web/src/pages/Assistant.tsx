@@ -87,9 +87,7 @@ export default function Assistant() {
       return s === a || s.includes(a) || a.includes(s)
     }
     for (const action of actions) {
-      if (action.type === 'navigate') {
-        navigate(action.path)
-      } else if (action.type === 'set_captain') {
+      if (action.type === 'set_captain') {
         const p = squad.find((pl) => matchPlayer(pl.name, action.name))
         if (p) setCaptain(p.element)
       } else if (action.type === 'set_vice_captain') {

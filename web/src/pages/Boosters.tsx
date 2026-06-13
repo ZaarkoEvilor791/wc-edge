@@ -284,7 +284,7 @@ export default function Boosters() {
     cs_shield: isR32Plus ? recCSShield(xi, allFdr, currentRoundId) : null,
   } : {}
 
-  const [expandedTips, setExpandedTips] = useState<Set<string>>(new Set())
+  const [expandedTips, setExpandedTips] = useState<Set<string>>(new Set(BOOSTERS.map((b) => b.id)))
   const toggleTip = (id: string) => setExpandedTips((prev) => {
     const next = new Set(prev)
     next.has(id) ? next.delete(id) : next.add(id)

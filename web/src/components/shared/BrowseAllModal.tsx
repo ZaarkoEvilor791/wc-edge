@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { usePlayers, useProjections, useTeams } from '../../hooks/useWC'
 import type { SquadPlayer } from '../../types/wc'
+import { POS_REQUIRED } from '../../config/gameRules'
 
 const POS_COLOR: Record<string, string> = {
   GK: 'text-yellow-400',
@@ -37,6 +38,11 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
 
   const squadCost = squad.reduce((s, p) => s + p.price, 0)
   const squadElements = new Set(squad.map((p) => p.element))
+  const squadPosCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const p of squad) counts[p.position] = (counts[p.position] ?? 0) + 1
+    return counts
+  }, [squad])
 
   const projMap = useMemo(
     () => new Map((projections ?? []).map((p) => [p.element, p.xp])),
@@ -101,6 +107,7 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
     if (isAddMode) {
       // Add mode: no outgoing player, just add to squad
       if (squadCost + candidate.price > budget + 0.001) return
+      if ((squadPosCounts[candidate.position] ?? 0) >= (POS_REQUIRED[candidate.position] ?? 99)) return
       onAdd?.({ element: candidate.element, name: candidate.name, position: candidate.position,
         price: candidate.price, xp: candidate.xp, team_abbr: candidate.team_abbr,
         squad_id: candidate.squad_id, low_sample: candidate.low_sample })
@@ -181,11 +188,13 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
                 filtered.slice(0, 100).map((p) => {
                   const overBudget = squadCost + p.price > budget + 0.001
                   const isEliminated = !p.is_active
+                  const posFull = (squadPosCounts[p.position] ?? 0) >= (POS_REQUIRED[p.position] ?? 99)
+                  const isDisabled = overBudget || isEliminated || posFull
                   return (
                     <button
                       key={p.element}
                       onClick={() => handleCandidateTap(p)}
-                      disabled={overBudget || isEliminated}
+                      disabled={isDisabled}
                       className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800 text-left disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <div className="min-w-0">
@@ -195,8 +204,10 @@ export default function BrowseAllModal({ squad, round, budget, onSwap, onClose, 
                       <div className="ml-3 text-right shrink-0 space-y-0.5">
                         <p className="text-sm font-bold text-accent">{p.xp.toFixed(1)} xP</p>
                         <p className="text-xs text-slate-400">£{p.price.toFixed(1)}m</p>
-                        {(overBudget || isEliminated) && (
-                          <p className="text-[10px] text-rose-400">{isEliminated ? 'Not eligible' : 'Over budget'}</p>
+                        {isDisabled && (
+                          <p className="text-[10px] text-rose-400">
+                            {isEliminated ? 'Not eligible' : posFull ? 'Position full' : 'Over budget'}
+                          </p>
                         )}
                       </div>
                     </button>

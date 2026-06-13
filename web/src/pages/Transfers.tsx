@@ -217,9 +217,9 @@ function SwapCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SwapPlayerCard player={suggestion.out} variant="out" eliminated={outEliminated} />
-        <svg className="h-6 w-6 flex-shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="h-6 w-6 flex-shrink-0 rotate-90 self-center text-slate-500 sm:rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
         </svg>
         <SwapPlayerCard player={suggestion.in} variant="in" />
@@ -310,7 +310,8 @@ export default function Transfers() {
 
   const round = selectedRound ?? currentRound?.id ?? 1
   const { data: projections } = useProjections(round)
-  const hasSquad = squad.length > 0
+  const safeSquad = squad.filter(p => p?.element != null)
+  const hasSquad = safeSquad.length > 0
 
   const eliminatedSquadIds = new Set(
     (teams ?? []).filter(t => !t.is_active).map(t => t.squad_id)
@@ -334,7 +335,7 @@ export default function Transfers() {
   function analyze() {
     if (!hasSquad) return
     suggest(
-      { squad: squad.map((p) => p.element), round, freeTransfers, budget },
+      { squad: safeSquad.map((p) => p.element), round, freeTransfers, budget },
       {
         onSuccess: (data) => {
           setSuggestions(data.transfers)
@@ -348,9 +349,9 @@ export default function Transfers() {
 
   function handleAccept() {
     const s = suggestions![index]
-    setPrevSquads((prev) => [...prev, squad])
+    setPrevSquads((prev) => [...prev, safeSquad])
     setAccepted((prev) => [...prev, s])
-    const newSquad: SquadPlayer[] = squad.map((p) =>
+    const newSquad: SquadPlayer[] = safeSquad.map((p) =>
       p.element === s.out.element
         ? { element: s.in.element, name: s.in.name, position: s.in.position,
             price: s.in.price, xp: s.in.xp, team_abbr: s.in.team_abbr,
@@ -376,8 +377,8 @@ export default function Transfers() {
   }
 
   function handleManualSwap(inPlayer: SquadPlayer, outPlayer: SquadPlayer) {
-    setPrevSquads((prev) => [...prev, squad])
-    setSquad(squad.map((p) => (p.element === outPlayer.element ? inPlayer : p)))
+    setPrevSquads((prev) => [...prev, safeSquad])
+    setSquad(safeSquad.map((p) => (p.element === outPlayer.element ? inPlayer : p)))
     setAccepted((prev) => [...prev, {
       out: { element: outPlayer.element, name: outPlayer.name, position: outPlayer.position,
              price: outPlayer.price, xp: outPlayer.xp, team_abbr: outPlayer.team_abbr,
@@ -594,7 +595,7 @@ export default function Transfers() {
       {/* Modals */}
       {manualOut && (
         <BrowseAllModal
-          squad={squad}
+          squad={safeSquad}
           round={round}
           budget={budget}
           initialOut={manualOut}
@@ -605,7 +606,7 @@ export default function Transfers() {
 
       {showBrowseAll && (
         <BrowseAllModal
-          squad={squad}
+          squad={safeSquad}
           round={round}
           budget={budget}
           onSwap={handleManualSwap}

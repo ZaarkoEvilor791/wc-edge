@@ -6,7 +6,7 @@ import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
 import { getXI, swapInSquad, optimiseXI, getEligibleSwapTargets } from '../utils/squad'
 import { roundPhase, COUNTRY_LIMIT } from '../domain/squadValidator'
-import { POS_ORDER } from '../config/gameRules'
+import { POS_ORDER, POS_REQUIRED } from '../config/gameRules'
 import Spinner from '../components/shared/Spinner'
 import StatCard from '../components/shared/StatCard'
 import Pitch from '../components/shared/Pitch'
@@ -191,6 +191,9 @@ export default function Squad() {
   }
 
   function handleAdd(inPlayer: SquadPlayer) {
+    const posCounts: Record<string, number> = {}
+    for (const p of displaySquad) posCounts[p.position] = (posCounts[p.position] ?? 0) + 1
+    if ((posCounts[inPlayer.position] ?? 0) >= (POS_REQUIRED[inPlayer.position] ?? 99)) return
     const updated = [...displaySquad, inPlayer]
     updated.sort((a, b) => {
       const diff = POS_ORDER.indexOf(a.position) - POS_ORDER.indexOf(b.position)
