@@ -13,6 +13,7 @@ interface Props {
   isSelected?: boolean
   isEligible?: boolean
   isDimmed?: boolean
+  isLocked?: boolean
   onClick: () => void
 }
 
@@ -21,12 +22,13 @@ function surname(name: string): string {
   return parts[parts.length - 1].slice(0, 10)
 }
 
-export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isViceCaptain, eliminated, isSelected, isEligible, isDimmed, onClick }: Props) {
+export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isViceCaptain, eliminated, isSelected, isEligible, isDimmed, isLocked, onClick }: Props) {
   const kit = getKit(player.team_abbr)
 
   return (
     <button
       onClick={onClick}
+      disabled={isLocked}
       className={clsx(
         'relative flex flex-col items-center rounded-lg border px-1 pt-1 pb-1 text-center transition-all duration-150',
         'w-[72px] sm:w-[72px]',
@@ -35,7 +37,8 @@ export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isVice
           : 'border-white/[0.07] bg-slate-900/60 backdrop-blur-sm shadow-card hover:border-white/20 hover:bg-slate-800/60',
         isSelected && 'ring-2 ring-accent border-accent/50 shadow-glow-gold-md',
         isEligible && !isSelected && 'ring-2 ring-cyan border-cyan/50 shadow-glow-cyan-md',
-        isDimmed && 'opacity-40',
+        (isDimmed || isLocked) && 'opacity-40',
+        isLocked && 'cursor-not-allowed',
       )}
     >
       {/* Captain / VC badge */}
@@ -64,13 +67,17 @@ export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isVice
         {surname(player.name)}
       </span>
 
-      {/* xP */}
-      <span className={clsx(
-        'text-[10px] font-mono font-medium leading-tight tabular-nums',
-        isBench ? 'text-slate-400' : 'text-accent',
-      )}>
-        {xp.toFixed(1)}
-      </span>
+      {/* xP or FT badge */}
+      {isLocked ? (
+        <span className="text-[10px] font-bold leading-tight text-slate-500">FT</span>
+      ) : (
+        <span className={clsx(
+          'text-[10px] font-mono font-medium leading-tight tabular-nums',
+          isBench ? 'text-slate-400' : 'text-accent',
+        )}>
+          {xp.toFixed(1)}
+        </span>
+      )}
     </button>
   )
 }

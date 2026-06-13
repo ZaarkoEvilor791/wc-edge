@@ -11,7 +11,16 @@ export function useTeams() {
 }
 
 export function useRounds() {
-  return useQuery({ queryKey: ['rounds'], queryFn: wcApi.rounds, staleTime: 5 * 60_000 })
+  return useQuery({ queryKey: ['rounds'], queryFn: wcApi.rounds, staleTime: 5 * 60_000, refetchInterval: 2 * 60_000 })
+}
+
+export function useLive(round: number | undefined) {
+  return useQuery({
+    queryKey: ['live', round],
+    queryFn: () => wcApi.live(round!),
+    enabled: !!round,
+    refetchInterval: 60_000,
+  })
 }
 
 export function useProjections(round: number) {

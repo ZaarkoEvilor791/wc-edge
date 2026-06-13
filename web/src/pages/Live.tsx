@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { wcApi } from '../services/wcApi'
 import { useCurrentRound } from '../hooks/useWC'
-import { useSquadStore } from '../store/squadStore'
 import Spinner from '../components/shared/Spinner'
 
 interface LiveMatch {
@@ -73,7 +72,6 @@ function MatchCard({ m }: { m: LiveMatch }) {
 
 export default function Live() {
   const currentRound = useCurrentRound()
-  const { squad, captain } = useSquadStore()
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
   const { data, isLoading } = useQuery({
@@ -96,10 +94,6 @@ export default function Live() {
   const isStale = !Array.isArray(raw) && !!(raw as Record<string, unknown>)?.stale
   const source = !Array.isArray(raw) ? ((raw as Record<string, unknown>)?.source as string) : null
 
-  const hasActiveMatches = matches.some((m) => m.status === 'live' || m.status === 'finished')
-  const captainName = captain != null ? squad.find((p) => p.element === captain)?.name : null
-  const showCaptainBanner = hasActiveMatches && captainName != null
-
   const updatedStr = lastUpdated
     ? lastUpdated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
     : null
@@ -120,23 +114,6 @@ export default function Live() {
             : 'Live scores unavailable — showing fixture schedule'
           : `Updates every 60s${updatedStr ? ` · last updated ${updatedStr}` : ''}`}
       </p>
-
-      {/* Captain banner */}
-      {showCaptainBanner && (
-        <div className="mb-4 flex items-center justify-between rounded-xl border border-accent/30 bg-accent/10 px-4 py-3">
-          <p className="text-sm text-accent">
-            ⚡ <span className="font-semibold">{captainName}</span> is your captain — consider a mid-match swap if they've already played
-          </p>
-          <a
-            href="https://play.fifa.com/fantasy/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-3 shrink-0 text-sm font-semibold text-accent hover:underline"
-          >
-            FIFA Fantasy →
-          </a>
-        </div>
-      )}
 
       {!currentRound ? (
         <p className="text-sm text-slate-400">No active round — tournament hasn't started yet.</p>
