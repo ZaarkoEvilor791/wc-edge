@@ -1,5 +1,15 @@
 # Session History
 
+## Session 42 — Live round awareness + Captain page redesign
+
+- **Screenshot fill fix** — `OnboardingModal.handleConfirmSquad` previously stored only the matched players (e.g. 10 of 15), leaving squad short and cost inconsistent. Now calls `fillSquadFromSuggested(matched, suggestedData?.squad_json ?? [])` to pad to 15 with top-xP picks before normalizing. `useSuggestedSquad()` added to `ModalContent`.
+- **Live round awareness** — `useRounds()` gains `refetchInterval: 2 * 60_000`. Round status changes (e.g. cron writes `status='playing'`) now detected within 2 min without user navigation. `useProjections(round)` + `useTeamFdr(round)` cascade automatically via React Query key change.
+- **`useLive(round)` extracted** — previously inlined in `Live.tsx`. Now exported from `useWC.ts`. `Live.tsx` switches to the shared hook; `Captain.tsx` uses it for mid-round swap detection.
+- **Captain page redesign** — full rewrite. Pitch view (reuses `Pitch` + `PitchPlayerCard`) is now the primary UI. Tap any unplayed player on pitch to set captain (C badge). Ranked list remains below pitch for xP/FDR/variance context and VC assignment. Deadline countdown badge replaced by "Mid-round swap" badge when `currentRound.status === 'playing'`.
+- **Mid-round swap mode** — when round is `'playing'`, cross-references ESPN live data with squad players' team name. Players whose team has a `finished` match today: dimmed (opacity-50), FT badge replaces xP, button disabled. All others are captainable. Graceful fallback: if `useLive()` returns no data, all players are swappable.
+- **`lockedElements` prop on `Pitch`/`PitchPlayerCard`** — new optional `Set<number>`. `isLocked` on card: `disabled`, `opacity-40`, `cursor-not-allowed`, FT label replaces xP. Backward-compatible; Squad page unaffected.
+- **Live page** — captain banner removed (superseded by Captain page mid-round mode). `useSquadStore` import removed from `Live.tsx`.
+
 ## Session 41 — Architecture deepening
 
 - **`normalizeSquad()`** extracted to `utils/squad.ts` — named utility for sorting squad by (position, xP DESC). Used in Squad.tsx init + `handleAdd`, and OnboardingModal `handleBuildWithVariant` + `handleConfirmSquad`. Callers use it on fresh loads; swaps bypass it to preserve user intent. See ADR 001.

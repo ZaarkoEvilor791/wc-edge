@@ -54,6 +54,8 @@ Authoritative design decisions. Before changing anything in this list, check if 
 - **Live tier order** — Tier 1 (community API, dead for WC2026) → Tier 1.5 (ESPN, primary) → Tier 2 (FIFA schedule fallback).
 - **ESPN public scoreboard** — `site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=YYYYMMDD`. No key, no rate limit. Past days cached 1hr; today 60s.
 - **Round status is `'playing'` not `'active'`** — `useCurrentRound()` and `getCurrentRoundId()` accept both.
+- **`useLive(round)` is a shared hook in `useWC.ts`** — exported alongside other hooks. 60s `refetchInterval`. Pass `round` as `undefined` to disable (used in Captain when round is not `'playing'`).
+- **`useRounds()` polls every 2 min** — `refetchInterval: 2 * 60_000`. Everything that depends on `currentRound` (projections, FDR, captain mid-round mode) updates automatically when round status changes in DB.
 
 ## Persistence
 
@@ -71,6 +73,10 @@ Authoritative design decisions. Before changing anything in this list, check if 
 - **`backdrop-blur` stacking context** — only works outside `overflow:hidden`. Pitch is unsafe. Safe: sidebar, topbar, bottom tab bar, chat bubbles, modals.
 - **Glassmorphism glow tokens** — CSS vars in `index.css` (`--glow-gold`, `--glow-cyan`, `--glow-card`). Tailwind `boxShadow` tokens in `tailwind.config.ts`. Tune globally, not per-component.
 - **EmptySlotCard only shown when `onEmptySlotClick` passed** — Squad page passes it; Transfers doesn't.
+- **`lockedElements?: Set<number>` on `Pitch`** — optional prop for mid-round lock state. Passed to `FormationRow` and bench strip → `PitchPlayerCard` `isLocked`. Does not interact with swap mode. Captain page uses it; Squad page does not.
+- **`isLocked` on `PitchPlayerCard`** — `disabled` button, `opacity-40`, `cursor-not-allowed`, shows FT label instead of xP. Takes precedence over `isDimmed`.
+- **Captain page pitch view** — `onPlayerClick` sets captain (not swap). No `swapSourceElement` / `eligibleElements` passed. Mid-round locked players fire no-op in handler + are `disabled` at button level.
+- **`fillSquadFromSuggested` called in `OnboardingModal`** — `handleConfirmSquad` calls it with `suggestedData?.squad_json ?? []` to guarantee 15 players before `normalizeSquad`. `useSuggestedSquad()` added to `ModalContent` for this purpose.
 
 ## Engine
 

@@ -17,7 +17,7 @@
 
 ---
 
-## Current State (Session 42 starting)
+## Current State (Session 43 starting)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
@@ -37,7 +37,11 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · 00:00 UTC (post-match blend) · June 27 06:00 UTC (post-group Bayesian FDR)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
-**Session 41 shipped:** Architecture deepening — `normalizeSquad()` (ADR 001), `canAddPlayer()` (ADR 002), `FREE_TRANSFERS_BY_PHASE` to gameRules (ADR 004). All fresh-load paths (Squad.tsx, OnboardingModal) now call `normalizeSquad()`. BrowseAllModal add-mode now enforces country limits via `canAddPlayer()`. CONTEXT.md + 5 ADRs + docs/ops + docs/sessions + docs/key-decisions created. Tests: 118 → 129.
+**Session 42 shipped:**
+- **Screenshot fill fix** — `OnboardingModal.handleConfirmSquad` now calls `fillSquadFromSuggested(matched, suggestedData?.squad_json ?? [])` before normalizing. Squad is always padded to 15; cost/player count now consistent.
+- **Live round awareness** — `useRounds()` gains `refetchInterval: 2 * 60_000`. Round status changes propagate within 2 min; `useProjections` + `useTeamFdr` cascade automatically via React Query key change. `useLive(round)` extracted as a shared hook.
+- **Captain page redesign** — Pitch view is now primary UI. Tap any unplayed player to set captain (C badge). Ranked list below for xP/FDR/variance + VC assignment. Mid-round swap mode: when `currentRound.status === 'playing'`, players whose team has a finished match today show FT badge, are dimmed and non-interactive. Live page captain banner removed.
+- **`lockedElements` on `Pitch`/`PitchPlayerCard`** — new optional prop. `isLocked` card: disabled, opacity-50, FT replaces xP, cursor-not-allowed.
 
 ---
 
@@ -48,7 +52,7 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 cd web && npm run dev    # Express :3001 + Vite :5173
 
 # Tests
-cd web && npm test                        # 118 vitest
+cd web && npm test                        # 129 vitest
 cd engine && py -m pytest tests/ -v       # 49 pytest
 
 # Engine (Windows PowerShell)
@@ -89,7 +93,7 @@ web/
     │                           getEligibleSwapTargets(), fillSquadFromSuggested()
     ├── store/appStore.ts       sidebar + onboarding + squadViewMode (Zustand + persist)
     ├── store/squadStore.ts     squad[], captain, viceCaptain, formationCounts, boosterStates
-    ├── hooks/useWC.ts          React Query hooks
+    ├── hooks/useWC.ts          React Query hooks (useRounds polls 2min; useLive exported)
     ├── components/shared/      Pitch, PitchPlayerCard, PlayerProfileModal,
     │                           OnboardingModal, BrowseAllModal, EmptySlotCard,
     │                           UnmatchedBanner, RoundXpChart, StatCard, Spinner, Logo
@@ -105,9 +109,9 @@ web/
 | Assistant | / | none | Edge AI, starter chips, squad context |
 | Squad | /squad | none | Pitch + list view, card-to-card swap, Optimise XI, budget bar |
 | Transfers | /transfers | RequireSquad | Greedy suggest, Accept/Pass/Undo, hit verdict, Browse All |
-| Captain | /captain | RequireSquad | Ranked list, VC button, FDR badge, deadline countdown |
+| Captain | /captain | RequireSquad | Pitch view + ranked list, tap to set C, mid-round swap mode, FDR badge |
 | Boosters | /boosters | RequireSquad | 5 chip cards, strategy tips, Available/Active/Used state |
-| Live | /live | none | Match cards, captain banner, ESPN scores |
+| Live | /live | none | Match cards, ESPN scores (60s poll) |
 
 ---
 
@@ -201,3 +205,4 @@ Render auto-deploys on `main` push.
 1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons. See `docs/ops.md`.
 2. **ADR 002 server-side** — extend `canAddPlayer` enforcement to the server (`/api/transfers/suggest` response validation). Trigger: if a country-limit or position bug is reported.
 3. **ADR 003 (post-tournament)** — store xP breakdown as JSONB in `wc.player_projections`; remove reverse-engineering from PlayerProfileModal.
+4. **Captain mid-round: team-name matching** — ESPN `home_team`/`away_team` strings may not exactly match `teams.name` in DB. Monitor in prod; add fallback matching (abbr or fuzzy) if FT detection misfires.
