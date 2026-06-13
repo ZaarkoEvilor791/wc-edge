@@ -44,6 +44,7 @@ interface LiveMatch {
 }
 
 export default function Captain() {
+  const [view, setView] = useState<'list' | 'pitch'>('list')
   const { squad, captain, viceCaptain, formationCounts, setCaptain, setViceCaptain } = useSquadStore()
   const currentRound = useCurrentRound()
   const { data: rounds } = useRounds()
@@ -134,25 +135,47 @@ export default function Captain() {
         <p className="text-slate-400">No squad loaded yet. Visit Squad to load your players.</p>
       ) : (
         <>
-          {/* Pitch view */}
-          <div className="mb-6">
-            <Pitch
-              players={squad}
-              projections={projections ?? []}
-              round={round}
-              captain={captain}
-              viceCaptain={viceCaptain}
-              posCount={{ GK: 1, ...formationCounts }}
-              eliminatedSquadIds={eliminatedSquadIds}
-              lockedElements={playedElements}
-              onPlayerClick={handlePitchClick}
-            />
-            <p className="mt-2 text-center text-[11px] text-slate-600">
-              Tap to set captain · Use VC button in list below to set vice-captain
-            </p>
+          {/* View toggle */}
+          <div className="mb-4 flex rounded-xl border border-white/[0.06] bg-slate-900/40 p-1">
+            {(['list', 'pitch'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={clsx(
+                  'flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors',
+                  view === v
+                    ? 'bg-accent/20 text-accent'
+                    : 'text-slate-500 hover:text-slate-300',
+                )}
+              >
+                {v === 'list' ? 'List' : 'Pitch'}
+              </button>
+            ))}
           </div>
 
+          {/* Pitch view */}
+          {view === 'pitch' && (
+            <div className="mb-6">
+              <Pitch
+                players={squad}
+                projections={projections ?? []}
+                round={round}
+                captain={captain}
+                viceCaptain={viceCaptain}
+                posCount={{ GK: 1, ...formationCounts }}
+                eliminatedSquadIds={eliminatedSquadIds}
+                lockedElements={playedElements}
+                onPlayerClick={handlePitchClick}
+              />
+              <p className="mt-2 text-center text-[11px] text-slate-600">
+                Tap to set captain · Switch to List to set vice-captain
+              </p>
+            </div>
+          )}
+
           {/* Ranked list */}
+          {view === 'list' && (
+          <>
           <div className="mb-1 flex items-center px-4 text-xs text-slate-500">
             <span className="w-6 shrink-0" />
             <span className="ml-3 flex-1">Player</span>
@@ -241,6 +264,8 @@ export default function Captain() {
               )
             })}
           </div>
+          </>
+          )}
 
           {/* FIFA link */}
           <div className="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.06] bg-slate-900/40 backdrop-blur-sm px-4 py-3">
