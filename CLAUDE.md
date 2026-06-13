@@ -45,6 +45,15 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
   - **FIFA fallback showed finished matches as "scheduled"** — fixed to emit `status: 'finished'` for matches where `kickoff` is in the past. Also fixed fallback round lookup to use `rounds[round-1]` (array index) instead of `rounds.find(r => r.id === round)` (fragile ID match).
   - **Team name truncation** — `w-24 truncate` → `flex-1 min-w-0 truncate` on both team name spans in `Live.tsx`.
 - **Live page shows all past scores** — ESPN tier fetches every day from the round's `start_date` to today. Past days cached 1hr (scores immutable); today cached 60s (live updates). Round 1 results all visible: Mexico 2-0 SA, South Korea 2-1 Czechia, Canada 1-1 Bosnia, USA 4-1 Paraguay.
+- **Sci-fi visual overhaul** — full app redesign from flat dark UI to glassmorphism/glow aesthetic.
+  - **Design system** (`tailwind.config.ts`, `index.css`): brighter gold accent `#C8A84C → #E8B84B`, new cyan `#00D4FF`, CSS glow variables (`--glow-gold`, `--glow-cyan`, `--glow-card`), `boxShadow` tokens (`glow-gold`, `glow-cyan`, `glow-gold-md`, `glow-cyan-md`, `glow-green-md`, `card`), `pulse-slow` + `scan` + `shimmer` keyframes, 40px cyan grid texture on body background, `prefers-reduced-motion` guard.
+  - **Layout shell**: animated scan-line in banner, glassmorphism sidebar/topbar/bottom-tab-bar (`backdrop-blur-xl`, `bg-slate-950/90`, `border-white/[0.06]`), active nav item gold left-bar + inner glow, active mobile tab drop-shadow glow, gradient top-edge on BottomTabBar.
+  - **Pitch cards** (`PitchPlayerCard.tsx`): glass surface (`backdrop-blur-sm`), gold ring on swap-selected, cyan ring on swap-eligible, captain badge glow.
+  - **Captain rows**: glass hover, gold shadow on active captain.
+  - **Live match cards**: green glow pulse on live matches, glass on finished.
+  - **Assistant chat** (`Assistant.tsx`): user bubbles gold-tinted glass (`bg-accent/15 border-accent/25`), Edge bubbles cyan glass (`bg-cyan/[0.06] border-cyan/15`), Edge avatar glow, glass input bar with `focus-within` gold ring, glass starter chips with hover glow.
+  - **PlayerProfileModal**: dark navy header (replaces blue gradient), glass stat boxes, glass fixture rows, glass xP breakdown table, glass bottom action bar.
+  - TypeScript: 0 errors. Tests: 118/118 green. No layout dimensions, z-index stack, or touch targets changed.
 
 ## Session 38 — What was shipped
 
@@ -222,7 +231,7 @@ When a new knockout phase starts, the budget increases to £105m. This is auto-d
 
 1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons. Run `migrate.py` on any new DB instance before engine runs.
 
-2. **Post-launch UX fixes** (deferred from Session 38):
+2. **Remaining UX fixes**:
    - Player modal scroll: `PlayerProfileModal.tsx` — `overflow-hidden` → `overflow-y-auto` + fade gradient
    - Transfers swap card: `Transfers.tsx` SwapCard — `flex-col` on mobile (`md:flex-row`)
    - Boosters tips expanded by default: `Boosters.tsx` — strategy tips visible without tapping
@@ -397,6 +406,10 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **`show_tip` action** — Edge can send `{type:'show_tip', page:'squad'|'transfers'|'captain'|'boosters'|'live'}` in the actions block. `executeActions()` in `Assistant.tsx` injects a `__TIP__:<page>` message into the chat array. Message renderer checks for this prefix and renders `PageGuideCard` instead of a speech bubble. Guide content lives in `web/src/data/pageGuides.ts`.
 - **StatsBomb field names** — `key_pass` doesn't exist in open data; use `pass.shot_assist` for chances created. Tackles: event `type.name === 'Duel'` with `duel.type.name === 'Tackle'`.
 - **`migrate.py` must run on new DB instances** — adds `player_stats` table + bonus columns + `is_penalty_taker` column. The engine crashes with `UndefinedColumn` if skipped.
+- **ESPN public scoreboard** — `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=YYYYMMDD` — no key, no rate limit. State map: `'pre'→'scheduled'`, `'in'→'live'`, `'post'→'finished'`. Past days cached 1hr (immutable), today cached 60s. `datesInRange(startDate)` generates all dates from round `start_date` to today for full round history.
+- **Live tier order** — Tier 1 (community API, dead for WC2026) → Tier 1.5 (ESPN, primary) → Tier 2 (FIFA schedule fallback with elapsed→finished status). Server returns `{matches, source, stale}` shape; `stale=true` when on FIFA fallback.
+- **Glassmorphism glow tokens** — all glow intensities defined as CSS custom properties in `index.css` (`--glow-gold`, `--glow-cyan`, `--glow-card`) and as Tailwind `boxShadow` tokens in `tailwind.config.ts`. Tune globally via these variables, not per-component.
+- **`backdrop-blur` stacking context rule** — only works outside `overflow: hidden` containers. Pitch is unsafe (it has `overflow-hidden`). Safe: sidebar, topbar, bottom tab bar, chat bubbles, modals.
 - **Round status is `'playing'` not `'active'`** — FIFA Fantasy's `rounds.json` uses `status: 'playing'` for the active round. `useCurrentRound()` (`useWC.ts`) and `getCurrentRoundId()` (`db.ts`) accept `'active' OR 'playing'`. `_sync_round_statuses()` lowercases before writing to DB.
 - **Live page ESPN tier** — `espnFetchDay(dateStr, ttlMs)` + `datesInRange(startDate)` in `server.ts` fetch all days from the round's `start_date` to today. Past days: 1hr cache (scores immutable). Today: 60s cache. No API key, no budget. Falls through to FIFA schedule fallback if ESPN returns 0 events. Community API (`worldcup2026-api.vercel.app`) is dead for WC 2026 — Tier 1 always fails, Tier 1.5 (ESPN) handles everything.
 
