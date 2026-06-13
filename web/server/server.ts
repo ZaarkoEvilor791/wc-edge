@@ -88,10 +88,10 @@ function toYYYYMMDD(d: Date) {
   return d.toISOString().slice(0, 10).replace(/-/g, '')
 }
 
-async function espnFetchDay(dateStr: string): Promise<LiveMatch[]> {
+async function espnFetchDay(dateStr: string, ttlMs = 60_000): Promise<LiveMatch[]> {
   const url = `${ESPN_SCOREBOARD}?dates=${dateStr}`
   const cached = proxyCache.get(url)
-  if (cached && Date.now() - cached.ts < 60_000) return cached.data as LiveMatch[]
+  if (cached && Date.now() - cached.ts < ttlMs) return cached.data as LiveMatch[]
   const r = await fetch(url)
   if (!r.ok) throw new Error(`ESPN ${r.status}`)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,6 +120,19 @@ async function espnFetchDay(dateStr: string): Promise<LiveMatch[]> {
   })
   proxyCache.set(url, { data: matches, ts: Date.now() })
   return matches
+}
+
+function datesInRange(startDate: string | null): string[] {
+  const todayUtc = new Date(); todayUtc.setUTCHours(0, 0, 0, 0)
+  const start = startDate ? new Date(startDate) : todayUtc
+  start.setUTCHours(0, 0, 0, 0)
+  const dates: string[] = []
+  const cursor = new Date(start)
+  while (cursor <= todayUtc) {
+    dates.push(toYYYYMMDD(cursor))
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+  return dates
 }
 
 app.get(ROUTES.fifaPlayers, (_, res) => fifaProxy(`${FIFA_BASE}/players.json`, 5 * 60_000, res))
@@ -297,15 +310,16 @@ app.get('/api/live', async (req, res) => {
     if (!r.ok) throw new Error(`${r.status}`)
     res.json(await r.json())
   } catch {
-    // Tier 1.5 — ESPN public scoreboard (no key, 60s cache): today + yesterday covers live + finished
+    // Tier 1.5 — ESPN public scoreboard (no key): all days from round start to today
     try {
-      const today = new Date()
-      const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1)
-      const [todayMatches, yesterdayMatches] = await Promise.all([
-        espnFetchDay(toYYYYMMDD(today)),
-        espnFetchDay(toYYYYMMDD(yesterday)),
-      ])
-      const combined = [...yesterdayMatches, ...todayMatches]
+      const rounds = await getRounds()
+      const rnd = rounds.find((r) => r.id === round) ?? rounds[round - 1]
+      const todayStr = toYYYYMMDD(new Date())
+      const dates = datesInRange(rnd?.start_date ?? null)
+      const perDay = await Promise.all(
+        dates.map((d) => espnFetchDay(d, d < todayStr ? 60 * 60_000 : 60_000))
+      )
+      const combined = perDay.flat()
         .sort((a, b) => new Date(a.kickoff ?? 0).getTime() - new Date(b.kickoff ?? 0).getTime())
       combined.forEach((m, i) => { m.id = i })
       if (combined.length > 0) {
