@@ -12,7 +12,7 @@
 
 ---
 
-## Current State (Session 38 complete)
+## Current State (Session 39 complete)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
@@ -35,6 +35,16 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
 ---
+
+## Session 39 — What was shipped
+
+- **Live page fixed** — 3 compounding bugs diagnosed and resolved on day 2 of the tournament.
+  - **Round status `'playing'` vs `'active'`** — FIFA Fantasy's `rounds.json` uses `status: 'playing'` for the active round (not `'active'`). `useCurrentRound()` (`useWC.ts`) and `getCurrentRoundId()` (`db.ts`) both checked for `'active'` only, silently falling back to `rounds[0]`. Fixed to accept `'playing'` as well.
+  - **`wc_run.py` status normalization** — `_sync_round_statuses()` now lowercases status before writing to DB. `_detect_round_and_budget` updated to use `LOWER(status) != 'complete'`. Ran `UPDATE wc.rounds SET status = LOWER(status)` against Neon to normalize existing rows.
+  - **Community API dead** — `worldcup2026-api.vercel.app` returns 404 for WC 2026. Added ESPN public scoreboard (`site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard`) as Tier 1.5 fallback. No API key, no budget, no rate limit.
+  - **FIFA fallback showed finished matches as "scheduled"** — fixed to emit `status: 'finished'` for matches where `kickoff` is in the past. Also fixed fallback round lookup to use `rounds[round-1]` (array index) instead of `rounds.find(r => r.id === round)` (fragile ID match).
+  - **Team name truncation** — `w-24 truncate` → `flex-1 min-w-0 truncate` on both team name spans in `Live.tsx`.
+- **Live page shows all past scores** — ESPN tier fetches every day from the round's `start_date` to today. Past days cached 1hr (scores immutable); today cached 60s (live updates). Round 1 results all visible: Mexico 2-0 SA, South Korea 2-1 Czechia, Canada 1-1 Bosnia, USA 4-1 Paraguay.
 
 ## Session 38 — What was shipped
 
@@ -216,7 +226,6 @@ When a new knockout phase starts, the budget increases to £105m. This is auto-d
    - Player modal scroll: `PlayerProfileModal.tsx` — `overflow-hidden` → `overflow-y-auto` + fade gradient
    - Transfers swap card: `Transfers.tsx` SwapCard — `flex-col` on mobile (`md:flex-row`)
    - Boosters tips expanded by default: `Boosters.tsx` — strategy tips visible without tapping
-   - Live kickoff readability: `Live.tsx` — team name `flex-1 min-w-0 truncate`, kickoff on own line
 
 3. **Phase 2 (post-tournament)** — StatsBomb tackles + key passes → xP model.
 
@@ -305,7 +314,7 @@ web/
 | POST /api/squad/from-screenshot | Claude Haiku Vision → matched players |
 | POST /api/transfers/suggest | Greedy, {squad, round, freeTransfers} |
 | GET /api/fdr?round=N | FDR 1–5 per team |
-| GET /api/live?round=N | Community API; falls back to FIFA schedule |
+| GET /api/live?round=N | ESPN scoreboard (all days from round start to today); falls back to FIFA schedule |
 | POST /api/chat | Edge AI, {messages, squadNames?} |
 
 ---
@@ -388,6 +397,8 @@ WC gold accent `#E8B84B` · navy `#0C1D3E` · pitch-green `#2D7A4F` · body bg `
 - **`show_tip` action** — Edge can send `{type:'show_tip', page:'squad'|'transfers'|'captain'|'boosters'|'live'}` in the actions block. `executeActions()` in `Assistant.tsx` injects a `__TIP__:<page>` message into the chat array. Message renderer checks for this prefix and renders `PageGuideCard` instead of a speech bubble. Guide content lives in `web/src/data/pageGuides.ts`.
 - **StatsBomb field names** — `key_pass` doesn't exist in open data; use `pass.shot_assist` for chances created. Tackles: event `type.name === 'Duel'` with `duel.type.name === 'Tackle'`.
 - **`migrate.py` must run on new DB instances** — adds `player_stats` table + bonus columns + `is_penalty_taker` column. The engine crashes with `UndefinedColumn` if skipped.
+- **Round status is `'playing'` not `'active'`** — FIFA Fantasy's `rounds.json` uses `status: 'playing'` for the active round. `useCurrentRound()` (`useWC.ts`) and `getCurrentRoundId()` (`db.ts`) accept `'active' OR 'playing'`. `_sync_round_statuses()` lowercases before writing to DB.
+- **Live page ESPN tier** — `espnFetchDay(dateStr, ttlMs)` + `datesInRange(startDate)` in `server.ts` fetch all days from the round's `start_date` to today. Past days: 1hr cache (scores immutable). Today: 60s cache. No API key, no budget. Falls through to FIFA schedule fallback if ESPN returns 0 events. Community API (`worldcup2026-api.vercel.app`) is dead for WC 2026 — Tier 1 always fails, Tier 1.5 (ESPN) handles everything.
 
 ---
 
