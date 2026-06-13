@@ -17,11 +17,11 @@
 
 ---
 
-## Current State (Session 41 complete)
+## Current State (Session 42 starting)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
 
-**Tests:** 118 vitest (6 files) + 49 pytest — all green.
+**Tests:** 129 vitest (6 files) + 49 pytest — all green.
 
 **DB:** 1,481 players · 8 rounds · projections re-run post-Session-37 · 384 team_fdr rows · 3 suggested_squad rows (round 1: max_xp £100.0m 74.5xP). `wc.players` has `is_penalty_taker BOOLEAN` (32 takers seeded). `wc.player_stats` has `tourn_chances90`, `tourn_tackles90`, `tourn_sot90`.
 
@@ -37,7 +37,7 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · 00:00 UTC (post-match blend) · June 27 06:00 UTC (post-group Bayesian FDR)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 
-**Session 41 changes:** `normalizeSquad()` extracted to `utils/squad.ts` — used in Squad.tsx, OnboardingModal; `canAddPlayer()` added to `squadValidator.ts` — used in Squad.tsx `handleAdd` and BrowseAllModal add-mode (replaces inline checks + adds country-limit enforcement); `FREE_TRANSFERS_BY_PHASE` moved to `gameRules.ts`; CONTEXT.md + ADRs + docs split created. Tests: 129 vitest.
+**Session 41 shipped:** Architecture deepening — `normalizeSquad()` (ADR 001), `canAddPlayer()` (ADR 002), `FREE_TRANSFERS_BY_PHASE` to gameRules (ADR 004). All fresh-load paths (Squad.tsx, OnboardingModal) now call `normalizeSquad()`. BrowseAllModal add-mode now enforces country limits via `canAddPlayer()`. CONTEXT.md + 5 ADRs + docs/ops + docs/sessions + docs/key-decisions created. Tests: 118 → 129.
 
 ---
 
@@ -199,4 +199,5 @@ Render auto-deploys on `main` push.
 ## Next Session Priorities
 
 1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons. See `docs/ops.md`.
-2. **Phase 2 (post-tournament)** — store xP breakdown in DB (ADR 003); full server-side validation gate (ADR 002).
+2. **ADR 002 server-side** — extend `canAddPlayer` enforcement to the server (`/api/transfers/suggest` response validation). Trigger: if a country-limit or position bug is reported.
+3. **ADR 003 (post-tournament)** — store xP breakdown as JSONB in `wc.player_projections`; remove reverse-engineering from PlayerProfileModal.
