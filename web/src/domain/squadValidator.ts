@@ -1,6 +1,11 @@
 import type { SquadPlayer } from '../types/wc'
 import { POS_REQUIRED } from '../config/gameRules'
 
+export interface AddCheck {
+  allowed: boolean
+  reason?: string
+}
+
 export type RoundPhase = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'final'
 
 export const COUNTRY_LIMIT: Record<RoundPhase, number> = {
@@ -57,4 +62,31 @@ export function validateSquad(squad: SquadPlayer[], phase: RoundPhase): Validati
     errors,
     countryViolations,
   }
+}
+
+// Single validation gate for adding a player to the squad.
+// Checks position cap, budget, and country limit in one place.
+// squadCost = sum of current squad prices (caller computes once).
+export function canAddPlayer(
+  squad: SquadPlayer[],
+  candidate: { position: string; price: number; team_abbr: string },
+  phase: RoundPhase,
+  squadCost: number,
+  budget: number,
+): AddCheck {
+  const posCounts: Record<string, number> = {}
+  for (const p of squad) posCounts[p.position] = (posCounts[p.position] ?? 0) + 1
+  if ((posCounts[candidate.position] ?? 0) >= (POS_REQUIRED[candidate.position] ?? 99)) {
+    return { allowed: false, reason: 'Position full' }
+  }
+  if (squadCost + candidate.price > budget + 0.001) {
+    return { allowed: false, reason: 'Over budget' }
+  }
+  const limit = COUNTRY_LIMIT[phase]
+  const countryCounts: Record<string, number> = {}
+  for (const p of squad) countryCounts[p.team_abbr] = (countryCounts[p.team_abbr] ?? 0) + 1
+  if ((countryCounts[candidate.team_abbr] ?? 0) >= limit) {
+    return { allowed: false, reason: `Country limit (${limit})` }
+  }
+  return { allowed: true }
 }

@@ -4,9 +4,8 @@ import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import { useTransferSuggest, useCurrentRound, useRounds, useTeams, useProjections } from '../hooks/useWC'
 import { roundPhase } from '../domain/squadValidator'
-import type { RoundPhase } from '../domain/squadValidator'
 import type { TransferSuggestion, SquadPlayer, TransferCard } from '../types/wc'
-import { POS_ORDER } from '../config/gameRules'
+import { POS_ORDER, FREE_TRANSFERS_BY_PHASE } from '../config/gameRules'
 import BrowseAllModal from '../components/shared/BrowseAllModal'
 import JerseyIcon from '../components/shared/JerseyIcon'
 import { getKit } from '../data/teamColors'
@@ -18,10 +17,6 @@ const POS_COLOR: Record<string, string> = {
   DEF: 'text-blue-400',
   MID: 'text-green-400',
   FWD: 'text-red-400',
-}
-
-const FREE_TRANSFERS_BY_PHASE: Record<RoundPhase, number> = {
-  group: 2, r32: 6, r16: 4, qf: 4, sf: 5, final: 6,
 }
 
 // ---- Squad list ----

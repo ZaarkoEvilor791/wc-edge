@@ -1,6 +1,16 @@
 import type { SquadPlayer } from '../types/wc'
 import { POS_COUNT, POS_REQUIRED, POS_ORDER } from '../config/gameRules'
 
+// Sorts players into canonical squad order: position group (GK→DEF→MID→FWD), then xP DESC within each group.
+// Required by getXI(). Call this when loading a new squad from DB, screenshot, or onboarding —
+// NOT after manual swaps (swapInSquad preserves the user's XI/bench intent without resorting).
+export function normalizeSquad(players: SquadPlayer[]): SquadPlayer[] {
+  return [...players].sort((a, b) => {
+    const posOrder = POS_ORDER.indexOf(a.position) - POS_ORDER.indexOf(b.position)
+    return posOrder !== 0 ? posOrder : b.xp - a.xp
+  })
+}
+
 // Fills a partial screenshot match up to 15 players using top-xP picks from the
 // suggested squad, preserving position composition (2GK/5DEF/5MID/3FWD).
 export function fillSquadFromSuggested(matched: SquadPlayer[], suggested: SquadPlayer[]): SquadPlayer[] {

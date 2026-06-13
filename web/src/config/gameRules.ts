@@ -35,3 +35,8 @@ export const SCORING = {
   SCOUTING_BONUS: 2,             // >4 pts scored AND <5% ownership
   QUALIFICATION_BOOSTER: 2,      // per XI player who advances to next round (chip mechanic, R32+ only)
 } as const
+
+// Free transfers per tournament phase. Keep in sync with engine/config.py.
+export const FREE_TRANSFERS_BY_PHASE: Record<string, number> = {
+  group: 2, r32: 6, r16: 4, qf: 4, sf: 5, final: 6,
+}

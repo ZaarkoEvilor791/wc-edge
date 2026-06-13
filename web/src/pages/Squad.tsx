@@ -4,9 +4,9 @@ import { useSuggestedSquad, useProjections, useCurrentRound, useTeams } from '..
 import { useSquadStore } from '../store/squadStore'
 import { useAppStore } from '../store/appStore'
 import type { SquadPlayer } from '../types/wc'
-import { getXI, swapInSquad, optimiseXI, getEligibleSwapTargets } from '../utils/squad'
-import { roundPhase, COUNTRY_LIMIT } from '../domain/squadValidator'
-import { POS_ORDER, POS_REQUIRED } from '../config/gameRules'
+import { getXI, swapInSquad, optimiseXI, getEligibleSwapTargets, normalizeSquad } from '../utils/squad'
+import { roundPhase, COUNTRY_LIMIT, canAddPlayer } from '../domain/squadValidator'
+import { POS_ORDER } from '../config/gameRules'
 import Spinner from '../components/shared/Spinner'
 import StatCard from '../components/shared/StatCard'
 import Pitch from '../components/shared/Pitch'
@@ -83,12 +83,7 @@ export default function Squad() {
     const isCorrupt = squad.length > 0 &&
       new Set(squad.map(p => p.element)).size !== squad.length
     if (squad.length === 0 || isCorrupt) {
-      // Pre-sort by xP within each position so array order = starter order for getXI
-      const byPos: Record<string, SquadPlayer[]> = { GK: [], DEF: [], MID: [], FWD: [] }
-      for (const p of data.squad_json) byPos[p.position]?.push(p)
-      const sorted = ['GK', 'DEF', 'MID', 'FWD'].flatMap(
-        (pos) => [...(byPos[pos] ?? [])].sort((a, b) => b.xp - a.xp)
-      )
+      const sorted = normalizeSquad(data.squad_json)
       setSquad(sorted)
       const { xi: xiSorted } = getXI(sorted, { GK: 1, DEF: 4, MID: 4, FWD: 2 })
       const xiElements = new Set(xiSorted.map((p) => p.element))
@@ -191,15 +186,9 @@ export default function Squad() {
   }
 
   function handleAdd(inPlayer: SquadPlayer) {
-    const posCounts: Record<string, number> = {}
-    for (const p of displaySquad) posCounts[p.position] = (posCounts[p.position] ?? 0) + 1
-    if ((posCounts[inPlayer.position] ?? 0) >= (POS_REQUIRED[inPlayer.position] ?? 99)) return
-    const updated = [...displaySquad, inPlayer]
-    updated.sort((a, b) => {
-      const diff = POS_ORDER.indexOf(a.position) - POS_ORDER.indexOf(b.position)
-      return diff !== 0 ? diff : b.xp - a.xp
-    })
-    setSquad(updated)
+    const squadCost = displaySquad.reduce((s, p) => s + p.price, 0)
+    if (!canAddPlayer(displaySquad, inPlayer, phase, squadCost, 100).allowed) return
+    setSquad(normalizeSquad([...displaySquad, inPlayer]))
   }
 
   return (
