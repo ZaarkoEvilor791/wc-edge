@@ -174,7 +174,7 @@ export async function getTeamFdr(round: number) {
 
 export async function getCurrentRoundId(): Promise<number> {
   const rows = await q<{ id: number }>(
-    "SELECT id FROM rounds WHERE status = 'active' ORDER BY id LIMIT 1"
+    "SELECT id FROM rounds WHERE status IN ('active', 'playing') ORDER BY id LIMIT 1"
   )
   if (rows.length) return rows[0].id
   const all = await q<{ id: number }>('SELECT id FROM rounds ORDER BY id LIMIT 1')

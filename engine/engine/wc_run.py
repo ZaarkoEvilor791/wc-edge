@@ -31,8 +31,8 @@ def _sync_round_statuses(conn) -> None:
     with conn.cursor() as cur:
         for r in rounds:
             rid = r.get("id")
-            status = r.get("status")
-            if rid is None or status is None:
+            status = (r.get("status") or "").lower()
+            if rid is None or not status:
                 continue
             cur.execute(
                 "UPDATE wc.rounds SET status = %s, updated_at = NOW() "
@@ -52,7 +52,7 @@ def _detect_round_and_budget(conn) -> tuple[int, float]:
     """
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT id, stage FROM wc.rounds WHERE status != 'COMPLETE' ORDER BY id LIMIT 1"
+            "SELECT id, stage FROM wc.rounds WHERE LOWER(status) != 'complete' ORDER BY id LIMIT 1"
         )
         row = cur.fetchone()
 

@@ -97,5 +97,5 @@ export function useTransferSuggest() {
 export function useCurrentRound() {
   const { data: rounds } = useRounds()
   if (!rounds) return null
-  return rounds.find((r) => r.status === 'active') ?? rounds[0] ?? null
+  return rounds.find((r) => r.status === 'active' || r.status === 'playing') ?? rounds[0] ?? null
 }

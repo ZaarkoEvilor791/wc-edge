@@ -33,7 +33,7 @@ function MatchCard({ m }: { m: LiveMatch }) {
   return (
     <div className={`rounded-xl border px-4 py-3 ${isScheduled ? 'border-slate-800/60 bg-slate-900/60' : 'border-slate-800 bg-slate-900'}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="w-24 truncate text-right text-sm font-semibold text-slate-100">{m.home_team}</span>
+        <span className="flex-1 min-w-0 truncate text-right text-sm font-semibold text-slate-100">{m.home_team}</span>
 
         <div className="flex min-w-[72px] flex-col items-center">
           {isScheduled ? (
@@ -59,7 +59,7 @@ function MatchCard({ m }: { m: LiveMatch }) {
           )}
         </div>
 
-        <span className="w-24 truncate text-sm font-semibold text-slate-100">{m.away_team}</span>
+        <span className="flex-1 min-w-0 truncate text-sm font-semibold text-slate-100">{m.away_team}</span>
       </div>
     </div>
   )
