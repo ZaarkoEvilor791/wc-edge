@@ -28,19 +28,19 @@ export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isVice
     <button
       onClick={onClick}
       className={clsx(
-        'relative flex flex-col items-center rounded-lg border px-1 pt-1 pb-1 text-center transition-all hover:bg-slate-800/60',
+        'relative flex flex-col items-center rounded-lg border px-1 pt-1 pb-1 text-center transition-all duration-150',
         'w-[72px] sm:w-[72px]',
         isBench
-          ? 'border-slate-700 bg-slate-900/60'
-          : 'border-slate-700/40 bg-slate-950',
-        isSelected && 'ring-2 ring-[#E8B84B] ring-offset-1 ring-offset-transparent border-[#E8B84B]/60',
-        isEligible && !isSelected && 'ring-2 ring-green-400 ring-offset-1 ring-offset-transparent border-green-400/60',
+          ? 'border-white/[0.05] bg-slate-950/50 shadow-card'
+          : 'border-white/[0.07] bg-slate-900/60 backdrop-blur-sm shadow-card hover:border-white/20 hover:bg-slate-800/60',
+        isSelected && 'ring-2 ring-accent border-accent/50 shadow-glow-gold-md',
+        isEligible && !isSelected && 'ring-2 ring-cyan border-cyan/50 shadow-glow-cyan-md',
         isDimmed && 'opacity-40',
       )}
     >
       {/* Captain / VC badge */}
       {isCaptain && (
-        <span className="absolute -top-1.5 -right-1.5 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#E8B84B] text-[9px] font-black text-slate-900 leading-none">
+        <span className="absolute -top-1.5 -right-1.5 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-accent text-[9px] font-black text-slate-900 leading-none shadow-[0_0_8px_rgba(232,184,75,0.6)]">
           C
         </span>
       )}
@@ -66,7 +66,7 @@ export default function PitchPlayerCard({ player, xp, isBench, isCaptain, isVice
 
       {/* xP */}
       <span className={clsx(
-        'text-[10px] font-medium leading-tight',
+        'text-[10px] font-mono font-medium leading-tight tabular-nums',
         isBench ? 'text-slate-400' : 'text-accent',
       )}>
         {xp.toFixed(1)}

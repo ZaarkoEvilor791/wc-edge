@@ -201,7 +201,7 @@ export default function Assistant() {
   return (
     <div className="flex h-full flex-col -m-4 md:-m-6">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between border-b border-slate-800 px-6 py-4">
+      <div className="shrink-0 flex items-center justify-between border-b border-white/[0.06] bg-slate-950/60 backdrop-blur-sm px-6 py-4">
         <div>
           <h1 className="text-xl font-bold text-slate-100">Edge</h1>
           <p className="text-xs text-slate-500">
@@ -213,7 +213,7 @@ export default function Assistant() {
             )}
           </p>
         </div>
-        <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-500">
+        <span className="rounded-full border border-white/[0.08] bg-slate-900/60 px-2.5 py-1 text-xs text-slate-500">
           Powered by Claude
         </span>
       </div>
@@ -248,15 +248,15 @@ export default function Assistant() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.role === 'assistant' && (
-                  <div className="mr-2 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg">
+                  <div className="mr-2 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg shadow-[0_0_10px_rgba(232,184,75,0.45)]">
                     E
                   </div>
                 )}
                 <div
-                  className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed backdrop-blur-sm ${
                     msg.role === 'user'
-                      ? 'rounded-tr-sm bg-slate-700 text-slate-100'
-                      : 'rounded-tl-sm bg-slate-800 text-slate-100'
+                      ? 'rounded-tr-sm border border-accent/25 bg-accent/15 text-slate-100'
+                      : 'rounded-tl-sm border border-cyan/15 bg-cyan/[0.06] text-slate-100'
                   }`}
                 >
                   {renderContent(msg.content)}
@@ -267,10 +267,10 @@ export default function Assistant() {
 
           {(loading || screenshotLoading) && (
             <div className="flex justify-start">
-              <div className="mr-2 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg">
+              <div className="mr-2 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg shadow-[0_0_10px_rgba(232,184,75,0.45)]">
                 E
               </div>
-              <div className="rounded-2xl rounded-tl-sm bg-slate-800 px-4 py-3">
+              <div className="rounded-2xl rounded-tl-sm border border-cyan/15 bg-cyan/[0.06] backdrop-blur-sm px-4 py-3">
                 <ThinkingDots label={screenshotLoading ? 'Processing screenshot' : 'Edge is thinking'} />
               </div>
             </div>
@@ -292,7 +292,7 @@ export default function Assistant() {
               key={chip}
               onClick={() => send(chip)}
               disabled={loading}
-              className="rounded-full border border-slate-600 px-3 py-1.5 text-xs text-slate-300 transition hover:border-accent hover:text-accent disabled:opacity-40"
+              className="rounded-full border border-white/[0.1] bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300 backdrop-blur-sm transition hover:border-accent/50 hover:text-accent hover:shadow-[0_0_8px_rgba(232,184,75,0.2)] disabled:opacity-40"
             >
               {chip}
             </button>
@@ -301,8 +301,8 @@ export default function Assistant() {
       )}
 
       {/* Input bar */}
-      <div className="shrink-0 border-t border-slate-800 px-6 py-3">
-        <div className="flex items-end gap-2">
+      <div className="shrink-0 border-t border-white/[0.06] bg-slate-950/60 px-6 py-3">
+        <div className="flex items-end gap-2 rounded-xl border border-white/[0.08] bg-slate-900/60 px-3 py-2 backdrop-blur-sm focus-within:border-accent/50 focus-within:shadow-[0_0_0_1px_rgba(232,184,75,0.12)] transition-all">
           {/* Screenshot upload */}
           <input
             ref={fileInputRef}
@@ -318,7 +318,7 @@ export default function Assistant() {
             onClick={() => fileInputRef.current?.click()}
             disabled={loading || screenshotLoading}
             title="Upload squad screenshot"
-            className="mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-400 transition hover:bg-slate-700 hover:text-slate-200 disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:text-slate-300 disabled:opacity-40"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -334,7 +334,7 @@ export default function Assistant() {
             disabled={loading || screenshotLoading}
             rows={1}
             placeholder="Ask Edge anything, or give a command…"
-            className="flex-1 resize-none rounded-xl bg-slate-800 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+            className="flex-1 resize-none bg-transparent px-1 py-1.5 text-sm text-slate-100 placeholder-slate-600 outline-none disabled:opacity-50"
             style={{ maxHeight: '120px', overflowY: 'auto' }}
             onInput={(e) => {
               const el = e.currentTarget
@@ -345,12 +345,12 @@ export default function Assistant() {
           <button
             onClick={() => send(input)}
             disabled={loading || screenshotLoading || !input.trim()}
-            className="mb-0.5 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-fg transition hover:opacity-90 disabled:opacity-40"
+            className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-fg transition hover:opacity-90 hover:shadow-glow-gold disabled:opacity-40"
           >
             Send
           </button>
         </div>
-        <p className="mt-1.5 text-xs text-slate-600">Enter to send · Shift+Enter for new line · 📷 to upload squad screenshot</p>
+        <p className="mt-1.5 text-xs text-slate-700">Enter to send · Shift+Enter for new line · camera to upload screenshot</p>
       </div>
     </div>
   )
@@ -361,21 +361,21 @@ function PageGuideCard({ page }: { page: GuidePage }) {
   const nav = useNavigate()
   if (!guide) return null
   return (
-    <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-sm">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-400/80">
+    <div className="rounded-2xl border border-accent/25 bg-accent/[0.07] backdrop-blur-sm px-4 py-3 text-sm shadow-glow-gold">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-accent/80">
         Page guide · {guide.title}
       </p>
       <ul className="space-y-1">
         {guide.actions.map((action, i) => (
           <li key={i} className="flex items-start gap-2 text-slate-300">
-            <span className="mt-0.5 shrink-0 text-amber-500/60">·</span>
+            <span className="mt-0.5 shrink-0 text-accent/50">·</span>
             {action}
           </li>
         ))}
       </ul>
       <button
         onClick={() => nav(guide.path)}
-        className="mt-3 rounded-lg border border-amber-500/20 px-3 py-1.5 text-xs text-amber-400 transition-colors hover:border-amber-500/40 hover:text-amber-300"
+        className="mt-3 rounded-lg border border-accent/20 px-3 py-1.5 text-xs text-accent transition-all hover:border-accent/40 hover:shadow-[0_0_8px_rgba(232,184,75,0.2)]"
       >
         Go to {guide.title} →
       </button>

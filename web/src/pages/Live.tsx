@@ -31,7 +31,13 @@ function MatchCard({ m }: { m: LiveMatch }) {
   const hasScore = m.home_score != null && m.away_score != null
 
   return (
-    <div className={`rounded-xl border px-4 py-3 ${isScheduled ? 'border-slate-800/60 bg-slate-900/60' : 'border-slate-800 bg-slate-900'}`}>
+    <div className={`rounded-xl border px-4 py-3 transition-all duration-150 ${
+      isLive
+        ? 'border-green-400/40 bg-slate-900/60 backdrop-blur-sm shadow-glow-green-md animate-pulse-slow'
+        : isFinished
+          ? 'border-white/[0.08] bg-slate-900/50 backdrop-blur-sm'
+          : 'border-white/[0.04] bg-slate-950/60'
+    }`}>
       <div className="flex items-center justify-between gap-2">
         <span className="flex-1 min-w-0 truncate text-right text-sm font-semibold text-slate-100">{m.home_team}</span>
 

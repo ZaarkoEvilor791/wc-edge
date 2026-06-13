@@ -20,8 +20,13 @@ export default {
       colors: {
         slate: brandSlate,
         accent: {
-          DEFAULT: '#C8A84C',  // FIFA trophy gold
+          DEFAULT: '#E8B84B',
           fg: '#060D18',
+          glow: 'rgba(232,184,75,0.25)',
+        },
+        cyan: {
+          DEFAULT: '#00D4FF',
+          glow: 'rgba(0,212,255,0.2)',
         },
         'wc-navy': '#0C1D3E',
         'wc-red': '#DC2430',
@@ -36,6 +41,29 @@ export default {
           4: '#ff1751',
           5: '#80072d',
         },
+      },
+      animation: {
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
+        shimmer: 'shimmer 2.5s linear infinite',
+        scan: 'scan 6s linear infinite',
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        scan: {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(200px)' },
+        },
+      },
+      boxShadow: {
+        'glow-gold': '0 0 20px rgba(232,184,75,0.15), 0 0 40px rgba(232,184,75,0.05)',
+        'glow-cyan': '0 0 20px rgba(0,212,255,0.15), 0 0 40px rgba(0,212,255,0.05)',
+        'glow-gold-md': '0 0 16px rgba(232,184,75,0.35)',
+        'glow-cyan-md': '0 0 16px rgba(0,212,255,0.3)',
+        'glow-green-md': '0 0 16px rgba(74,222,128,0.2)',
+        card: '0 4px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)',
       },
     },
   },

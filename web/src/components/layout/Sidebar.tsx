@@ -82,7 +82,7 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        'fixed inset-y-0 left-0 z-20 flex shrink-0 flex-col border-r border-slate-800 bg-slate-900 transition-all duration-200',
+        'fixed inset-y-0 left-0 z-20 flex shrink-0 flex-col border-r border-white/[0.06] bg-slate-950/90 backdrop-blur-xl transition-all duration-200',
         'md:relative md:inset-auto md:z-auto md:translate-x-0',
         mobileMenuOpen ? 'translate-x-0 w-52' : '-translate-x-full w-52',
         collapsed ? 'md:w-[58px]' : 'md:w-52',
@@ -90,7 +90,7 @@ export default function Sidebar() {
     >
       {/* Logo / wordmark */}
       <div className={clsx(
-        'flex h-14 items-center border-b border-slate-800/60',
+        'flex h-14 items-center border-b border-white/[0.05]',
         isCollapsed ? 'justify-center' : 'px-5',
       )}>
         {isCollapsed ? <LogoMark /> : <Logo />}
@@ -120,11 +120,11 @@ export default function Sidebar() {
             onClick={() => setMobileMenuOpen(false)}
             className={({ isActive }) =>
               clsx(
-                'flex items-center rounded-lg py-2 text-sm font-medium transition-colors',
+                'flex items-center rounded-lg py-2 text-sm font-medium transition-all duration-150',
                 isCollapsed ? 'justify-center px-0' : 'gap-2.5 px-3',
                 isActive
-                  ? 'bg-accent/15 text-accent'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100',
+                  ? 'border-l-2 border-accent bg-accent/10 text-accent shadow-[inset_0_0_12px_rgba(232,184,75,0.07)]'
+                  : 'border-l-2 border-transparent text-slate-400 hover:bg-white/[0.04] hover:text-slate-100',
               )
             }
           >
@@ -140,8 +140,8 @@ export default function Sidebar() {
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         className={clsx(
           'absolute -right-3 top-[52px] z-10 hidden h-6 w-6 items-center justify-center',
-          'rounded-full border border-slate-700 bg-slate-900 text-slate-400',
-          'hover:border-accent hover:text-accent transition-colors shadow-sm',
+          'rounded-full border border-white/[0.08] bg-slate-950 text-slate-400',
+          'hover:border-accent/60 hover:text-accent hover:shadow-[0_0_8px_rgba(232,184,75,0.3)] transition-all duration-150 shadow-sm',
           'md:flex',
         )}
       >

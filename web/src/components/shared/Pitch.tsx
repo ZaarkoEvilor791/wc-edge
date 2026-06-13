@@ -109,7 +109,7 @@ export default function Pitch({
       {/* Pitch surface */}
       <div
         className="relative w-full overflow-hidden rounded-xl"
-        style={{ background: '#2D7A4F' }}
+        style={{ background: 'radial-gradient(ellipse at 50% 40%, #1e5c39 0%, #163d28 50%, #0c2518 100%)' }}
       >
         {/* Pitch markings as SVG overlay */}
         <svg

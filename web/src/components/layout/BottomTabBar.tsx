@@ -50,9 +50,6 @@ const TABS = [
   { path: '/captain', label: 'Captain', icon: <CaptainIcon />, exact: false },
 ]
 
-const activeClass = 'text-accent'
-const inactiveClass = 'text-slate-500'
-
 export default function BottomTabBar() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const navigate = useNavigate()
@@ -65,14 +62,22 @@ export default function BottomTabBar() {
   return (
     <>
       {/* Bottom tab bar */}
-      <nav className="fixed bottom-0 inset-x-0 z-40 flex h-16 items-stretch border-t border-slate-800 bg-slate-900 md:hidden">
+      <nav className="fixed bottom-0 inset-x-0 z-40 flex h-16 items-stretch bg-slate-950/90 backdrop-blur-xl md:hidden">
+        {/* Gradient top edge */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 border-t border-white/[0.06] w-full" />
+
         {TABS.map((tab) => (
           <NavLink
             key={tab.path}
             to={tab.path}
             end={tab.exact}
             className={({ isActive }) =>
-              `flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors ${isActive ? activeClass : inactiveClass}`
+              `flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 ${
+                isActive
+                  ? 'text-accent drop-shadow-[0_0_6px_rgba(232,184,75,0.5)]'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`
             }
           >
             {tab.icon}
@@ -83,7 +88,11 @@ export default function BottomTabBar() {
         {/* More button */}
         <button
           onClick={() => setSheetOpen(true)}
-          className={`flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors ${sheetOpen ? activeClass : inactiveClass}`}
+          className={`flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 ${
+            sheetOpen
+              ? 'text-accent drop-shadow-[0_0_6px_rgba(232,184,75,0.5)]'
+              : 'text-slate-500 hover:text-slate-300'
+          }`}
         >
           <MoreIcon />
           <span className="text-[10px] font-medium">More</span>
@@ -94,16 +103,16 @@ export default function BottomTabBar() {
       {sheetOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
             onClick={() => setSheetOpen(false)}
           />
-          <div className="fixed inset-x-0 bottom-16 z-50 rounded-t-2xl border-t border-slate-700 bg-slate-900 pb-2 md:hidden">
-            <div className="mx-auto mt-2 mb-3 h-1 w-10 rounded-full bg-slate-700" />
+          <div className="fixed inset-x-0 bottom-16 z-50 rounded-t-2xl border-t border-white/[0.08] bg-slate-950/95 backdrop-blur-xl pb-2 md:hidden">
+            <div className="mx-auto mt-2 mb-3 h-1 w-10 rounded-full bg-white/10" />
             <button
               onClick={() => goTo('/boosters')}
-              className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition hover:bg-slate-800"
+              className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-all hover:bg-white/[0.04]"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 text-slate-400">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 text-accent/60">
                 <path d="M10 2l1.5 4.5H16l-3.5 2.5 1.3 4.5L10 11l-3.8 2.5 1.3-4.5L4 6.5h4.5z" strokeLinejoin="round" />
               </svg>
               <div>
@@ -116,9 +125,9 @@ export default function BottomTabBar() {
             </button>
             <button
               onClick={() => goTo('/live')}
-              className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition hover:bg-slate-800"
+              className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-all hover:bg-white/[0.04]"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 text-slate-400">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 text-cyan/60">
                 <circle cx="10" cy="10" r="3" />
                 <circle cx="10" cy="10" r="7" strokeDasharray="2 3" />
               </svg>

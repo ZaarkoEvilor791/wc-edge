@@ -4,9 +4,9 @@ export function LogoMark({ className }: { className?: string }) {
   return (
     <div className={clsx('flex items-center justify-center', className)}>
       <svg viewBox="0 0 32 32" className="h-7 w-7" fill="none" aria-hidden>
-        <path d="M10 4h12v10a6 6 0 0 1-12 0V4z" stroke="#C8A84C" strokeWidth="1.75" strokeLinejoin="round" />
-        <path d="M10 7H6a4 4 0 0 0 4 4M22 7h4a4 4 0 0 1-4 4" stroke="#C8A84C" strokeWidth="1.75" strokeLinecap="round" />
-        <path d="M16 20v4M12 28h8" stroke="#C8A84C" strokeWidth="1.75" strokeLinecap="round" />
+        <path d="M10 4h12v10a6 6 0 0 1-12 0V4z" stroke="#E8B84B" strokeWidth="1.75" strokeLinejoin="round" />
+        <path d="M10 7H6a4 4 0 0 0 4 4M22 7h4a4 4 0 0 1-4 4" stroke="#E8B84B" strokeWidth="1.75" strokeLinecap="round" />
+        <path d="M16 20v4M12 28h8" stroke="#E8B84B" strokeWidth="1.75" strokeLinecap="round" />
       </svg>
     </div>
   )

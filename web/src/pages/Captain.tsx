@@ -97,12 +97,12 @@ export default function Captain() {
               key={p.element}
               onClick={() => setCaptain(p.element)}
               className={clsx(
-                'flex w-full items-center rounded-xl border px-4 py-2.5 text-left transition-colors',
+                'flex w-full items-center rounded-xl border px-4 py-2.5 text-left transition-all duration-150',
                 captain === p.element
-                  ? 'border-accent bg-accent/10'
+                  ? 'border-accent/50 bg-accent/10 shadow-glow-gold'
                   : i === 0
-                    ? 'border-accent/40 hover:border-accent'
-                    : 'border-slate-800 bg-slate-900 hover:border-slate-600',
+                    ? 'border-accent/30 bg-slate-900/50 backdrop-blur-sm hover:border-accent/60 hover:shadow-glow-gold'
+                    : 'border-white/[0.06] bg-slate-900/40 backdrop-blur-sm hover:border-white/20 hover:bg-slate-800/50',
               )}
             >
               <span className="w-6 shrink-0 text-sm tabular-nums text-slate-500">{i + 1}</span>
@@ -165,7 +165,7 @@ export default function Captain() {
       )}
 
       {sorted.length > 0 && (
-        <div className="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3">
+        <div className="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.06] bg-slate-900/40 backdrop-blur-sm px-4 py-3">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" className="shrink-0 text-slate-500">
             <circle cx="6" cy="6" r="5" />
             <path d="M6 4v4M6 3.5v.01" strokeLinecap="round" />

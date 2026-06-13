@@ -5,11 +5,26 @@
 @layer base {
   :root {
     color-scheme: dark;
+    --glow-gold: 0 0 20px rgba(232,184,75,0.15), 0 0 40px rgba(232,184,75,0.05);
+    --glow-cyan: 0 0 20px rgba(0,212,255,0.15), 0 0 40px rgba(0,212,255,0.05);
+    --glow-card: 0 4px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
   }
   body {
     @apply bg-slate-950 text-slate-100 antialiased;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.018) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-attachment: fixed;
   }
   * {
     @apply border-slate-700;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
