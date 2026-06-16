@@ -1,5 +1,13 @@
 # Session History
 
+## Session 44 — Star ratings + Captain kickoff timing
+
+- **`playerStarRating(xp, lowSample)`** added to `utils/squad.ts` — tiers: ≥6.0=★5 (gold), ≥4.5=★4 (cyan), ≥3.0=★3 (slate), `low_sample` players capped at ★3. Returns 0 for 1★/2★ (no badge rendered).
+- **Star badges on all player surfaces** — compact `★N` pill top-left on `PitchPlayerCard` (C/VC stay top-right); star glyph rows above xP in `BrowseAllModal` (all 3 modes), `Transfers` SquadList, `Squad` list, and `Captain` list.
+- **Captain kickoff timing** — `Captain.tsx` previously locked players only after `status='finished'`. Now builds `matchKickoffs` map (squad_id → `{ kickoff: Date, status }`) from ESPN live data and computes `lockedElements` using kickoff timestamp (locks when `kickoff <= now` OR `status='live'/'finished'`). Fallback to `playedElements` when ESPN has no match data for a team.
+- **Kickoff chips in Captain list** — unplayed players show `kicks off HH:MM` (slate, >6h), `kicks off in Xh Ym` (amber, <6h), or `Live` badge (green) inline in the position·abbr line. A 30s `now` state ticker keeps chips fresh between 60s live data polls.
+- **Tournament monitoring** — engine crons all green. After day 2 apif ingest: 1,484 players, 578 with club stats. Top xP: Salah 8.66, Ronaldo 7.89, Gyökeres 7.56. `blend_live_observations` waiting for first round to complete.
+
 ## Session 42 — Live round awareness + Captain page redesign
 
 - **Screenshot fill fix** — `OnboardingModal.handleConfirmSquad` previously stored only the matched players (e.g. 10 of 15), leaving squad short and cost inconsistent. Now calls `fillSquadFromSuggested(matched, suggestedData?.squad_json ?? [])` to pad to 15 with top-xP picks before normalizing. `useSuggestedSquad()` added to `ModalContent`.

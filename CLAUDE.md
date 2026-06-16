@@ -17,15 +17,15 @@
 
 ---
 
-## Current State (Session 44 starting)
+## Current State (Session 45 starting)
 
-All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working.
+All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working. **Tournament live since June 12.**
 
 **Tests:** 129 vitest (6 files) + 49 pytest — all green.
 
-**DB:** 1,481 players · 8 rounds · projections re-run post-Session-37 · 384 team_fdr rows · 3 suggested_squad rows (round 1: max_xp £100.0m 74.5xP). `wc.players` has `is_penalty_taker BOOLEAN` (32 takers seeded). `wc.player_stats` has `tourn_chances90`, `tourn_tackles90`, `tourn_sot90`.
+**DB:** 1,484 players · 8 rounds · 578 players with club stats (API-Football day 2 run complete) · 384 team_fdr rows · 3 suggested_squad rows (round 1: max_xp £99.6m 97.97xP post-stats). `wc.players` has `is_penalty_taker BOOLEAN` (32 takers seeded). `wc.player_stats` has `tourn_chances90`, `tourn_tackles90`, `tourn_sot90`.
 
-**apif budget:** `day1_used: 80, day2_used: 16` — both runs complete.
+**apif budget:** `day1_used: 80, day2_used: 16` — both runs complete. Daily 04:00 UTC cron uses 32 req/run.
 
 **DB state:** `wc.teams` — exactly 48 rows (squad_id 1–48). `is_active BOOLEAN DEFAULT TRUE` live. `wc.suggested_squad` PK is `(round, variant)`. **IMPORTANT: `migrate.py` must be run against any new DB instance.**
 
@@ -36,9 +36,11 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · 00:00 UTC (post-match blend) · June 27 06:00 UTC (post-group Bayesian FDR)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
+- All runs green as of June 13. `blend_live_observations` fires once a round is `COMPLETE` (0 rounds complete so far).
 
-**Session 43 shipped:**
-- **Captain page List/Pitch tab toggle** — replaced vertically stacked pitch+list layout with a List/Pitch tab switcher. List is default (C + VC assignment). Pitch is a separate tab (tap to set captain). `view` state in `Captain.tsx`.
+**Session 44 shipped:**
+- **Star ratings on player cards** — `playerStarRating(xp, lowSample)` in `utils/squad.ts`. Tiers: ≥6.0=★5 gold, ≥4.5=★4 cyan, ≥3.0=★3 slate; `low_sample` capped at ★3. Compact `★N` badge top-left on `PitchPlayerCard`; star glyphs in `BrowseAllModal`, `Transfers` SquadList, `Squad` list, `Captain` list.
+- **Captain kickoff timing** — `Captain.tsx` now locks players when their match **kicks off** (not just full-time). `matchKickoffs` map (squad_id → kickoff+status from ESPN live data); `lockedElements` replaces `playedElements` for lock logic; kickoff chips show `kicks off HH:MM` / `in Xh Ym` / `Live` badge in the list. 30s `now` ticker keeps chips fresh.
 
 **Planned (not yet built):**
 - **Edge AI squad context enrichment** — `/api/chat` currently drops the `squad: number[]` sent by frontend. Plan: add `getSquadContext(elementIds, round)` to `db.ts` (JOIN across players/projections/team_fdr/player_stats), add `buildSquadAnalysis()` formatter to `server.ts`, inject `<squad_analysis>` block into system prompt replacing bare name list. Edge will be honest that per-match history isn't in DB — advises from xP + FDR signals. Plan file: `C:\Users\shriy\.claude\plans\velvet-weaving-rabin.md`.
