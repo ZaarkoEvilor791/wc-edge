@@ -506,7 +506,7 @@ def blend_live_observations(conn: psycopg.Connection) -> None:
     Prior fades to ~25% after round 5. Zero-op when no rounds are complete.
     """
     with conn.cursor() as cur:
-        cur.execute("SELECT COUNT(*) FROM wc.rounds WHERE status = 'COMPLETE'")
+        cur.execute("SELECT COUNT(*) FROM wc.rounds WHERE status = 'complete'")
         row = cur.fetchone()
     rounds_played: int = row[0] if row else 0
 
