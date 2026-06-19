@@ -1,5 +1,10 @@
 # Session History
 
+## Session 46 — blend bug fix + Edge AI context plan
+
+- **`blend_live_observations` case-sensitivity bug fixed** — `engine/engine/wc_model.py:509` checked `status = 'COMPLETE'` but DB stores `'complete'`. Blend returned `rounds_played=0` and silently skipped on every run since tournament start. Fixed to lowercase. Manually triggered engine workflow post-fix: 11,872 projections blended (1,484 players × 8 rounds) with Round 1 actual FIFA Fantasy avgPoints at 23% obs weight.
+- **Edge AI context enrichment — planned** — Elite product team review surfaced two root causes: (1) static system prompt with no live data, (2) `squad: number[]` dropped at `server.ts:399`. Plan: two-block system prompt (static 2048+ token cached prefix + dynamic `<tournament>`+`<squad_analysis>` block); `getCurrentRound()` server-side cached hourly; `getSquadContext()` per-request DB join; `buildSquadAnalysis()` formatter; anti-hallucination constraints blocking Edge from requesting points screenshots. Plan file: `C:\Users\shriy\.claude\plans\why-does-llm-not-tidy-teapot.md`.
+
 ## Session 44 — Star ratings + Captain kickoff timing
 
 - **`playerStarRating(xp, lowSample)`** added to `utils/squad.ts` — tiers: ≥6.0=★5 (gold), ≥4.5=★4 (cyan), ≥3.0=★3 (slate), `low_sample` players capped at ★3. Returns 0 for 1★/2★ (no badge rendered).
