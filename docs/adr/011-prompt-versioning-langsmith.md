@@ -112,6 +112,8 @@ Where overall = 0.4×factual_accuracy + 0.3×actionability + 0.2×grounding + 0.
 
 **Why these weights:** `factual_accuracy` and `actionability` are the highest-value dimensions — a hallucinating or non-actionable advisor is useless. `grounding` is strongly correlated with `factual_accuracy` but is a separate check (player names vs stat values). `conciseness` is a UX signal, lower weight.
 
+**Eval runs on 10% sample, not every response.** Running Claude-as-judge on 100% of responses would double the per-query LLM cost. `actionability` (valid action JSON) and `grounding` (player names) are already enforced deterministically by the Guardrails node — the LLM judge's marginal value is in `factual_accuracy` and `conciseness`, which require reading the response in context. 10% sampling gives statistically meaningful quality signals at 1/10th the cost.
+
 ---
 
 ## A/B Testing

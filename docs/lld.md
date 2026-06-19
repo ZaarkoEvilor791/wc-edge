@@ -144,6 +144,7 @@ Trigger async FAISS index rebuild. Returns immediately; rebuild happens in backg
 {
   "status": "ok",
   "models": {
+    "router": "claude-haiku-4-5-20251001",
     "primary": "claude-sonnet-4-6",
     "fallback1": "azure/gpt-4o",
     "fallback2": "gemini/gemini-1.5-pro"
@@ -346,6 +347,30 @@ async function chatWithAIAdvisor(body: ChatRequest): Promise<Response> {
 ```
 
 `AI_SERVICE_URL` defaults to `http://localhost:8001` in dev, set via Render env var in prod.
+
+---
+
+## Model Tiering
+
+| Node | Model | Reason |
+|---|---|---|
+| Router | `claude-haiku-4-5-20251001` | 4-class classification; ~50 input tokens; 73% cheaper than Sonnet |
+| TransferAdvisor / CaptaincyAdvisor / ChipStrategist | `claude-sonnet-4-6` | Tool calls + structured reasoning required |
+| KnowledgeAgent | No LLM call — pure retrieval (FAISS + NetworkX) | |
+| Synthesizer | `claude-sonnet-4-6` | Complex output with CoT + JSON actions |
+| Guardrails | No LLM call — pure Python (DB lookup + regex + substring check) | |
+
+**Synthesizer prefill pattern** (forces JSON output, strips CoT before streaming):
+```python
+messages = [
+    {"role": "system", "content": [cached_block, dynamic_block]},
+    *state["messages"],
+    {"role": "assistant", "content": "<thinking>"},  # prefill: model continues from here
+]
+raw = response.choices[0].message.content
+_, _, answer = raw.partition("</thinking>")   # strip CoT — user never sees it
+state["final_response"] = answer.strip()
+```
 
 ---
 

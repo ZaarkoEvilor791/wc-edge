@@ -1,5 +1,14 @@
 # Session History
 
+## Session 49 — ATROS cost audit applied to architecture docs
+
+- **ATROS token optimisation audit** conducted on the AI Advisor architecture. Four concrete changes identified and applied across all docs:
+- **Router → Haiku** (`claude-haiku-4-5-20251001` replacing Sonnet for the Router node). 4-class intent classification (~50 tokens) doesn't need Sonnet reasoning. 73% cheaper per call; ~150ms faster. Updated `lld.md` Model Tiering table, `hld.md` container diagram, `adr/008`.
+- **Guardrails → pure Python** (no LLM call). All three guardrails checks are deterministic: player name validation = DB `SELECT`; citation grounding = substring match against rag_context; injection detection = regex. Guardrails node now runs in ~2–5ms at $0. Updated `hld.md`, `lld.md`, `llmops.md` OTel span tree, `security.md`, `adr/008`.
+- **RAG top-k 5→3** (~40% fewer context tokens per retrieval). Structured player documents (80–100 tokens each) don't need 5 results — top result is usually definitive. Saves ~160 tokens per Advisor+Synthesizer call pair. Updated `rag-design.md`, `hld.md` NFR table, `adr/006`.
+- **Eval sampling 10%** (was: every response). LLM-as-judge on 100% of responses doubles per-query cost. `actionability` and `grounding` are already enforced deterministically by Guardrails; the judge's value is in `factual_accuracy` and `conciseness`. `maybe_evaluate(sample_rate=0.10)` wrapper added to `llmops.md`. Updated `llmops.md`, `adr/011`.
+- **Synthesizer CoT isolation** documented: prefill `<thinking>` block, strip before SSE stream — users and output token billing only see the final answer. Added to `lld.md` Model Tiering section.
+
 ## Session 48 — Phase 0: portfolio architecture docs
 
 - **`README.md` created** — portfolio-grade root README with mermaid architecture diagram, tech stack badges (Python/FastAPI/LangGraph/LlamaIndex/litellm/XGBoost/MLflow/FAISS/Docker/k8s), AI/ML skills coverage table mapping each skill to a concrete implementation, full repo map, quick-start commands, WC rules summary, and ADR index.

@@ -23,6 +23,9 @@ Player names and position keywords ("FWD", "captain", "FDR") are exact-match sig
 **Why all-MiniLM-L6-v2:**  
 Zero per-call cost (vs OpenAI `text-embedding-ada-002`). Runs on CPU in ~2ms per document. 384 dimensions are sufficient for retrieval from 1,484 structured player documents (not open-domain unstructured text). Model loads once at service startup.
 
+**Why top-k=3 not 5:**
+Each player document is ~80–100 tokens. Top-5 adds ~450 tokens of dynamic context to every Advisor and Synthesizer call. For structured player profiles (short, factual), the top result is usually definitive and the 4th/5th results add marginal signal. Reducing to top-3 saves ~160 tokens (~40%) per call with no measurable retrieval quality loss. `DEFAULT_TOP_K = 3` in `rag/hybrid_retriever.py`.
+
 **Why FAISS local / Weaviate prod:**  
 FAISS is a local file (2MB for 1,484 docs). No network dependency for dev/CI. Weaviate Cloud enables stateless pods in Kubernetes (no PersistentVolumeClaim for the index). The `VectorStoreBackend` ABC makes the swap transparent to all callers.
 

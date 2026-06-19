@@ -145,10 +145,12 @@ No code changes required. LangSmith captures:
 
 ### Eval Dataset
 
-Queries are collected to a LangSmith dataset (`wc-edge-eval`) and scored with an LLM-as-judge:
+Queries are collected to a LangSmith dataset (`wc-edge-eval`) and scored with an LLM-as-judge. **Eval runs on a 10% random sample** — running Claude-as-judge on every response would double the per-query LLM cost for no additional signal quality.
 
 ```python
 # eval/llm_judge.py
+import random
+
 EVAL_RUBRIC = """
 Score this AI fantasy football response on 4 dimensions (each 0.0–1.0):
 
@@ -160,11 +162,17 @@ Score this AI fantasy football response on 4 dimensions (each 0.0–1.0):
 Return JSON only: {"factual_accuracy": f, "actionability": f, "grounding": f, "conciseness": f, "overall": f}
 """
 
-def evaluate_response(query: str, response: str, rag_context: str, valid_players: set[str]) -> dict:
-    scores = llm_call(EVAL_RUBRIC + f"\nQuery: {query}\nResponse: {response}\nRAG context: {rag_context}")
-    mlflow.log_metrics(scores)   # also logged to MLflow for cross-system comparison
+async def maybe_evaluate(query: str, response: str, rag_context: str,
+                         valid_players: set[str], sample_rate: float = 0.10) -> dict | None:
+    if random.random() > sample_rate:
+        return None   # skip — 90% of calls; dimensons 2 (actionability) and 3 (grounding)
+                      # are verified deterministically by the guardrails node anyway
+    scores = await llm_call(EVAL_RUBRIC + f"\nQuery: {query}\nResponse: {response}\nRAG context: {rag_context}")
+    mlflow.log_metrics(scores)
     return scores
 ```
+
+**Note:** `actionability` and `grounding` are already enforced deterministically by the Guardrails node (Pydantic schema + DB name lookup). The LLM judge's value is in `factual_accuracy` and `conciseness` — dimensions that require reading the response in context.
 
 ---
 
@@ -241,17 +249,18 @@ tracer = trace.get_tracer("wc-edge.ai-advisor")
 ### Spans Per Request
 
 ```
-POST /chat (root span, ~3-5s)
-├── router_agent (50-200ms)
+POST /chat (root span, ~2-4s)
+├── router_agent (50-150ms)          ← Haiku: 73% cheaper than Sonnet
+│   └── llm_call.haiku (50-150ms)
 ├── transfer_advisor (100-500ms)
 │   ├── db_query.get_projections (10-50ms)
-│   └── llm_call.litellm (500-3000ms)
-├── knowledge_agent (100-300ms)
-│   ├── rag.retrieve (20-100ms)  ← FAISS cosine + BM25
+│   └── llm_call.sonnet (500-3000ms)
+├── knowledge_agent (30-150ms)       ← no LLM call; pure retrieval
+│   ├── rag.retrieve (20-100ms)  ← FAISS cosine + BM25, top-3
 │   └── graphrag.traverse (10-50ms)  ← NetworkX BFS
 ├── synthesizer (200-1000ms)
-│   └── llm_call.litellm (200-800ms)
-└── guardrails (10-30ms)
+│   └── llm_call.sonnet (200-800ms)  ← CoT stripped before SSE stream
+└── guardrails (2-5ms)               ← no LLM call; DB lookup + regex
 ```
 
 ### Key Metrics (Prometheus via OTel)

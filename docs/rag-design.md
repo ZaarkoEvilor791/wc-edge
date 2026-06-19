@@ -92,7 +92,7 @@ class VectorStoreBackend(ABC):
     @abstractmethod
     def build(self, documents: list[Document]) -> None: ...
     @abstractmethod
-    def retrieve(self, query: str, k: int = 5) -> list[NodeWithScore]: ...
+    def retrieve(self, query: str, k: int = 3) -> list[NodeWithScore]: ...
     @abstractmethod
     def persist(self, path: str) -> None: ...
 
@@ -239,7 +239,7 @@ async def knowledge_agent(state: AgentState) -> AgentState:
     entities = extract_entities(query, db)
 
     # RAG: semantic + BM25
-    rag_docs = retrieve(query, k=5)
+    rag_docs = retrieve(query, k=3)
     state["rag_context"] = format_docs(rag_docs)
 
     # GraphRAG: multi-hop if entities found
@@ -281,7 +281,7 @@ Block 1 uses Anthropic prompt caching (`cache_control: ephemeral`). With 2,048+ 
 
 | Metric | Target | How Measured |
 |---|---|---|
-| RAG precision@5 | > 0.8 (relevant players in top-5) | LLM-as-judge: are retrieved docs about players the user asked about? |
+| RAG precision@3 | > 0.8 (relevant players in top-3) | LLM-as-judge (10% sample): are retrieved docs about players the user asked about? |
 | GraphRAG hit rate | > 70% of queries with named entities use graph context | Logged per request to LangSmith |
 | Hallucination rate | 0% invalid player names in actions | Guardrails DB lookup; flagged in LangSmith eval dataset |
 | Index staleness | < 25 hours | `/health` endpoint; readiness probe blocks traffic if exceeded |

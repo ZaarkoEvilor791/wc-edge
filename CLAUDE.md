@@ -17,7 +17,7 @@
 
 ---
 
-## Current State (Session 48 starting)
+## Current State (Session 49 starting)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working. **Tournament live since June 12. Round 2 now active.**
 
@@ -38,10 +38,10 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
 - All runs green. Blend working correctly since Session 46 fix.
 
-**Session 48 — Phase 0 docs shipped:**
+**Session 48 — Phase 0 docs shipped + ATROS cost audit applied:**
 - `README.md` created (portfolio README: mermaid architecture diagram, tech badges, skills coverage table, full repo map).
-- `docs/hld.md`, `docs/lld.md`, `docs/rag-design.md`, `docs/llmops.md`, `docs/security.md` created.
-- ADR 006–012 created in `docs/adr/`. Phase 0 complete — all files untracked, ready to commit.
+- `docs/hld.md`, `docs/lld.md`, `docs/rag-design.md`, `docs/llmops.md`, `docs/security.md` created. ADR 006–012 created in `docs/adr/`.
+- ATROS audit applied across all docs: Router → Haiku (73% cheaper); Guardrails → pure Python (no LLM); RAG top-k 5→3 (~40% fewer context tokens); eval → 10% sample; Synthesizer CoT isolation documented.
 
 **Planned (not yet built — plan at `C:\Users\shriy\.claude\plans\i-want-to-enhance-shiny-parnas.md`):**
 - **Phase 1: AI Advisor service + RAG** — `services/ai-advisor/`: LangGraph 6-node StateGraph (Router → [TransferAdvisor | CaptaincyAdvisor | ChipStrategist] → KnowledgeAgent → Synthesizer → Guardrails), LlamaIndex FAISS RAG (hybrid BM25 + semantic), litellm multi-model router (Claude → Azure GPT-4o → Vertex Gemini → Ollama), streaming SSE. BFF proxies `/api/chat` to new service with circuit-breaker fallback to legacy handler.

@@ -30,6 +30,14 @@ Router Agent             intent classification
 
 **State schema:** `AgentState` TypedDict — all nodes read/write a single shared state object. No inter-agent messaging; state passes sequentially through the DAG.
 
+**Model tiering within the graph:**
+- Router node → `claude-haiku-4-5-20251001` (4-class classification, ~50 tokens, 73% cheaper than Sonnet)
+- Specialist Advisor + Synthesizer nodes → `claude-sonnet-4-6` (complex reasoning + structured output)
+- KnowledgeAgent → no LLM call (pure FAISS retrieval + NetworkX traversal)
+- Guardrails → no LLM call (pure Python: DB name lookup + citation substring check + injection regex)
+
+Using Sonnet for the Router and Guardrails was identified as unnecessary spend in the ATROS cost audit (Session 48). Both tasks are deterministic at the required accuracy level.
+
 **Production safety:**
 ```python
 app = graph.compile(

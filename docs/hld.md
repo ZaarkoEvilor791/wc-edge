@@ -60,7 +60,7 @@ graph TB
         RAG["LlamaIndex FAISS RAG\nBM25 + semantic hybrid"]
         GR["GraphRAG\nPropertyGraphIndex\nNetworkX"]
         LR["litellm Router\nClaude → Azure → Gemini → Ollama"]
-        GU["Guardrails\nPydantic + hallucination check\nCitation grounding"]
+        GU["Guardrails\nPure Python: DB lookup + regex\n(no LLM call)"]
     end
 
     subgraph PI["Player Intelligence (FastAPI :8002)"]
@@ -145,7 +145,7 @@ graph TB
    a. RAG: LlamaIndex hybrid retrieval → top-5 player docs from FAISS
    b. GraphRAG: entity extraction → PropertyGraph traversal → fixture context
 6. Synthesizer: merge agent_outputs + rag_context + graph_context → draft response
-7. Guardrails: validate player names, ground citations, detect injection
+7. Guardrails (pure Python, no LLM): player name DB lookup + citation substring check + injection regex
 8. SSE stream back: {status events} then {type:'done', content, actions, citations, token_usage}
 9. BFF forwards SSE to browser
 10. Frontend renders: status pill → response → citation footnotes → action buttons
@@ -187,7 +187,7 @@ graph TB
 |---|---|---|
 | AI advisor latency (p95) | < 5s | SSE streaming + litellm 30s timeout |
 | FAISS index refresh | < 60s rebuild | Background task + atomic swap |
-| LLM cost per conversation | < $0.02 | Cached system prompt block (2048+ tokens) + top-k=5 RAG |
+| LLM cost per conversation | < $0.02 | Cached system prompt block (2048+ tokens) + top-k=3 RAG + Haiku router + deterministic guardrails |
 | Production availability | Existing Render monolith unchanged during tournament | Circuit-breaker fallback to legacy handler |
 | XGBoost governance | No regression on CV RMSE | MLflow `Staging → Production` gate |
 | Hallucination rate | 0% invalid player names in actions | Guardrails DB lookup at response time |

@@ -79,7 +79,7 @@ All factual claims (xP values, FDR scores, player prices) are injected from retr
 
 ### Layer 2: Player Name Validation
 
-The Guardrails node validates all player names mentioned in `actions[]` against the live DB:
+The Guardrails node validates all player names mentioned in `actions[]` against the live DB. **This is a pure Python DB lookup — no LLM call.** The entire Guardrails node runs in ~2–5ms at zero LLM cost.
 
 ```python
 def validate_player_names(actions: list[dict], conn) -> tuple[list[dict], list[str]]:
