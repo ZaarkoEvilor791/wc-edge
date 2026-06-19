@@ -17,13 +17,13 @@
 
 ---
 
-## Current State (Session 46 starting)
+## Current State (Session 48 starting)
 
 All 6 pages built, polished, and live on production. TypeScript clean. GitHub Actions working. **Tournament live since June 12. Round 2 now active.**
 
 **Tests:** 129 vitest (6 files) + 49 pytest — all green.
 
-**DB:** 1,484 players · 8 rounds · 578 players with club stats · 384 team_fdr rows · Round 1 `status='complete'`. `wc.projections` xP now blended with MD1 actual FIFA Fantasy avgPoints (23% obs weight, 77% prior).
+**DB:** 1,484 players · 8 rounds · 578 players with club stats · 384 team_fdr rows · Round 1 `status='complete'`. `wc.projections` xP blended with MD1 actual FIFA Fantasy avgPoints (23% obs weight, 77% prior). `goals_pg`/`goals_conceded_pg` in `wc.team_fdr` currently NULL — dynamic FDR update will populate these.
 
 **apif budget:** `day1_used: 80, day2_used: 16` — both runs complete. Daily 04:00 UTC cron uses 32 req/run.
 
@@ -36,13 +36,21 @@ All 6 pages built, polished, and live on production. TypeScript clean. GitHub Ac
 **GitHub Actions:** `.github/workflows/engine.yml` live.
 - Crons: 04:00 UTC (apif + model + blend) · 18:00 UTC (model + blend only) · 00:00 UTC (post-match blend) · June 27 06:00 UTC (post-group Bayesian FDR)
 - `workflow_dispatch` inputs: `skip_apif` (default false), `post_group` (default false)
-- All runs green. Blend now working correctly (Session 46 bug fix).
+- All runs green. Blend working correctly since Session 46 fix.
 
-**Session 46 shipped:**
-- **`blend_live_observations` bug fix** — status check used `'COMPLETE'` (uppercase) but DB stores `'complete'` (lowercase). Blend silently skipped every round. Fixed in `engine/engine/wc_model.py:509`. Manually triggered engine workflow post-fix — 11,872 projections blended with Round 1 data.
+**Session 48 — Phase 0 docs shipped:**
+- `README.md` created (portfolio README: mermaid architecture diagram, tech badges, skills coverage table, full repo map).
+- `docs/hld.md`, `docs/lld.md`, `docs/rag-design.md`, `docs/llmops.md`, `docs/security.md` created.
+- ADR 006–012 created in `docs/adr/`. Phase 0 complete — all files untracked, ready to commit.
 
-**Planned (not yet built — plan at `C:\Users\shriy\.claude\plans\why-does-llm-not-tidy-teapot.md`):**
-- **Edge AI live context** — two-block system prompt architecture: static cached prefix (2048+ tokens, scoring rules + anti-hallucination constraints) + dynamic uncached block (`<tournament>` round/stage/eliminated count + `<squad_analysis>` per-player xP/FDR/ELIM/PK). Stops Edge hallucinating screenshot workflows. Requires: `getCurrentRound()` + `getSquadContext()` in `db.ts`; `buildSquadAnalysis()` in `server.ts`; round cache refreshed hourly via `setInterval`; squad IDs destructured from request body (currently dropped). Camera button tooltip fix (`title="Load squad from screenshot"`).
+**Planned (not yet built — plan at `C:\Users\shriy\.claude\plans\i-want-to-enhance-shiny-parnas.md`):**
+- **Phase 1: AI Advisor service + RAG** — `services/ai-advisor/`: LangGraph 6-node StateGraph (Router → [TransferAdvisor | CaptaincyAdvisor | ChipStrategist] → KnowledgeAgent → Synthesizer → Guardrails), LlamaIndex FAISS RAG (hybrid BM25 + semantic), litellm multi-model router (Claude → Azure GPT-4o → Vertex Gemini → Ollama), streaming SSE. BFF proxies `/api/chat` to new service with circuit-breaker fallback to legacy handler.
+- **Phase 2: GraphRAG** — LlamaIndex PropertyGraphIndex (Player→Team→Fixture→Round→Stat). Multi-hop traversal for captaincy/fixture queries.
+- **Phase 3: Guardrails + Prompt Engineering** — Pydantic output schema, player name hallucination check, prompt injection detection, versioned prompt files, DSPy few-shot optimizer.
+- **Phase 4: XGBoost + MLflow** — `train_xgb_model()` with `TimeSeriesSplit` CV in `wc_model.py`; MLflow model registry with auto-promote governance gate; `xgb_xp`/`ensemble_xp` columns in `wc.projections`.
+- **Phase 5: Docker + k8s** — `docker-compose.yml` (5 services + Redis + MLflow), Helm charts for AKS/EKS/GKE.
+- **Phase 6: LLMOps + fine-tuning scaffold** — LangSmith tracing, 4-dimension eval rubric, OpenTelemetry, DSPy/LoRA scaffolds, CrewAI alternative.
+- **Dynamic FDR** — `update_round_fdr()` in `wc_model.py` generalises post-group Bayesian update to run after every completed round. Populates `goals_pg`/`goals_conceded_pg`. Triggered by 00:00 UTC cron. Feeds into GraphRAG FACES edges and RAG player documents via Redis `round.complete` event chain.
 
 ---
 
@@ -204,7 +212,8 @@ Render auto-deploys on `main` push.
 ## Next Session Priorities
 
 1. **Tournament ops (ongoing)** — mark eliminated teams after each round, monitor engine crons. See `docs/ops.md`.
-2. **Edge AI squad context** — implement plan at `C:\Users\shriy\.claude\plans\velvet-weaving-rabin.md`. Adds `getSquadContext()` to `db.ts` + `buildSquadAnalysis()` to `server.ts`; injects per-player xP/FDR/stats into `/api/chat` system prompt so Edge can give real squad advice.
-3. **ADR 002 server-side** — extend `canAddPlayer` enforcement to the server (`/api/transfers/suggest` response validation). Trigger: if a country-limit or position bug is reported.
-4. **ADR 003 (post-tournament)** — store xP breakdown as JSONB in `wc.player_projections`; remove reverse-engineering from PlayerProfileModal.
-5. **Captain mid-round: team-name matching** — ESPN `home_team`/`away_team` strings may not exactly match `teams.name` in DB. Monitor in prod; add fallback matching (abbr or fuzzy) if FT detection misfires.
+2. **Portfolio architecture — Phase 1 (AI Advisor + RAG)** — create `services/ai-advisor/`: LangGraph StateGraph, LlamaIndex FAISS indexer, litellm router, streaming SSE `/chat` endpoint, BFF proxy with circuit-breaker fallback. Plan at `C:\Users\shriy\.claude\plans\i-want-to-enhance-shiny-parnas.md`.
+3. **Dynamic FDR** — `update_round_fdr()` in `wc_model.py`; call from `wc_run.py` post-blend; populates `goals_pg`/`goals_conceded_pg`. Must run before Phase 1 GraphRAG uses these values.
+4. **ADR 002 server-side** — extend `canAddPlayer` enforcement to the server (`/api/transfers/suggest` response validation). Trigger: if a country-limit or position bug is reported.
+5. **ADR 003 (post-tournament)** — store xP breakdown as JSONB in `wc.player_projections`; remove reverse-engineering from PlayerProfileModal.
+6. **Captain mid-round: team-name matching** — ESPN `home_team`/`away_team` strings may not exactly match `teams.name` in DB. Monitor in prod; add fallback matching (abbr or fuzzy) if FT detection misfires.
