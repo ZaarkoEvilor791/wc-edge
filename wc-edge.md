@@ -1,3 +1,5 @@
+> **Context consolidated** — Key decisions from this pre-build design plan have been extracted into [`.knowledge/sessions/000-existing-context.md`](.knowledge/sessions/000-existing-context.md). This file is the original design spec; CLAUDE.md and the knowledge file are current truth.
+
 # wc-edge — FIFA WC 2026 Fantasy Tool: Full Design Plan
 
 **Status:** Grilling complete (data layer + model + engine architecture). Remaining: Express API routes, pages/UX, deployment details.  

@@ -1,3 +1,5 @@
+> **Context consolidated** — RAG/GraphRAG decisions are summarised in [`.knowledge/sessions/000-existing-context.md`](../.knowledge/sessions/000-existing-context.md). This file remains the authoritative RAG design document.
+
 # RAG + GraphRAG Design
 
 **Status:** Proposed  

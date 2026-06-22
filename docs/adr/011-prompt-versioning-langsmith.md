@@ -1,4 +1,6 @@
-# ADR 011 — Prompt Versioning + LangSmith LLMOps
+﻿> **Context consolidated** — This ADR is summarised in [`.knowledge/sessions/000-existing-context.md`](../../.knowledge/sessions/000-existing-context.md).
+
+# ADR 011 â€” Prompt Versioning + LangSmith LLMOps
 
 **Status:** Proposed  
 **Date:** 2026-06-19  
@@ -36,7 +38,7 @@ messages = [
 ]
 ```
 
-**Block 1 (cached):** WC 2026 scoring constants, squad rules, anti-hallucination instructions, citation format rules. 2,048+ tokens. Anthropic caches this block for 5 minutes — repeated calls in the same session pay only output tokens for block 1. At ~3 req/session × 1,500 cached tokens × $0.003/1K input, caching saves ~$0.013 per session.
+**Block 1 (cached):** WC 2026 scoring constants, squad rules, anti-hallucination instructions, citation format rules. 2,048+ tokens. Anthropic caches this block for 5 minutes â€” repeated calls in the same session pay only output tokens for block 1. At ~3 req/session Ã— 1,500 cached tokens Ã— $0.003/1K input, caching saves ~$0.013 per session.
 
 **Block 2 (dynamic):** `<tournament>`, `<squad_analysis>`, `<rag_context>`, `<graph_context>`. Changes per request; never cached.
 
@@ -44,11 +46,11 @@ messages = [
 
 ```
 prompts/
-├── system_v1.md              production prompt
-├── system_v2.md              challenger (A/B test candidate)
-├── few_shot_transfers.json   5 transfer examples (grounded in actual outcomes)
-├── few_shot_captain.json     5 captaincy examples
-└── prompt_config.yaml        active versions + A/B config
+â”œâ”€â”€ system_v1.md              production prompt
+â”œâ”€â”€ system_v2.md              challenger (A/B test candidate)
+â”œâ”€â”€ few_shot_transfers.json   5 transfer examples (grounded in actual outcomes)
+â”œâ”€â”€ few_shot_captain.json     5 captaincy examples
+â””â”€â”€ prompt_config.yaml        active versions + A/B config
 ```
 
 `prompt_config.yaml`:
@@ -91,7 +93,7 @@ LangSmith captures per run:
 
 ```python
 EVAL_RUBRIC = """
-Score this AI fantasy football response on 4 dimensions (each 0.0–1.0):
+Score this AI fantasy football response on 4 dimensions (each 0.0â€“1.0):
 
 1. factual_accuracy: Are all xP/FDR values cited present in the provided rag_context?
    1.0 = all values verified | 0.5 = some values missing | 0.0 = values not in context
@@ -103,16 +105,16 @@ Score this AI fantasy football response on 4 dimensions (each 0.0–1.0):
    1.0 = all names valid | 0.5 = 1 name invalid | 0.0 = 2+ names invalid
 
 4. conciseness: Is the response under 200 tokens?
-   1.0 = under 150 tokens | 0.5 = 150–250 tokens | 0.0 = over 250 tokens
+   1.0 = under 150 tokens | 0.5 = 150â€“250 tokens | 0.0 = over 250 tokens
 
 Return JSON only: {"factual_accuracy": f, "actionability": f, "grounding": f, "conciseness": f, "overall": f}
-Where overall = 0.4×factual_accuracy + 0.3×actionability + 0.2×grounding + 0.1×conciseness
+Where overall = 0.4Ã—factual_accuracy + 0.3Ã—actionability + 0.2Ã—grounding + 0.1Ã—conciseness
 """
 ```
 
-**Why these weights:** `factual_accuracy` and `actionability` are the highest-value dimensions — a hallucinating or non-actionable advisor is useless. `grounding` is strongly correlated with `factual_accuracy` but is a separate check (player names vs stat values). `conciseness` is a UX signal, lower weight.
+**Why these weights:** `factual_accuracy` and `actionability` are the highest-value dimensions â€” a hallucinating or non-actionable advisor is useless. `grounding` is strongly correlated with `factual_accuracy` but is a separate check (player names vs stat values). `conciseness` is a UX signal, lower weight.
 
-**Eval runs on 10% sample, not every response.** Running Claude-as-judge on 100% of responses would double the per-query LLM cost. `actionability` (valid action JSON) and `grounding` (player names) are already enforced deterministically by the Guardrails node — the LLM judge's marginal value is in `factual_accuracy` and `conciseness`, which require reading the response in context. 10% sampling gives statistically meaningful quality signals at 1/10th the cost.
+**Eval runs on 10% sample, not every response.** Running Claude-as-judge on 100% of responses would double the per-query LLM cost. `actionability` (valid action JSON) and `grounding` (player names) are already enforced deterministically by the Guardrails node â€” the LLM judge's marginal value is in `factual_accuracy` and `conciseness`, which require reading the response in context. 10% sampling gives statistically meaningful quality signals at 1/10th the cost.
 
 ---
 
@@ -120,7 +122,7 @@ Where overall = 0.4×factual_accuracy + 0.3×actionability + 0.2×grounding + 0.
 
 When `ab_test.enabled: true`, the prompt loader routes 50% of requests to `system_v1`, 50% to `system_v2`. Both versions are tagged in LangSmith traces. After 100 samples per variant, the variant with higher mean `factual_accuracy` (or the configured metric) is declared the winner and promoted in `prompt_config.yaml` by setting the active version.
 
-Manual promotion is required — no auto-promotion. This ensures a human reviews the LangSmith dashboard and confirms the difference is statistically meaningful before switching traffic.
+Manual promotion is required â€” no auto-promotion. This ensures a human reviews the LangSmith dashboard and confirms the difference is statistically meaningful before switching traffic.
 
 ---
 
@@ -140,7 +142,7 @@ Manual promotion is required — no auto-promotion. This ensures a human reviews
 - `prompt_config.yaml` is committed to git. Changes to the active version create a git commit trail.
 - Hot-reload: the prompt loader reads `prompt_config.yaml` on each request (cached with a 60s TTL via `functools.lru_cache`). Version changes take effect within 60 seconds without redeployment.
 - LangSmith traces contain full user messages. Ensure no PII is included in user messages before enabling tracing. WC Fantasy queries contain no PII.
-- Eval rubric is itself an LLM call (Claude-as-judge). At $0.003/1K tokens × ~500 tokens input × 100 evals = ~$0.15 for a full A/B evaluation batch.
+- Eval rubric is itself an LLM call (Claude-as-judge). At $0.003/1K tokens Ã— ~500 tokens input Ã— 100 evals = ~$0.15 for a full A/B evaluation batch.
 
 ## What future reviewers should not re-suggest
 

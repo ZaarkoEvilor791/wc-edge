@@ -1,3 +1,5 @@
+> **Context consolidated** — All decisions from this file have been extracted into [`.knowledge/sessions/000-existing-context.md`](../.knowledge/sessions/000-existing-context.md). This file remains the authoritative design decision log; the knowledge file is the quick-reference.
+
 # Key Decisions
 
 Authoritative design decisions. Before changing anything in this list, check if an ADR exists in `docs/adr/`.

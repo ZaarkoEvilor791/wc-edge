@@ -1,3 +1,5 @@
+> **Context consolidated** — Current plan and phase status from sessions have been extracted into [`.knowledge/sessions/000-existing-context.md`](../.knowledge/sessions/000-existing-context.md). This file remains the full session log.
+
 # Session History
 
 ## Session 49 — ATROS cost audit applied to architecture docs

@@ -1,14 +1,16 @@
-# ADR 007 — GraphRAG with LlamaIndex PropertyGraphIndex
+﻿> **Context consolidated** — This ADR is summarised in [`.knowledge/sessions/000-existing-context.md`](../../.knowledge/sessions/000-existing-context.md).
+
+# ADR 007 â€” GraphRAG with LlamaIndex PropertyGraphIndex
 
 **Status:** Proposed  
 **Date:** 2026-06-19  
-**Context:** Phase 2 — multi-hop reasoning for fixture and captaincy queries
+**Context:** Phase 2 â€” multi-hop reasoning for fixture and captaincy queries
 
 ---
 
 ## Decision
 
-Build a player/team/fixture knowledge graph using LlamaIndex `PropertyGraphIndex` backed by NetworkX. At query time, extract named entities from the user message → traverse the graph → serialize the subgraph as structured text injected into the LLM context. This is distinct from (and complementary to) RAG: graph traversal enables multi-hop reasoning that vector similarity cannot provide.
+Build a player/team/fixture knowledge graph using LlamaIndex `PropertyGraphIndex` backed by NetworkX. At query time, extract named entities from the user message â†’ traverse the graph â†’ serialize the subgraph as structured text injected into the LLM context. This is distinct from (and complementary to) RAG: graph traversal enables multi-hop reasoning that vector similarity cannot provide.
 
 ---
 
@@ -17,11 +19,11 @@ Build a player/team/fixture knowledge graph using LlamaIndex `PropertyGraphIndex
 ### Why GraphRAG at All
 
 Pure RAG retrieves documents about individual players but cannot answer relational queries:
-- "Which of my players have easy fixtures this round?" (requires Player→Team→FACES)
-- "Is Norway defensive strength going to hurt Mbappé's cs_probability?" (requires two FACES edges + team stats)
+- "Which of my players have easy fixtures this round?" (requires Playerâ†’Teamâ†’FACES)
+- "Is Norway defensive strength going to hurt MbappÃ©'s cs_probability?" (requires two FACES edges + team stats)
 - "Who are the best penalty-taking alternatives to Haaland?" (requires TEAMMATES_WITH + is_penalty_taker filter)
 
-These require graph traversal — following typed relationships across multiple entities — which vector similarity cannot model.
+These require graph traversal â€” following typed relationships across multiple entities â€” which vector similarity cannot model.
 
 ### Why LlamaIndex PropertyGraphIndex + NetworkX
 
@@ -31,7 +33,7 @@ These require graph traversal — following typed relationships across multiple 
 
 ### Graph Schema Decision
 
-The `FACES {fdr_rating, lambda_posterior, def_multiplier, goals_conceded_pg}` edge is the core design decision. It carries live FDR data — updated after every completed round by `update_round_fdr()` — so the graph automatically reflects actual defensive/offensive form, not just pre-tournament seed estimates. This is what makes captaincy advice grounded.
+The `FACES {fdr_rating, lambda_posterior, def_multiplier, goals_conceded_pg}` edge is the core design decision. It carries live FDR data â€” updated after every completed round by `update_round_fdr()` â€” so the graph automatically reflects actual defensive/offensive form, not just pre-tournament seed estimates. This is what makes captaincy advice grounded.
 
 ---
 
@@ -43,7 +45,7 @@ The `FACES {fdr_rating, lambda_posterior, def_multiplier, goals_conceded_pg}` ed
 | RDF/SPARQL | Steep learning curve; no natural fit with the Python ML stack; verbose query language |
 | Amazon Neptune | Cloud-hosted graph DB; cost and vendor lock-in not justified; NetworkX sufficient |
 | Custom adjacency dict | Reinvents graph traversal; loses PropertyGraphIndex query abstractions |
-| Microsoft GraphRAG | Designed for unstructured text corpora; our data is already structured (DB rows) — no need for LLM-based entity extraction on the graph build path |
+| Microsoft GraphRAG | Designed for unstructured text corpora; our data is already structured (DB rows) â€” no need for LLM-based entity extraction on the graph build path |
 
 ---
 
@@ -51,8 +53,8 @@ The `FACES {fdr_rating, lambda_posterior, def_multiplier, goals_conceded_pg}` ed
 
 - Graph is rebuilt in memory on ai-advisor service startup and hourly via a background task
 - `FACES` edges are stale by at most 1 hour between `update_round_fdr()` runs
-- `entity_extractor.py` uses rapidfuzz for fuzzy name matching (handles "Mbappe" → "Mbappé", "Erling" → "Haaland")
-- GraphRAG context is only injected into the LLM prompt when the entity extractor finds ≥1 player or team mention in the query — avoids inflating prompt length on general queries
+- `entity_extractor.py` uses rapidfuzz for fuzzy name matching (handles "Mbappe" â†’ "MbappÃ©", "Erling" â†’ "Haaland")
+- GraphRAG context is only injected into the LLM prompt when the entity extractor finds â‰¥1 player or team mention in the query â€” avoids inflating prompt length on general queries
 - `get_matchup_context()` and `get_player_neighbourhood()` serialize graph output as human-readable text (not JSON). LLM comprehension of natural language is better than structured JSON for multi-hop context.
 
 ## What future reviewers should not re-suggest

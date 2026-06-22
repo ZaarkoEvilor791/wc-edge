@@ -1,8 +1,10 @@
-# ADR 010 — litellm Multi-Model Router
+﻿> **Context consolidated** — This ADR is summarised in [`.knowledge/sessions/000-existing-context.md`](../../.knowledge/sessions/000-existing-context.md).
+
+# ADR 010 â€” litellm Multi-Model Router
 
 **Status:** Proposed  
 **Date:** 2026-06-19  
-**Context:** Phase 1 AI Advisor — LLM abstraction layer with automatic fallback
+**Context:** Phase 1 AI Advisor â€” LLM abstraction layer with automatic fallback
 
 ---
 
@@ -66,7 +68,7 @@ router = Router(
 The direct SDK approach (`anthropic.Anthropic().messages.create(...)`) works but hard-codes the LLM provider. If Anthropic has an outage, the AI advisor goes down with it. With litellm Router, the code calls `router.acompletion(model="primary", ...)` and the routing layer handles provider selection, retry, and fallback transparently.
 
 **Why these three providers:**  
-Claude Sonnet 4.6 is the primary because it performs best on structured output tasks (actions JSON, citation grounding) and is already in use in the existing server.ts chat handler. Azure OpenAI GPT-4o is the Tier 2 fallback — enterprise-grade availability, OpenAI-compatible interface. Vertex AI Gemini 1.5 Pro is Tier 3 — Google Cloud, demonstrates multi-cloud capability. Ollama Llama 3.1 is for local dev without API keys — allows contributors to run the full stack without cloud credentials.
+Claude Sonnet 4.6 is the primary because it performs best on structured output tasks (actions JSON, citation grounding) and is already in use in the existing server.ts chat handler. Azure OpenAI GPT-4o is the Tier 2 fallback â€” enterprise-grade availability, OpenAI-compatible interface. Vertex AI Gemini 1.5 Pro is Tier 3 â€” Google Cloud, demonstrates multi-cloud capability. Ollama Llama 3.1 is for local dev without API keys â€” allows contributors to run the full stack without cloud credentials.
 
 **Why least-busy routing:**  
 The AI advisor handles one request at a time per user (sequential conversation turns). "Least-busy" reduces latency when multiple users are hitting the service simultaneously by routing to whichever model replica has the shortest queue.
@@ -123,4 +125,4 @@ The OpenTelemetry span on each `router.acompletion` call includes:
 
 ## What future reviewers should not re-suggest
 
-Do not suggest removing Azure/Vertex fallbacks as "over-engineering." The fallback chain is specifically what makes this portfolio system noteworthy — demonstrating live multi-cloud LLM routing is a concrete differentiator from systems that call a single provider directly. The fallbacks are inactive unless the primary provider fails, so they add zero latency cost in the happy path.
+Do not suggest removing Azure/Vertex fallbacks as "over-engineering." The fallback chain is specifically what makes this portfolio system noteworthy â€” demonstrating live multi-cloud LLM routing is a concrete differentiator from systems that call a single provider directly. The fallbacks are inactive unless the primary provider fails, so they add zero latency cost in the happy path.

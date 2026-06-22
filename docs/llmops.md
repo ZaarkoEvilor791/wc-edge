@@ -1,3 +1,5 @@
+> **Context consolidated** — LLMOps decisions (eval sampling, prompt versioning) are referenced in [`.knowledge/sessions/000-existing-context.md`](../.knowledge/sessions/000-existing-context.md). This file remains the authoritative LLMOps design.
+
 # LLMOps Design — MLflow + LangSmith + OpenTelemetry
 
 **Status:** Proposed  

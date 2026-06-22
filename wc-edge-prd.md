@@ -1,3 +1,5 @@
+> **Context consolidated** — Product requirements and decisions from this PRD have been extracted into [`.knowledge/sessions/000-existing-context.md`](.knowledge/sessions/000-existing-context.md). This file is the original PRD; CLAUDE.md is current truth.
+
 # wc-edge PRD — FIFA WC 2026 Fantasy Companion Tool
 
 ## Problem Statement

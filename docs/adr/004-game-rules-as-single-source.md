@@ -1,8 +1,10 @@
-# ADR 004 — Game Rules as Single Source of Truth
+﻿> **Context consolidated** — This ADR is summarised in [`.knowledge/sessions/000-existing-context.md`](../../.knowledge/sessions/000-existing-context.md).
+
+# ADR 004 â€” Game Rules as Single Source of Truth
 
 **Status:** Accepted  
 **Date:** 2026-06-13  
-**Context:** Session 41 architecture review — Candidate D
+**Context:** Session 41 architecture review â€” Candidate D
 
 ---
 
@@ -10,17 +12,17 @@
 
 All WC 2026 Fantasy game constants live in `web/src/config/gameRules.ts`. No page component, hook, or service may define game rules inline. This includes:
 
-- `POS_REQUIRED` — squad position requirements
-- `POS_COUNT` — XI starter counts per position
-- `SCORING` — all scoring constants (goals, clean sheet, appearances, cards)
-- `FREE_TRANSFERS_BY_PHASE` — free transfer allowance per tournament phase
-- `TOTAL_ROUNDS` — 8
+- `POS_REQUIRED` â€” squad position requirements
+- `POS_COUNT` â€” XI starter counts per position
+- `SCORING` â€” all scoring constants (goals, clean sheet, appearances, cards)
+- `FREE_TRANSFERS_BY_PHASE` â€” free transfer allowance per tournament phase
+- `TOTAL_ROUNDS` â€” 8
 
 `engine/config.py` mirrors the same constants for the Python engine. Both files must be kept in sync manually (no auto-generation during the tournament; verify on each rule change).
 
 ## Rationale
 
-`FREE_TRANSFERS_BY_PHASE` was found in `Transfers.tsx` at Session 41 review — a page component. If FIFA updated transfer counts mid-tournament, the fix would require editing a page. All other game rules live in `gameRules.ts`. This is a locality miss with no benefit.
+`FREE_TRANSFERS_BY_PHASE` was found in `Transfers.tsx` at Session 41 review â€” a page component. If FIFA updated transfer counts mid-tournament, the fix would require editing a page. All other game rules live in `gameRules.ts`. This is a locality miss with no benefit.
 
 ## Consequences
 

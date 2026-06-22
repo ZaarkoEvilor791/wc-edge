@@ -1,3 +1,5 @@
+> **Context consolidated** — Ops constraints and runbooks are referenced in [`.knowledge/sessions/000-existing-context.md`](../.knowledge/sessions/000-existing-context.md). This file remains the authoritative operations playbook.
+
 # Tournament Operations Playbook
 
 **Tournament:** June 12 – July 19, 2026

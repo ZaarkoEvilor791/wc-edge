@@ -1,5 +1,7 @@
 # wc-edge Project Guide
 
+> **Project context is consolidated in `.knowledge/sessions/`** — Start there for decisions, current plan, constraints, and open questions: [`.knowledge/sessions/000-existing-context.md`](.knowledge/sessions/000-existing-context.md). The sections below remain the quick-reference for local dev, architecture layout, and gotchas.
+
 **Project:** FIFA WC 2026 Fantasy Companion Tool — squad builder, transfer advisor, captain picker, live tracker, Edge AI advisor.
 
 **Production URL:** `https://wc-edge.onrender.com`

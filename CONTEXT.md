@@ -1,3 +1,5 @@
+> **Context consolidated** — Key decisions and constraints from this file have been extracted into [`.knowledge/sessions/000-existing-context.md`](.knowledge/sessions/000-existing-context.md). This file remains the authoritative domain glossary.
+
 # wc-edge Domain Glossary
 
 This file is the authoritative vocabulary for the wc-edge codebase. Architecture reviews, PR descriptions, and code comments should use these terms exactly. When a new concept is named during a review or grilling session, add it here.

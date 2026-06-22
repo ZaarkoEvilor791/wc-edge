@@ -1,3 +1,5 @@
+> **Context consolidated** — API contracts and model tiering decisions are referenced in [`.knowledge/sessions/000-existing-context.md`](../.knowledge/sessions/000-existing-context.md). This file remains the authoritative low-level design.
+
 # Low-Level Design — Service API Contracts
 
 **Status:** Proposed  

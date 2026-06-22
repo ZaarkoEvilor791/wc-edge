@@ -1,3 +1,5 @@
+> **Context consolidated** — Security constraints are referenced in [`.knowledge/sessions/000-existing-context.md`](../.knowledge/sessions/000-existing-context.md). This file remains the authoritative security design.
+
 # AI Security + Responsible AI
 
 **Status:** Proposed  

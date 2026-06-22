@@ -1,8 +1,10 @@
-# ADR 002 — Validation Gate in squadValidator.ts
+﻿> **Context consolidated** — This ADR is summarised in [`.knowledge/sessions/000-existing-context.md`](../../.knowledge/sessions/000-existing-context.md).
+
+# ADR 002 â€” Validation Gate in squadValidator.ts
 
 **Status:** Proposed  
 **Date:** 2026-06-13  
-**Context:** Session 41 architecture review — Candidate B
+**Context:** Session 41 architecture review â€” Candidate B
 
 ---
 
@@ -10,9 +12,9 @@
 
 Extend `domain/squadValidator.ts` to be the single validation gate for all squad mutations. It should answer three questions:
 
-1. `validateSquad(squad, phase)` — is the final squad valid? (already exists)
-2. `canAddPlayer(squad, candidate, phase, budget)` — can this player be added?
-3. `canSwapPlayers(squad, sourceEl, targetEl, phase)` — is this swap legal?
+1. `validateSquad(squad, phase)` â€” is the final squad valid? (already exists)
+2. `canAddPlayer(squad, candidate, phase, budget)` â€” can this player be added?
+3. `canSwapPlayers(squad, sourceEl, targetEl, phase)` â€” is this swap legal?
 
 All mutation points (Squad.handleAdd, Squad.handleSwap, BrowseAllModal add mode, transferAdvisor.ts) must call through this gate before mutating. Country limits must be enforced here (not just as UI warnings).
 
@@ -28,7 +30,7 @@ This ADR is **Proposed**, not Accepted. The refactor touches 7 files and require
 
 ## Consequences
 
-- `squadValidator.ts` becomes a pure functions module with no React dependencies — importable by both client and server.
+- `squadValidator.ts` becomes a pure functions module with no React dependencies â€” importable by both client and server.
 - Server-side: the `/api/transfers/suggest` route should optionally run `validateSquad()` on the result before returning.
 - All visual "Position full" / "Country limit" warnings derive from these functions rather than computing inline.
 - Tests: one test file for `canAddPlayer()` covers all callers' edge cases.

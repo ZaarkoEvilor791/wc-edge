@@ -1,14 +1,16 @@
-# ADR 012 — Dynamic Per-Round FDR Bayesian Update
+﻿> **Context consolidated** — This ADR is summarised in [`.knowledge/sessions/000-existing-context.md`](../../.knowledge/sessions/000-existing-context.md).
+
+# ADR 012 â€” Dynamic Per-Round FDR Bayesian Update
 
 **Status:** Proposed  
 **Date:** 2026-06-19  
-**Context:** Dynamic FDR — generalising the post-group Bayesian update to run after every completed round
+**Context:** Dynamic FDR â€” generalising the post-group Bayesian update to run after every completed round
 
 ---
 
 ## Decision
 
-Generalise the existing post-group Bayesian update (`_fetch_group_results` → `run_model --post-group`) into `update_round_fdr(conn, completed_round_id)` — a function that re-computes FDR for all future rounds using cumulative completed rounds as observations. It runs after every completed round (not just the group→KO transition), populates the currently-NULL `goals_pg` and `goals_conceded_pg` columns in `wc.team_fdr`, and triggers a FAISS index rebuild via Redis pub/sub.
+Generalise the existing post-group Bayesian update (`_fetch_group_results` â†’ `run_model --post-group`) into `update_round_fdr(conn, completed_round_id)` â€” a function that re-computes FDR for all future rounds using cumulative completed rounds as observations. It runs after every completed round (not just the groupâ†’KO transition), populates the currently-NULL `goals_pg` and `goals_conceded_pg` columns in `wc.team_fdr`, and triggers a FAISS index rebuild via Redis pub/sub.
 
 ---
 
@@ -19,7 +21,7 @@ Generalise the existing post-group Bayesian update (`_fetch_group_results` → `
 goals_pg, goals_conceded_pg, xg_created_pg, xgc_pg
 ```
 
-FDR is updated only at the group→KO boundary via `wc_run.py --post-group`. All subsequent knockout round FDRs are frozen at `KO_AVG_LAMBDA ≈ 1.175` — the prior, not tournament actuals.
+FDR is updated only at the groupâ†’KO boundary via `wc_run.py --post-group`. All subsequent knockout round FDRs are frozen at `KO_AVG_LAMBDA â‰ˆ 1.175` â€” the prior, not tournament actuals.
 
 This means:
 - A team that concedes 3 goals in the group stage has the same FDR in Round 2 as a team that kept 3 clean sheets
@@ -72,15 +74,15 @@ def update_round_fdr(conn, completed_round_id: int):
 
 ```
 GitHub Actions 00:00 UTC cron (post-match blend)
-└── blend_live_observations()
-└── update_round_fdr(completed_round_id)        ← new call
-    └── upserts lambda_posterior + goals_pg columns in wc.team_fdr
-└── embed_all_players()                         ← player docs now include updated goals_conceded_pg
-    └── FAISS index rebuilt to /tmp/faiss_new
-└── redis.publish "wc:events" "round.complete:{id}"
-    └── ai-advisor:
-        ├── refresh_index()  ← FAISS atomic swap
-        └── graphrag rebuild on next hourly tick (FACES edges now carry updated lambda)
+â””â”€â”€ blend_live_observations()
+â””â”€â”€ update_round_fdr(completed_round_id)        â† new call
+    â””â”€â”€ upserts lambda_posterior + goals_pg columns in wc.team_fdr
+â””â”€â”€ embed_all_players()                         â† player docs now include updated goals_conceded_pg
+    â””â”€â”€ FAISS index rebuilt to /tmp/faiss_new
+â””â”€â”€ redis.publish "wc:events" "round.complete:{id}"
+    â””â”€â”€ ai-advisor:
+        â”œâ”€â”€ refresh_index()  â† FAISS atomic swap
+        â””â”€â”€ graphrag rebuild on next hourly tick (FACES edges now carry updated lambda)
 ```
 
 `wc_run.py` also calls `update_round_fdr()` in the 04:00 and 18:00 UTC runs (after `blend_live_observations()`) so FDR stays fresh between the dedicated 00:00 post-match run.
@@ -92,7 +94,7 @@ GitHub Actions 00:00 UTC cron (post-match blend)
 | System | Effect |
 |---|---|
 | `wc.projections` xP | On next `run_model()` call, updated `lambda_posterior` flows into `xp_calc()`. Players vs weaker defences see higher xP. |
-| RAG player documents | `goals_conceded_pg` included in player doc text. Rebuilt on FAISS refresh. LLM sees "Opponent conceded 1.8 gpg R1–R3 actuals." |
+| RAG player documents | `goals_conceded_pg` included in player doc text. Rebuilt on FAISS refresh. LLM sees "Opponent conceded 1.8 gpg R1â€“R3 actuals." |
 | GraphRAG FACES edges | `lambda_posterior` + `goals_conceded_pg` on FACES edge. Rebuilt hourly. Multi-hop captaincy queries use real defensive record. |
 | AI Advisor `get_fdr()` tool | Reads `lambda_posterior` from `wc.team_fdr`. Returns live values post-update. |
 | `/api/fdr?round=N` (BFF) | Reads from `wc.team_fdr`. Returns updated FDR ratings immediately after upsert. |
@@ -103,27 +105,27 @@ GitHub Actions 00:00 UTC cron (post-match blend)
 
 FDR is a round-level signal. The Bayesian model's precision on 3 matches is already limited by small-sample noise (a single lucky 3-0 win vs a weak opponent should not halve a team's `lambda_posterior` mid-round). Updating FDR after each 90-minute match would add noise, not signal, and would require the engine to run on ESPN live score events rather than on round completion.
 
-The 00:00 UTC cron fires after each match day — typically within 3 hours of the final whistle. For fantasy purposes (transfer deadline is the next match kickoff), this timing is sufficient.
+The 00:00 UTC cron fires after each match day â€” typically within 3 hours of the final whistle. For fantasy purposes (transfer deadline is the next match kickoff), this timing is sufficient.
 
-**Rejected:** Real-time ESPN score → live FDR update. The complexity (webhook or 60s ESPN polling → engine trigger → model rerun → DB upsert → FAISS rebuild) is not justified by a signal that only meaningfully changes at round completion.
+**Rejected:** Real-time ESPN score â†’ live FDR update. The complexity (webhook or 60s ESPN polling â†’ engine trigger â†’ model rerun â†’ DB upsert â†’ FAISS rebuild) is not justified by a signal that only meaningfully changes at round completion.
 
 ---
 
 ## DB Migration
 
-No new columns required — `goals_pg` and `goals_conceded_pg` already exist in `wc.team_fdr` as nullable REAL columns (added in an earlier migration). `update_round_fdr()` populates them.
+No new columns required â€” `goals_pg` and `goals_conceded_pg` already exist in `wc.team_fdr` as nullable REAL columns (added in an earlier migration). `update_round_fdr()` populates them.
 
-The `xg_created_pg` and `xgc_pg` columns (also NULL) are not populated by this update — they require StatsBomb xG data per match, which API-Football does not provide. These remain NULL and are reserved for post-tournament analysis.
+The `xg_created_pg` and `xgc_pg` columns (also NULL) are not populated by this update â€” they require StatsBomb xG data per match, which API-Football does not provide. These remain NULL and are reserved for post-tournament analysis.
 
 ---
 
 ## Consequences
 
-- First run of `update_round_fdr()` after Round 1 completes will upsert FDR for all remaining rounds for all 48 teams (or those still active). Approximately 48 × 7 = 336 upserts per call.
+- First run of `update_round_fdr()` after Round 1 completes will upsert FDR for all remaining rounds for all 48 teams (or those still active). Approximately 48 Ã— 7 = 336 upserts per call.
 - If a team is eliminated (`is_active = false`), future rounds for that team are not upserted. The `wc.team_fdr` rows for eliminated teams retain their last-updated values for historical queries.
 - `update_round_fdr()` is idempotent. Calling it twice for the same `completed_round_id` produces the same `wc.team_fdr` state.
 - Tests for `update_round_fdr()` should verify: (a) goals_pg/goals_conceded_pg are non-NULL after the call, (b) future rounds are updated, (c) already-completed rounds are not modified.
 
 ## What future reviewers should not re-suggest
 
-Do not suggest running `update_round_fdr()` on live match scores during a game. The Bayesian update is designed for completed-match observations. Partial-game scores (e.g. 45-minute score) would introduce noise that violates the independence assumptions of the Poisson model. The correct trigger is match completion — which the 00:00 UTC cron already covers.
+Do not suggest running `update_round_fdr()` on live match scores during a game. The Bayesian update is designed for completed-match observations. Partial-game scores (e.g. 45-minute score) would introduce noise that violates the independence assumptions of the Poisson model. The correct trigger is match completion â€” which the 00:00 UTC cron already covers.

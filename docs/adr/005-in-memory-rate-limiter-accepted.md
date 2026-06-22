@@ -1,8 +1,10 @@
-# ADR 005 — In-Memory Rate Limiter: Accepted for Tournament Duration
+﻿> **Context consolidated** — This ADR is summarised in [`.knowledge/sessions/000-existing-context.md`](../../.knowledge/sessions/000-existing-context.md).
+
+# ADR 005 â€” In-Memory Rate Limiter: Accepted for Tournament Duration
 
 **Status:** Accepted  
 **Date:** 2026-06-13  
-**Context:** Session 41 architecture review — Candidate E
+**Context:** Session 41 architecture review â€” Candidate E
 
 ---
 
@@ -20,7 +22,7 @@ The rate limiter for `/api/chat` and `/api/from-screenshot` is stored in-memory 
 ## Consequences
 
 - A user who triggers a dyno restart (or waits for the daily recycling) gets a fresh daily quota.
-- This is a known, documented gap — not a missed requirement.
+- This is a known, documented gap â€” not a missed requirement.
 - If LLM costs spike unexpectedly, the first remediation is to check Anthropic usage logs, then reduce `max_tokens` or add model caching, not to harden the rate limiter.
 
 ## What future reviewers should not re-suggest

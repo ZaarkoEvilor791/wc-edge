@@ -1,8 +1,10 @@
-# ADR 003 — xP Breakdown: Stored vs. Derived
+﻿> **Context consolidated** — This ADR is summarised in [`.knowledge/sessions/000-existing-context.md`](../../.knowledge/sessions/000-existing-context.md).
+
+# ADR 003 â€” xP Breakdown: Stored vs. Derived
 
 **Status:** Deferred  
 **Date:** 2026-06-13  
-**Context:** Session 41 architecture review — Candidate C
+**Context:** Session 41 architecture review â€” Candidate C
 
 ---
 
@@ -32,7 +34,7 @@ breakdown = {
 ```
 
 ```typescript
-// PlayerProfileModal.tsx — replace formula with passthrough
+// PlayerProfileModal.tsx â€” replace formula with passthrough
 const { goals, clean_sheet, appearance, other } = projection.xpBreakdown
 ```
 

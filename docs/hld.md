@@ -1,3 +1,5 @@
+> **Context consolidated** — Architecture decisions from this file are referenced in [`.knowledge/sessions/000-existing-context.md`](../.knowledge/sessions/000-existing-context.md). This file remains the authoritative high-level design.
+
 # High-Level Design — wc-edge Portfolio Architecture v2
 
 **Status:** Proposed (Phase 0 — tournament live, microservices planned)  
