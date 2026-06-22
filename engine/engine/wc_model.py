@@ -96,8 +96,8 @@ def _group_opponents(team_row: dict, all_teams: list[dict]) -> list[dict]:
     ]
 
 
-def _fetch_group_results() -> dict[int, dict]:
-    """Fetch completed group stage match results from FIFA Fantasy rounds.json.
+def _fetch_all_results() -> dict[int, dict]:
+    """Fetch completed match results from all rounds in FIFA Fantasy rounds.json.
 
     Returns {squad_id: {goals_for: float, goals_against: float, matches: int}}
     Returns empty dict on any error (model falls back to seed-based lambdas).
@@ -107,12 +107,13 @@ def _fetch_group_results() -> dict[int, dict]:
         resp.raise_for_status()
         rounds_data = resp.json()
     except Exception as e:
-        print(f"[model] post-group FDR: failed to fetch rounds.json: {e}")
+        print(f"[model] FDR update: failed to fetch rounds.json: {e}")
         return {}
 
     team_stats: dict[int, dict] = {}
     for rnd in rounds_data:
-        if rnd.get("stage", "").upper() != "GROUP":
+        status = (rnd.get("status") or "").lower()
+        if status != "complete":
             continue
         for tournament in rnd.get("tournaments", []):
             home_id = tournament.get("homeSquadId") or tournament.get("homeId")
@@ -338,10 +339,11 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
         all_teams = [{"squad_id": r[0], "seed": r[1], "group_name": r[2]}
                      for r in cur.fetchall()]
 
-    # ---- rounds ----
+    # ---- rounds (include status for Bayesian FDR gating) ----
     with conn.cursor() as cur:
-        cur.execute("SELECT id, stage FROM wc.rounds ORDER BY id")
-        rounds = [{"id": r[0], "stage": r[1]} for r in cur.fetchall()]
+        cur.execute("SELECT id, stage, status FROM wc.rounds ORDER BY id")
+        rounds = [{"id": r[0], "stage": r[1], "status": (r[2] or "").lower()}
+                  for r in cur.fetchall()]
 
     # ---- median price per position (for prior scaling) ----
     pos_prices: dict[str, list[float]] = defaultdict(list)
@@ -353,12 +355,11 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
     print(f"[model] {len(players)} players | {len(stats_map)} with stats | "
           f"{len(rounds)} rounds | {len(all_teams)} teams")
 
-    # Fetch actual group results for post-group Bayesian FDR update
-    group_results: dict[int, dict] = {}
-    if post_group:
-        print("[model] Fetching group stage results for post-group FDR update...")
-        group_results = _fetch_group_results()
-        print(f"[model] Group results found for {len(group_results)} teams")
+    # Always fetch actual results from all completed rounds for Bayesian FDR update
+    print("[model] Fetching match results for dynamic FDR update...")
+    all_results = _fetch_all_results()
+    if all_results:
+        print(f"[model] Actual results found for {len(all_results)} teams")
 
     # ---- per-team FDR per round ----
     team_fdr: dict[int, dict[int, dict]] = {}
@@ -389,38 +390,35 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
                     "def_multiplier": 1.0,
                 }
 
-    # ---- post-group Bayesian FDR update (knockout rounds only) ----
-    if post_group and group_results:
-        total_goals = sum(s["goals_for"] for s in group_results.values())
-        total_matches = sum(s["matches"] for s in group_results.values())
+    # ---- Bayesian FDR update for all future (non-complete) rounds ----
+    if all_results:
+        total_goals = sum(s["goals_for"] for s in all_results.values())
+        total_matches = sum(s["matches"] for s in all_results.values())
         tourn_avg_gpg = (total_goals / total_matches) if total_matches > 0 else 1.3
         prior_virt = 3  # equivalent to 3 virtual matches of prior evidence
 
         for squad_id in team_fdr:
-            result = group_results.get(squad_id)
+            result = all_results.get(squad_id)
             if not result or result["matches"] == 0:
                 continue
             m = result["matches"]
             actual_gf = result["goals_for"] / m
             actual_ga = result["goals_against"] / m
+            concede_post = (prior_virt * KO_AVG_LAMBDA + m * actual_ga) / (prior_virt + m)
+            def_mult_post = actual_gf / tourn_avg_gpg if tourn_avg_gpg > 0 else 1.0
 
             for rnd_id, fdr_entry in team_fdr[squad_id].items():
                 rnd = next((r for r in rounds if r["id"] == rnd_id), None)
-                if not rnd or rnd["stage"] == "GROUP":
-                    continue  # only update knockout rounds
-
-                # Bayesian blend: KO_AVG_LAMBDA prior + actual group concede rate
-                concede_post = (prior_virt * KO_AVG_LAMBDA + m * actual_ga) / (prior_virt + m)
-                # def_multiplier: team's attacking output vs tournament average
-                def_mult_post = actual_gf / tourn_avg_gpg if tourn_avg_gpg > 0 else 1.0
+                if not rnd or rnd["status"] == "complete":
+                    continue  # only update future rounds
 
                 team_fdr[squad_id][rnd_id] = {
-                    "attack_lambda": KO_AVG_LAMBDA,
+                    "attack_lambda": fdr_entry["attack_lambda"],
                     "concede_lambda": concede_post,
                     "def_multiplier": def_mult_post,
                 }
 
-        print(f"[model] Post-group FDR updated. Tournament avg goals/game: {tourn_avg_gpg:.2f}")
+        print(f"[model] Dynamic FDR applied. Tournament avg: {tourn_avg_gpg:.2f} goals/game")
 
     # ---- compute projections ----
     proj_rows: list[tuple] = []
@@ -464,10 +462,15 @@ def run_model(conn: psycopg.Connection, post_group: bool = False) -> None:
             fdr_key = (squad_id, rnd["id"])
             if fdr_key not in seen_fdr and squad_id:
                 seen_fdr.add(fdr_key)
+                actual = all_results.get(squad_id)
+                goals_pg = (actual["goals_for"] / actual["matches"]
+                            if actual and actual["matches"] > 0 else None)
+                conc_pg = (actual["goals_against"] / actual["matches"]
+                           if actual and actual["matches"] > 0 else None)
                 fdr_rows.append((
                     squad_id, rnd["id"],
                     proj["attack_lambda"], proj["def_mult"],
-                    None, proj["concede_lambda"], None, proj["concede_lambda"],
+                    None, proj["concede_lambda"], goals_pg, conc_pg,
                 ))
 
     print(f"[model] Writing {len(proj_rows)} projection rows...")
@@ -569,6 +572,54 @@ def blend_live_observations(conn: psycopg.Connection) -> None:
         f"[model] blend_live_observations: {total_updated} projections blended "
         f"(rounds_played={rounds_played}, obs_weight={obs_weight}, prior_weight={prior_weight})"
     )
+
+
+def update_round_fdr(conn: psycopg.Connection) -> None:
+    """Update team_fdr with Bayesian posteriors from actual match results.
+
+    Populates goals_pg, goals_conceded_pg, xgc_pg, and def_multiplier
+    without regenerating all projections. Safe to call on every engine run.
+    """
+    all_results = _fetch_all_results()
+    if not all_results:
+        print("[model] update_round_fdr: no completed match results, skipping")
+        return
+
+    total_goals = sum(s["goals_for"] for s in all_results.values())
+    total_matches = sum(s["matches"] for s in all_results.values())
+    tourn_avg_gpg = total_goals / total_matches if total_matches > 0 else 1.3
+    prior_virt = 3
+
+    updates = []
+    for squad_id, result in all_results.items():
+        m = result["matches"]
+        if m == 0:
+            continue
+        actual_gf = result["goals_for"] / m
+        actual_ga = result["goals_against"] / m
+        concede_post = (prior_virt * KO_AVG_LAMBDA + m * actual_ga) / (prior_virt + m)
+        def_mult_post = actual_gf / tourn_avg_gpg if tourn_avg_gpg > 0 else 1.0
+        updates.append((actual_gf, actual_ga, concede_post, def_mult_post, squad_id))
+
+    if not updates:
+        return
+
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            UPDATE wc.team_fdr
+            SET goals_pg = %s,
+                goals_conceded_pg = %s,
+                xgc_pg = %s,
+                def_multiplier = %s,
+                updated_at = NOW()
+            WHERE squad_id = %s
+            """,
+            updates,
+        )
+    conn.commit()
+    print(f"[model] update_round_fdr: {len(updates)} teams updated "
+          f"(tourn avg {tourn_avg_gpg:.2f} g/game)")
 
 
 if __name__ == "__main__":

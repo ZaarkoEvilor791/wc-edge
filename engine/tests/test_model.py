@@ -10,7 +10,7 @@ from engine.wc_model import (
     compute_round_projection,
     SEED_LAMBDA,
     KO_AVG_LAMBDA,
-    _fetch_group_results,
+    _fetch_all_results,
 )
 
 MEDIAN_PRICE = {"GK": 5.0, "DEF": 5.5, "MID": 7.0, "FWD": 8.0}
@@ -287,25 +287,26 @@ class TestPostGroupFdrMath:
 
 
 # ---------------------------------------------------------------------------
-# _fetch_group_results — URL parsing logic (mocked HTTP)
+# _fetch_all_results — URL parsing logic (mocked HTTP)
 # ---------------------------------------------------------------------------
 
-class TestFetchGroupResults:
+class TestFetchAllResults:
     def test_returns_empty_on_http_error(self, monkeypatch):
         """If rounds.json fetch fails, returns empty dict without raising."""
         import httpx
         def _fail(*args, **kwargs):
             raise httpx.ConnectError("timeout")
         monkeypatch.setattr(httpx, "get", _fail)
-        result = _fetch_group_results()
+        result = _fetch_all_results()
         assert result == {}
 
-    def test_parses_completed_group_matches(self, monkeypatch):
+    def test_parses_completed_rounds_only(self, monkeypatch):
         import httpx
         from unittest.mock import MagicMock
 
         fake_data = [
             {
+                "status": "complete",
                 "stage": "GROUP",
                 "tournaments": [
                     {"homeSquadId": 1, "awaySquadId": 2, "homeScore": 2, "awayScore": 1},
@@ -313,6 +314,7 @@ class TestFetchGroupResults:
                 ],
             },
             {
+                "status": "playing",
                 "stage": "R32",
                 "tournaments": [
                     {"homeSquadId": 1, "awaySquadId": 4, "homeScore": 3, "awayScore": 0},
@@ -324,11 +326,43 @@ class TestFetchGroupResults:
         mock_resp.json.return_value = fake_data
         monkeypatch.setattr(httpx, "get", lambda *a, **kw: mock_resp)
 
-        result = _fetch_group_results()
+        result = _fetch_all_results()
 
-        # R32 match must be ignored
-        assert 4 not in result or result[4]["matches"] == 0
-        # Team 1: 2 matches, goals_for=3, goals_against=1
+        # Playing round must be ignored
+        assert 4 not in result
+        # Team 1: 2 matches from completed GROUP round
+        assert result[1]["matches"] == 2
+        assert result[1]["goals_for"] == pytest.approx(3.0)
+        assert result[1]["goals_against"] == pytest.approx(1.0)
+
+    def test_accumulates_across_multiple_complete_rounds(self, monkeypatch):
+        import httpx
+        from unittest.mock import MagicMock
+
+        fake_data = [
+            {
+                "status": "complete",
+                "stage": "GROUP",
+                "tournaments": [
+                    {"homeSquadId": 1, "awaySquadId": 2, "homeScore": 2, "awayScore": 0},
+                ],
+            },
+            {
+                "status": "complete",
+                "stage": "R32",
+                "tournaments": [
+                    {"homeSquadId": 1, "awaySquadId": 3, "homeScore": 1, "awayScore": 1},
+                ],
+            },
+        ]
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json.return_value = fake_data
+        monkeypatch.setattr(httpx, "get", lambda *a, **kw: mock_resp)
+
+        result = _fetch_all_results()
+
+        # Team 1: both rounds accumulated
         assert result[1]["matches"] == 2
         assert result[1]["goals_for"] == pytest.approx(3.0)
         assert result[1]["goals_against"] == pytest.approx(1.0)
@@ -339,6 +373,7 @@ class TestFetchGroupResults:
 
         fake_data = [
             {
+                "status": "complete",
                 "stage": "GROUP",
                 "tournaments": [
                     {"homeSquadId": 1, "awaySquadId": 2, "homeScore": None, "awayScore": None},
@@ -350,5 +385,5 @@ class TestFetchGroupResults:
         mock_resp.json.return_value = fake_data
         monkeypatch.setattr(httpx, "get", lambda *a, **kw: mock_resp)
 
-        result = _fetch_group_results()
+        result = _fetch_all_results()
         assert result == {}

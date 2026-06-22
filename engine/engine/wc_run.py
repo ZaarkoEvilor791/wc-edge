@@ -6,7 +6,7 @@ import httpx
 
 from .config import BUDGET_GROUP, BUDGET_R32
 from .db import connect, init_schema
-from .wc_model import blend_live_observations, run_model
+from .wc_model import blend_live_observations, run_model, update_round_fdr
 from .wc_optimizer import run_optimizer
 
 _FIFA_ROUNDS_URL = "https://play.fifa.com/json/fantasy/rounds.json"
@@ -110,6 +110,7 @@ def main() -> None:
     if args.phase in ("model", "all"):
         run_model(conn, post_group=args.post_group)
         blend_live_observations(conn)
+        update_round_fdr(conn)
 
     if args.phase in ("optimizer", "all"):
         for variant in ("max_xp", "value", "differential"):
