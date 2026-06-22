@@ -10,8 +10,20 @@ from .db import connect
 SQUAD_SIZE = 15
 POS_COUNTS = {"GK": 2, "DEF": 5, "MID": 5, "FWD": 3}
 BUDGET_GROUP = 100.0
-MAX_PER_TEAM = 3
+MAX_PER_TEAM = 3  # default / group stage
 VALUE_PRICE_PENALTY = 0.08  # differential: xp - penalty*price rewards value picks
+
+_STAGE_COUNTRY_CAP: dict[str, int] = {
+    "GROUP": 3, "R32": 3, "R16": 4, "QF": 5, "SF": 6, "FINAL": 8,
+}
+
+
+def _country_cap(stage: str) -> int:
+    s = (stage or "GROUP").upper()
+    for key, cap in _STAGE_COUNTRY_CAP.items():
+        if key in s:
+            return cap
+    return MAX_PER_TEAM
 
 
 def _solve(players: list[dict], budget: float, max_per_team: int) -> list[int] | None:
@@ -115,6 +127,11 @@ def run_optimizer(conn: psycopg.Connection, budget: float = BUDGET_GROUP, round_
     print(f"[optimizer] Loading projections for round {round_id} (variant={variant})...")
 
     with conn.cursor() as cur:
+        cur.execute("SELECT stage FROM wc.rounds WHERE id = %s", [round_id])
+        stage_row = cur.fetchone()
+    stage = stage_row[0] if stage_row else "GROUP"
+
+    with conn.cursor() as cur:
         cur.execute(
             """
             SELECT p.element, p.position, p.price, p.squad_id,
@@ -149,7 +166,7 @@ def run_optimizer(conn: psycopg.Connection, budget: float = BUDGET_GROUP, round_
 
     # Variant: adjust objective scores and team cap before solving
     solve_players = players
-    team_cap = MAX_PER_TEAM
+    team_cap = _country_cap(stage)
     if variant == "value":
         # Penalise expensive picks — same xP at lower price wins
         solve_players = [{**p, "xp": (p["xp"] or 0.0) - VALUE_PRICE_PENALTY * (p["price"] or 0.0)} for p in players]

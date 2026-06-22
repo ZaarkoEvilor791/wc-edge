@@ -17,6 +17,7 @@ import {
 import { suggestTransfers } from './services/transferAdvisor'
 import { processSquadScreenshot, isAllowedMime, ScreenshotParseError, ScreenshotEmptyError } from './services/screenshotService'
 import { SCORING } from '../src/config/gameRules'
+import { roundPhase, COUNTRY_LIMIT } from '../src/domain/squadValidator'
 import { ROUTES } from '../src/config/routes'
 
 function buildScoringContext(): string {
@@ -251,13 +252,17 @@ app.post(ROUTES.suggestTransfers, async (req, res) => {
   }
 
   try {
-    const [players, projections, teams] = await Promise.all([
-      getPlayers(), getProjections(round), getTeams(),
+    const [players, projections, teams, rounds] = await Promise.all([
+      getPlayers(), getProjections(round), getTeams(), getRounds(),
     ])
 
     const playerMap = new Map(players.map((p) => [p.element, p]))
     const teamMap = new Map(teams.map((t) => [t.squad_id, t]))
     const projMap = new Map(projections.map((p) => [p.element, p]))
+
+    const rnd = rounds.find((r) => r.id === round)
+    const phase = roundPhase(rnd?.stage ?? 'GROUP')
+    const maxPerCountry = COUNTRY_LIMIT[phase]
 
     const toCard = (el: number) => {
       const p = playerMap.get(el)!
@@ -276,7 +281,7 @@ app.post(ROUTES.suggestTransfers, async (req, res) => {
 
     const squadCards = squad.filter((el) => playerMap.has(el)).map(toCard)
     const pool = projections.filter((p) => playerMap.has(p.element)).map((p) => toCard(p.element))
-    const transfers = suggestTransfers(squadCards, pool, budget)
+    const transfers = suggestTransfers(squadCards, pool, budget, maxPerCountry)
 
     res.json({ transfers })
   } catch (err) {
@@ -401,6 +406,26 @@ app.post(ROUTES.chat, async (req, res) => {
     squadNames?: string[]
   }
 
+  let liveDataSection = ''
+  if (dbEnabled) {
+    try {
+      const currentRound = await getCurrentRoundId()
+      const [projections, allPlayers, allTeams] = await Promise.all([
+        getProjections(currentRound),
+        getPlayers(),
+        getTeams(),
+      ])
+      const playerNameMap = new Map(allPlayers.map((p) => [p.element, playerName(p)]))
+      const teamAbbrMap = new Map(allTeams.map((t) => [t.squad_id, t.abbr]))
+      const posMap = new Map(allPlayers.map((p) => [p.element, p.position]))
+      const squadAbbrMap = new Map(allPlayers.map((p) => [p.element, teamAbbrMap.get(p.squad_id) ?? '?']))
+      const top10 = projections.slice(0, 10).map((p) =>
+        `${playerNameMap.get(p.element) ?? p.element} (${posMap.get(p.element) ?? '?'}, ${squadAbbrMap.get(p.element) ?? '?'}) ${p.xp.toFixed(1)}xP`
+      ).join(', ')
+      liveDataSection = `\n\n<live_data>\nTop-10 xP round ${currentRound}: ${top10}\n</live_data>`
+    } catch { /* non-fatal — omit live data */ }
+  }
+
   const system = `<role>
 You are Edge — tactical AI for WC 2026 Fantasy. Sharp, confident, brief. Think JARVIS, not FAQ.
 Reply in ≤120 tokens (text only — actions block excluded). No preamble, no sign-off.
@@ -437,7 +462,7 @@ Match player names exactly from <squad>. Edge cannot load or set a squad — onl
 After optimise_xi or suggest_transfers, add one "On [page]:" orientation sentence:
 /squad — "Tap any card to swap. Gold ring = selected, green = eligible."
 /transfers — "Tap a player to transfer out, then pick the replacement."
-</page_guides>`
+</page_guides>${liveDataSection}`
 
   try {
     const response = await anthropic.messages.create({
