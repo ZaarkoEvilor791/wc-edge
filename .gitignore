@@ -9,3 +9,12 @@ engine/engine/__pycache__/
 .DS_Store
 __pycache__/
 *.log
+
+# Scratch / diagnostic scripts
+check-prod.js
+engine/check_*.py
+engine/find_players*.py
+engine/add_more_penalty_takers.py
+engine/cleanup_penalty_takers.py
+engine/fix_penalty_takers.py
+web/verify-screenshots/
